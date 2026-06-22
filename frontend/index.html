@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClearMRM — OSFI E-23 Model Risk Management</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.27.5/babel.min.js" crossorigin></script>
+<style>
+:root {
+  --navy: #0b2d5f;
+  --red: #b81c1c;
+  --amber: #c07500;
+  --green: #1a8a34;
+  --grey: #6b7280;
+  --blue: #1d4ed8;
+  --sidebar-width: 220px;
+  --topbar-height: 56px;
+  --radius: 8px;
+  --border: #e2e8f0;
+  --bg: #f8fafc;
+  --white: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; font-size: 14px; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+
+/* SPINNER */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
+.spinner-dark { border-color: rgba(11,45,95,0.2); border-top-color: var(--navy); }
+.spinner-center { display: flex; justify-content: center; padding: 40px; }
+
+/* LAYOUT */
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar { width: var(--sidebar-width); background: var(--navy); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto; }
+.sidebar-logo { padding: 20px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+.brand { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
+.brand span { color: #f97316; }
+.osfi-badge { display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; }
+.sidebar-nav { flex: 1; padding: 6px 0; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 13.5px; color: rgba(255,255,255,0.72); transition: background 0.15s, color 0.15s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
+.nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+.sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.12); }
+.tenant-name { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 2px; }
+.user-email { font-size: 11.5px; color: rgba(255,255,255,0.55); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-signout { margin-top: 10px; width: 100%; padding: 7px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.25); background: transparent; color: rgba(255,255,255,0.75); font-size: 12.5px; transition: background 0.15s; cursor: pointer; }
+.btn-signout:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.main { margin-left: var(--sidebar-width); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { height: var(--topbar-height); background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; position: sticky; top: 0; z-index: 50; gap: 12px; }
+.topbar-title { font-size: 16px; font-weight: 600; flex: 1; }
+.topbar-meta { font-size: 12px; color: var(--text-muted); }
+.content { padding: 24px; flex: 1; }
+
+/* CARDS */
+.card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.kpi-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
+.kpi-label { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.kpi-value { font-size: 30px; font-weight: 800; line-height: 1; }
+.kpi-navy { color: var(--navy); }
+.kpi-red { color: var(--red); }
+.kpi-amber { color: var(--amber); }
+.kpi-green { color: var(--green); }
+.kpi-grey { color: var(--grey); }
+
+/* BADGES */
+.badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.badge-t1 { background: #fee2e2; color: var(--red); }
+.badge-t2 { background: #fef3c7; color: #92400e; }
+.badge-t3 { background: #dcfce7; color: var(--green); }
+.badge-unrated { background: #f1f5f9; color: var(--grey); }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-purple { background: #ede9fe; color: #7c3aed; }
+.badge-yellow { background: #fef9c3; color: #a16207; }
+.badge-orange { background: #ffedd5; color: #c2410c; }
+.badge-green { background: #dcfce7; color: var(--green); }
+.badge-grey { background: #f1f5f9; color: var(--grey); }
+.badge-red { background: #fee2e2; color: var(--red); }
+.badge-amber { background: #fef3c7; color: #92400e; }
+.badge-vendor { background: #e0e7ff; color: #4338ca; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; transition: opacity 0.15s, background 0.15s; font-size: 14px; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #0e3a78; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #9b1717; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-success:hover:not(:disabled) { background: #157a2c; }
+.btn-outline { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+.btn-outline:hover:not(:disabled) { background: var(--navy); color: #fff; }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover:not(:disabled) { background: var(--bg); color: var(--text); }
+.btn-ai { background: linear-gradient(135deg, #1d4ed8, #7c3aed); color: #fff; }
+.btn-ai:hover:not(:disabled) { opacity: 0.88; }
+.btn-sm { padding: 5px 10px; font-size: 12.5px; }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 12px; font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13.5px; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #f8fafc; }
+.tbl-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* FORMS */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.ai-tag { font-size: 9.5px; font-weight: 700; background: linear-gradient(135deg, #1d4ed8, #7c3aed); color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 5px; vertical-align: middle; letter-spacing: 0; text-transform: none; }
+.form-control { padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--white); color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
+.form-control:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(11,45,95,0.1); }
+.form-control.ai-filled { border-color: #7c3aed; background: #faf5ff; }
+textarea.form-control { resize: vertical; min-height: 80px; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.checkbox-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.checkbox-row label { cursor: pointer; font-size: 14px; }
+
+/* ALERTS */
+.alert { padding: 12px 16px; border-radius: var(--radius); margin-bottom: 12px; font-size: 13.5px; border-left: 4px solid; line-height: 1.55; }
+.alert-warning { background: #fffbeb; border-color: var(--amber); color: #78350f; }
+.alert-danger { background: #fef2f2; border-color: var(--red); color: #7f1d1d; }
+.alert-info { background: #eff6ff; border-color: var(--blue); color: #1e3a8a; }
+.alert-success { background: #f0fdf4; border-color: var(--green); color: #14532d; }
+
+/* AI PANELS */
+.ai-panel { background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%); border: 1px solid #bfdbfe; border-radius: var(--radius); padding: 16px; margin-top: 12px; }
+.ai-panel-hdr { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1e3a8a; margin-bottom: 10px; font-size: 13px; }
+.ai-icon { font-size: 17px; }
+.ai-insight { font-size: 13.5px; color: #1e3a8a; line-height: 1.68; white-space: pre-wrap; }
+.ai-prio-badge { padding: 2px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; margin-left: 6px; }
+.prio-critical { background: #fee2e2; color: var(--red); }
+.prio-high { background: #ffedd5; color: #c2410c; }
+.prio-medium { background: #fef3c7; color: #92400e; }
+.prio-low { background: #dcfce7; color: var(--green); }
+.ai-sec { margin-top: 12px; }
+.ai-sec-title { font-size: 11px; font-weight: 700; color: #3730a3; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.ai-list { list-style: none; }
+.ai-list li { padding: 3px 0; color: #1e3a8a; font-size: 13px; }
+.ai-list li::before { content: '→ '; font-weight: 700; }
+
+/* MODALS */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
+.modal { background: var(--white); border-radius: var(--radius); max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+.modal-hdr { padding: 20px 24px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-hdr h2 { font-size: 16px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 22px; color: var(--text-muted); line-height: 1; cursor: pointer; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 20px 24px; }
+.modal-ftr { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+/* TOASTS */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: #1e293b; color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 13.5px; max-width: 340px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); animation: slideIn 0.25s ease; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+.toast.success { background: #15803d; }
+.toast.error { background: #b91c1c; }
+.toast.info { background: #1d4ed8; }
+@keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* LOGIN */
+.login-page { min-height: 100vh; background: linear-gradient(150deg, #0b2d5f 0%, #1e4080 55%, #0f3460 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { background: var(--white); border-radius: 12px; padding: 40px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+.login-logo { text-align: center; margin-bottom: 24px; }
+.login-logo .brand { font-size: 28px; }
+.login-logo .osfi-badge-lg { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; padding: 3px 12px; border-radius: 20px; }
+.login-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+.login-error { background: #fef2f2; border: 1px solid #fecaca; color: var(--red); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+.login-footer { margin-top: 20px; font-size: 11.5px; color: var(--text-muted); text-align: center; }
+
+/* WIZARD */
+.wizard-wrap { max-width: 580px; margin: 0 auto; }
+.wizard-progress { display: flex; align-items: center; margin-bottom: 28px; }
+.wz-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.wz-dot.done { background: var(--green); color: #fff; }
+.wz-dot.active { background: var(--navy); color: #fff; }
+.wz-dot.pending { background: #e2e8f0; color: var(--grey); }
+.wz-line { flex: 1; height: 2px; background: #e2e8f0; }
+.wz-line.done { background: var(--green); }
+.wz-question { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.wz-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+.wz-option { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: border-color 0.15s, background 0.15s; }
+.wz-option:hover { border-color: var(--navy); background: #f8fafc; }
+.wz-option.selected { border-color: var(--navy); background: #eff6ff; }
+.wz-option input { width: 16px; height: 16px; margin-top: 2px; cursor: pointer; flex-shrink: 0; }
+.wz-opt-label { font-weight: 600; font-size: 14px; }
+.wz-opt-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.result-center { text-align: center; padding: 28px 16px; }
+.tier-big { font-size: 58px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+.tier-big.t1 { color: var(--red); }
+.tier-big.t2 { color: var(--amber); }
+.tier-big.t3 { color: var(--green); }
+.tier-score { font-size: 17px; color: var(--text-muted); margin-bottom: 14px; }
+.tier-next { display: inline-block; background: #eff6ff; color: var(--blue); font-size: 13.5px; padding: 9px 18px; border-radius: 8px; margin-bottom: 20px; }
+
+/* DETAIL */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin-bottom: 18px; }
+.dl { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px; }
+.dv { font-size: 14px; }
+.history-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+
+/* WORKFLOW STATES */
+.wf-states { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; margin-bottom: 16px; }
+.wf-state { padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600; background: #f1f5f9; color: var(--grey); }
+.wf-state.active { background: var(--navy); color: #fff; }
+.wf-arrow { color: var(--text-muted); font-size: 12px; padding: 0 2px; }
+
+/* MISC */
+.section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.section-title { font-size: 15px; font-weight: 700; }
+.search-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.search-row .form-control { max-width: 280px; }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.import-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 24px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.import-zone:hover, .import-zone.drag-over { border-color: var(--navy); background: #f0f7ff; }
+.import-icon { font-size: 42px; margin-bottom: 12px; }
+.import-hint { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+.vendor-cb-list { display: flex; flex-direction: column; }
+.vendor-cb { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.vendor-cb:last-child { border-bottom: none; }
+.vendor-cb input { margin-top: 2px; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.vendor-cb label { font-size: 13.5px; cursor: pointer; line-height: 1.4; }
+.audit-row { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.audit-row:last-child { border-bottom: none; }
+.audit-ts { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; min-width: 140px; }
+.audit-desc { flex: 1; font-size: 13.5px; }
+.audit-user { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+
+/* ═══════════════════════════════════════════════════
+   AUTH HELPERS
+═══════════════════════════════════════════════════ */
+const TOKEN_KEY = 'cmrm_token';
+const getToken = () => localStorage.getItem(TOKEN_KEY);
+const storeToken = (t) => localStorage.setItem(TOKEN_KEY, t);
+const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+async function apiFetch(path, opts = {}) {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...opts.headers,
+  };
+  const res = await fetch(path, { ...opts, headers });
+  if (res.status === 401 || res.status === 403) { clearToken(); window.location.reload(); return; }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('pdf') || ct.includes('octet-stream')) return res.blob();
+  return res.json();
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST CONTEXT
+═══════════════════════════════════════════════════ */
+const ToastCtx = createContext(null);
+
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+  const add = useCallback((msg, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
+  return (
+    <ToastCtx.Provider value={add}>
+      {children}
+      <div className="toast-container">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast ${t.type}`}>
+            <span>{t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}</span>
+            <span>{t.msg}</span>
+          </div>
+        ))}
+      </div>
+    </ToastCtx.Provider>
+  );
+}
+const useToast = () => useContext(ToastCtx);
+
+/* ═══════════════════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════════════════ */
+const Spinner = ({ dark, size }) => (
+  <div className={`spinner${dark ? ' spinner-dark' : ''}`} style={size ? { width: size, height: size } : {}} />
+);
+
+function Modal({ title, onClose, children, footer }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+  return (
+    <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-hdr">
+          <h2>{title}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-ftr">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+const TierBadge = ({ tier }) => {
+  if (!tier || tier === 'unrated') return <span className="badge badge-unrated">Unrated</span>;
+  const cls = { 1: 'badge-t1', 2: 'badge-t2', 3: 'badge-t3' }[String(tier)] || 'badge-unrated';
+  return <span className={`badge ${cls}`}>T{tier}</span>;
+};
+
+const StatusBadge = ({ status }) => {
+  const map = {
+    requested: 'badge-blue', assigned: 'badge-purple', in_progress: 'badge-yellow',
+    findings_submitted: 'badge-orange', approved: 'badge-green', closed: 'badge-grey',
+    low: 'badge-green', medium: 'badge-amber', high: 'badge-red',
+    pass: 'badge-green', conditional_pass: 'badge-yellow', fail: 'badge-red',
+  };
+  return <span className={`badge ${map[status] || 'badge-grey'}`}>{(status || '').replace(/_/g, ' ')}</span>;
+};
+
+/* ═══════════════════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════════════════ */
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true); setError('');
+    try {
+      const data = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      storeToken(data.token);
+      onLogin(data);
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">
+          <div className="brand">Clear<span>MRM</span></div>
+          <div className="osfi-badge-lg">✓ OSFI E-23 Compliant</div>
+        </div>
+        <div className="login-title">Welcome back</div>
+        <div className="login-sub">Sign in to your Model Risk Management platform</div>
+        {error && <div className="login-error">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group" style={{ marginBottom: 14 }}>
+            <label className="form-label">Email Address</label>
+            <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@institution.ca" required autoFocus />
+          </div>
+          <div className="form-group" style={{ marginBottom: 20 }}>
+            <label className="form-label">Password</label>
+            <input className="form-control" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+          </div>
+          <button className="btn btn-primary" style={{ width: '100%', padding: '11px', fontSize: 15 }} type="submit" disabled={loading}>
+            {loading ? <><Spinner /> Signing in…</> : 'Sign In'}
+          </button>
+        </form>
+        <div className="login-footer">Secured · Canadian-hosted · PIPEDA compliant</div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════ */
+const NAV_ITEMS = [
+  { key: 'dashboard',   label: 'Dashboard',           icon: '📊' },
+  { key: 'models',      label: 'Model Inventory',      icon: '🗂️' },
+  { key: 'validations', label: 'Validations',          icon: '✅' },
+  { key: 'vendors',     label: 'Vendor Assessments',   icon: '🏢' },
+  { key: 'audit',       label: 'Audit Trail',          icon: '📋' },
+  { key: 'board',       label: 'Board Report',         icon: '📑' },
+  { key: 'import',      label: 'Import CSV',           icon: '📥' },
+];
+
+function Sidebar({ screen, setScreen, user }) {
+  return (
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <div className="brand">Clear<span>MRM</span></div>
+        <div className="osfi-badge">OSFI E-23 Compliant</div>
+      </div>
+      <nav className="sidebar-nav">
+        {NAV_ITEMS.map(n => (
+          <button key={n.key} className={`nav-item${screen === n.key ? ' active' : ''}`} onClick={() => setScreen(n.key)}>
+            <span className="nav-icon">{n.icon}</span>{n.label}
+          </button>
+        ))}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="tenant-name">{user?.tenant_name || 'ClearMRM'}</div>
+        <div className="user-email">{user?.email || ''}</div>
+        <button className="btn-signout" onClick={() => { clearToken(); window.location.reload(); }}>Sign Out</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════════════ */
+function Dashboard({ setScreen, setDetailModelId }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [aiInsight, setAiInsight] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiFetched = useRef(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    apiFetch('/api/dashboard')
+      .then(setData)
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function getAiBriefing() {
+    if (aiInsight || aiFetched.current) return;
+    aiFetched.current = true;
+    setAiLoading(true);
+    try {
+      const r = await apiFetch('/api/ai/dashboard-insight');
+      setAiInsight(r.insight);
+    } catch (e) { toast(e.message, 'error'); aiFetched.current = false; }
+    finally { setAiLoading(false); }
+  }
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+
+  return (
+    <div>
+      {data?.overdue > 0 && (
+        <div className="alert alert-danger">
+          ⚠️ <strong>{data.overdue} model(s)</strong> have overdue validations and require immediate attention under OSFI E-23.
+        </div>
+      )}
+      {data?.unrated > 0 && (
+        <div className="alert alert-warning">
+          ⚠️ <strong>{data.unrated} model(s)</strong> have not been risk-rated. Risk-rate all models to maintain OSFI E-23 compliance.
+        </div>
+      )}
+
+      <div className="kpi-grid">
+        <div className="kpi-card"><div className="kpi-label">Total Models</div><div className="kpi-value kpi-navy">{data?.total ?? '—'}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Tier 1 · High</div><div className="kpi-value kpi-red">{data?.tier1 ?? '—'}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Tier 2 · Medium</div><div className="kpi-value kpi-amber">{data?.tier2 ?? '—'}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Tier 3 · Low</div><div className="kpi-value kpi-green">{data?.tier3 ?? '—'}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Overdue</div><div className="kpi-value kpi-red">{data?.overdue ?? '—'}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Unrated</div><div className="kpi-value kpi-grey">{data?.unrated ?? '—'}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Val. Pending</div><div className="kpi-value kpi-amber">{data?.val_pending ?? '—'}</div></div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div className="section-hdr">
+          <div className="section-title">🤖 AI Intelligence Panel</div>
+          <button className="btn btn-ai btn-sm" onClick={getAiBriefing} disabled={aiLoading || !!aiInsight}>
+            {aiLoading ? <><Spinner /> Thinking…</> : aiInsight ? '✓ Briefing Loaded' : 'Get AI Briefing'}
+          </button>
+        </div>
+        {!aiInsight && !aiLoading && (
+          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+            Click <strong>Get AI Briefing</strong> for an OSFI E-23 compliance overview and risk summary powered by AI.
+          </div>
+        )}
+        {aiLoading && <div className="spinner-center"><Spinner dark size={24} /></div>}
+        {aiInsight && (
+          <div className="ai-panel">
+            <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Dashboard Briefing</div>
+            <div className="ai-insight">{aiInsight}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="section-hdr">
+          <div className="section-title">Recent Models</div>
+          <button className="btn btn-outline btn-sm" onClick={() => setScreen('models')}>View All</button>
+        </div>
+        {(!data?.recent || data.recent.length === 0) ? (
+          <div className="empty-state"><div className="empty-icon">🗂️</div><div>No models yet. Add your first model.</div></div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Model</th><th>Owner</th><th>Tier</th><th>Next Validation</th><th></th></tr>
+              </thead>
+              <tbody>
+                {data.recent.map(m => (
+                  <tr key={m.id}>
+                    <td><strong>{m.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>v{m.version}</span></td>
+                    <td>{m.model_owner_name || '—'}</td>
+                    <td><TierBadge tier={m.current_tier} /></td>
+                    <td style={{ fontSize: 13 }}>{m.next_validation_due || '—'}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(m.id); setScreen('model_detail'); }}>View</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   MODEL INVENTORY
+═══════════════════════════════════════════════════ */
+function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
+  const [models, setModels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [tierFilter, setTierFilter] = useState('');
+  const toast = useToast();
+
+  function load() {
+    const q = new URLSearchParams();
+    if (search) q.set('search', search);
+    if (tierFilter) q.set('tier', tierFilter);
+    setLoading(true);
+    apiFetch(`/api/models?${q}`)
+      .then(setModels)
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, [search, tierFilter]);
+
+  async function archiveModel(id, name) {
+    if (!confirm(`Archive "${name}"? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/api/models/${id}`, { method: 'DELETE' });
+      toast('Model archived', 'success');
+      load();
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  return (
+    <div>
+      <div className="search-row">
+        <input className="form-control" placeholder="Search by name, owner, BU…" value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="form-control" value={tierFilter} onChange={e => setTierFilter(e.target.value)} style={{ maxWidth: 160 }}>
+          <option value="">All Tiers</option>
+          <option value="1">Tier 1 · High</option>
+          <option value="2">Tier 2 · Medium</option>
+          <option value="3">Tier 3 · Low</option>
+          <option value="unrated">Unrated</option>
+        </select>
+        <button className="btn btn-primary" onClick={() => { setEditModelId(null); setScreen('model_form'); }}>+ Add Model</button>
+      </div>
+      <div className="card">
+        {loading ? (
+          <div className="spinner-center"><Spinner dark size={26} /></div>
+        ) : models.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">🗂️</div><div>No models found.</div></div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name / Version</th><th>Business Unit</th><th>Owner</th>
+                  <th>Methodology</th><th>Tier</th><th>Next Validation</th><th>Vendor</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {models.map(m => (
+                  <tr key={m.id}>
+                    <td>
+                      <strong>{m.name}</strong><br />
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>v{m.version}</span>
+                    </td>
+                    <td>{m.business_unit || '—'}</td>
+                    <td>{m.model_owner_name || '—'}</td>
+                    <td style={{ fontSize: 12.5 }}>{(m.methodology_type || '').replace(/_/g, ' ') || '—'}</td>
+                    <td><TierBadge tier={m.current_tier} /></td>
+                    <td style={{ fontSize: 13 }}>{m.next_validation_due || '—'}</td>
+                    <td>{m.is_third_party ? <span className="badge badge-vendor">Vendor</span> : '—'}</td>
+                    <td>
+                      <div className="tbl-actions">
+                        <button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(m.id); setScreen('model_detail'); }}>View</button>
+                        <button className="btn btn-outline btn-sm" onClick={() => { setEditModelId(m.id); setScreen('model_form'); }}>Edit</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => archiveModel(m.id, m.name)}>Archive</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   ADD / EDIT MODEL FORM
+═══════════════════════════════════════════════════ */
+function ModelForm({ modelId, setScreen, setDetailModelId }) {
+  const isEdit = !!modelId;
+  const toast = useToast();
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggested, setAiSuggested] = useState({});
+  const [form, setForm] = useState({
+    name: '', version: '1.0', description: '', purpose: '',
+    business_unit: '', model_owner_name: '', model_owner_email: '',
+    methodology_type: 'statistical', input_data_sources: '',
+    production_system: '', deployed_at: '',
+    is_third_party: false, vendor_name: '', vendor_product: '',
+  });
+
+  useEffect(() => {
+    if (!isEdit) return;
+    apiFetch(`/api/models/${modelId}`)
+      .then(d => setForm(prev => ({ ...prev, ...d })))
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }, [modelId]);
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  async function aiSmartFill() {
+    if (!form.name.trim()) { toast('Enter a model name first to use AI Smart Fill', 'info'); return; }
+    setAiLoading(true);
+    try {
+      const r = await apiFetch('/api/ai/suggest-model-fields', {
+        method: 'POST',
+        body: JSON.stringify({ name: form.name, description: form.description }),
+      });
+      const suggested = {};
+      if (r.methodology_type) { set('methodology_type', r.methodology_type); suggested.methodology_type = true; }
+      if (r.purpose)           { set('purpose', r.purpose); suggested.purpose = true; }
+      if (r.business_unit)     { set('business_unit', r.business_unit); suggested.business_unit = true; }
+      if (r.input_data_sources){ set('input_data_sources', r.input_data_sources); suggested.input_data_sources = true; }
+      setAiSuggested(prev => ({ ...prev, ...suggested }));
+      toast('AI Smart Fill applied — review and adjust as needed', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setAiLoading(false); }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const method = isEdit ? 'PUT' : 'POST';
+      const url    = isEdit ? `/api/models/${modelId}` : '/api/models';
+      const result = await apiFetch(url, { method, body: JSON.stringify(form) });
+      toast(isEdit ? 'Model updated' : 'Model created', 'success');
+      setDetailModelId(result?.id || modelId);
+      setScreen('model_detail');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setSaving(false); }
+  }
+
+  const Lbl = ({ field, children }) => (
+    <label className="form-label">
+      {children}
+      {aiSuggested[field] && <span className="ai-tag">AI Suggested</span>}
+    </label>
+  );
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setScreen('models')}>← Back</button>
+        <h2 style={{ fontSize: 16, fontWeight: 700 }}>{isEdit ? 'Edit Model' : 'Add New Model'}</h2>
+        <button className="btn btn-ai btn-sm" style={{ marginLeft: 'auto' }} onClick={aiSmartFill} disabled={aiLoading}>
+          {aiLoading ? <><Spinner /> Analysing…</> : '✨ AI Smart Fill'}
+        </button>
+      </div>
+      <div className="card">
+        <form onSubmit={handleSubmit}>
+          <div className="form-grid">
+            <div className="form-group">
+              <Lbl field="name">Model Name *</Lbl>
+              <input className={`form-control${aiSuggested.name ? ' ai-filled' : ''}`} value={form.name} onChange={e => set('name', e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Version *</label>
+              <input className="form-control" value={form.version} onChange={e => set('version', e.target.value)} required />
+            </div>
+            <div className="form-group full">
+              <Lbl field="description">Description</Lbl>
+              <textarea className={`form-control${aiSuggested.description ? ' ai-filled' : ''}`} value={form.description} onChange={e => set('description', e.target.value)} rows={3} />
+            </div>
+            <div className="form-group full">
+              <Lbl field="purpose">Purpose</Lbl>
+              <textarea className={`form-control${aiSuggested.purpose ? ' ai-filled' : ''}`} value={form.purpose} onChange={e => set('purpose', e.target.value)} rows={2} />
+            </div>
+            <div className="form-group">
+              <Lbl field="business_unit">Business Unit</Lbl>
+              <input className={`form-control${aiSuggested.business_unit ? ' ai-filled' : ''}`} value={form.business_unit} onChange={e => set('business_unit', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Methodology Type</label>
+              <select className={`form-control${aiSuggested.methodology_type ? ' ai-filled' : ''}`} value={form.methodology_type} onChange={e => set('methodology_type', e.target.value)}>
+                <option value="rule_based">Rule-Based</option>
+                <option value="statistical">Statistical</option>
+                <option value="ml">Machine Learning</option>
+                <option value="deep_learning">Deep Learning</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Model Owner Name</label>
+              <input className="form-control" value={form.model_owner_name} onChange={e => set('model_owner_name', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Model Owner Email</label>
+              <input className="form-control" type="email" value={form.model_owner_email} onChange={e => set('model_owner_email', e.target.value)} />
+            </div>
+            <div className="form-group full">
+              <Lbl field="input_data_sources">Input Data Sources</Lbl>
+              <textarea className={`form-control${aiSuggested.input_data_sources ? ' ai-filled' : ''}`} value={form.input_data_sources} onChange={e => set('input_data_sources', e.target.value)} rows={2} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Production System</label>
+              <input className="form-control" value={form.production_system} onChange={e => set('production_system', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Deployed At</label>
+              <input className="form-control" type="date" value={form.deployed_at} onChange={e => set('deployed_at', e.target.value)} />
+            </div>
+            <div className="form-group full">
+              <div className="checkbox-row">
+                <input type="checkbox" id="is_tp" checked={!!form.is_third_party} onChange={e => set('is_third_party', e.target.checked)} />
+                <label htmlFor="is_tp" style={{ fontWeight: 500, fontSize: 14, cursor: 'pointer' }}>This is a third-party / vendor model</label>
+              </div>
+            </div>
+            {form.is_third_party && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Vendor Name</label>
+                  <input className="form-control" value={form.vendor_name} onChange={e => set('vendor_name', e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Vendor Product</label>
+                  <input className="form-control" value={form.vendor_product} onChange={e => set('vendor_product', e.target.value)} />
+                </div>
+              </>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setScreen('models')}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? <><Spinner /> Saving…</> : isEdit ? 'Update Model' : 'Create Model'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   MODEL DETAIL
+═══════════════════════════════════════════════════ */
+function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
+  const [model, setModel] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [aiAdvice, setAiAdvice] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const toast = useToast();
+
+  function reload() {
+    setLoading(true);
+    apiFetch(`/api/models/${modelId}`)
+      .then(setModel)
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { reload(); }, [modelId]);
+
+  async function getAiAdvice() {
+    setAiLoading(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/ai-advice`, { method: 'POST' });
+      setAiAdvice(r);
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setAiLoading(false); }
+  }
+
+  async function requestValidation() {
+    try {
+      await apiFetch('/api/validations', {
+        method: 'POST',
+        body: JSON.stringify({ model_id: modelId, validation_type: 'full' }),
+      });
+      toast('Validation requested successfully', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function markValidated() {
+    try {
+      await apiFetch(`/api/models/${modelId}/validate`, { method: 'POST' });
+      toast('Model marked as validated', 'success');
+      reload();
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+  if (!model) return <div className="empty-state">Model not found.</div>;
+
+  const prioCls = { critical: 'prio-critical', high: 'prio-high', medium: 'prio-medium', low: 'prio-low' };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => setScreen('models')}>← Back</button>
+        <h2 style={{ fontSize: 16, fontWeight: 700 }}>{model.name}</h2>
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>v{model.version}</span>
+        <TierBadge tier={model.current_tier} />
+        {model.is_third_party && <span className="badge badge-vendor">Vendor</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setEditModelId(modelId); setScreen('model_form'); }}>Edit</button>
+          <button className="btn btn-primary btn-sm" onClick={() => { setRateModelId(modelId); setScreen('rate_wizard'); }}>Rate Risk</button>
+          <button className="btn btn-outline btn-sm" onClick={requestValidation}>Request Validation</button>
+          <button className="btn btn-success btn-sm" onClick={markValidated}>Mark Validated</button>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="section-title" style={{ marginBottom: 14 }}>Model Fields</div>
+        <div className="detail-grid">
+          {[
+            ['Business Unit',     model.business_unit],
+            ['Owner',             model.model_owner_name],
+            ['Owner Email',       model.model_owner_email],
+            ['Methodology',       (model.methodology_type || '').replace(/_/g, ' ')],
+            ['Production System', model.production_system],
+            ['Deployed At',       model.deployed_at],
+          ].map(([l, v]) => (
+            <div key={l} className="detail-item"><div className="dl">{l}</div><div className="dv">{v || '—'}</div></div>
+          ))}
+          {model.purpose && (
+            <div className="detail-item" style={{ gridColumn: '1/-1' }}>
+              <div className="dl">Purpose</div><div className="dv">{model.purpose}</div>
+            </div>
+          )}
+          {model.input_data_sources && (
+            <div className="detail-item" style={{ gridColumn: '1/-1' }}>
+              <div className="dl">Input Data Sources</div><div className="dv">{model.input_data_sources}</div>
+            </div>
+          )}
+          {model.is_third_party && (
+            <>
+              <div className="detail-item"><div className="dl">Vendor Name</div><div className="dv">{model.vendor_name || '—'}</div></div>
+              <div className="detail-item"><div className="dl">Vendor Product</div><div className="dv">{model.vendor_product || '—'}</div></div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {model.ratings && model.ratings.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="section-title" style={{ marginBottom: 14 }}>Rating History</div>
+          {model.ratings.map((r, i) => (
+            <div key={i} className="history-item">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                <TierBadge tier={r.tier} />
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.rated_at} · {r.rated_by}</span>
+                <span style={{ marginLeft: 'auto', fontSize: 13 }}>Score: <strong>{r.score}</strong></span>
+              </div>
+              {r.ai_reasoning && (
+                <div className="ai-panel" style={{ marginTop: 6 }}>
+                  <div className="ai-insight">{r.ai_reasoning}</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {model.validations && model.validations.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="section-title" style={{ marginBottom: 14 }}>Validation History</div>
+          {model.validations.map((v, i) => (
+            <div key={i} className="history-item">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <StatusBadge status={v.status} />
+                <span style={{ fontWeight: 600 }}>{(v.validation_type || '').replace(/_/g, ' ')}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{v.created_at}</span>
+                {v.assigned_to && <span style={{ fontSize: 12 }}>Assigned: {v.assigned_to}</span>}
+                {v.outcome && <StatusBadge status={v.outcome} />}
+              </div>
+              {v.findings && <div style={{ marginTop: 6, fontSize: 13, color: 'var(--text-muted)' }}>{v.findings}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card">
+        <div className="section-hdr">
+          <div className="section-title">🤖 AI Model Advice</div>
+          <button className="btn btn-ai btn-sm" onClick={getAiAdvice} disabled={aiLoading}>
+            {aiLoading ? <><Spinner /> Analysing…</> : 'Get AI Advice'}
+          </button>
+        </div>
+        {!aiAdvice && !aiLoading && (
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            Get AI-powered OSFI E-23 gap analysis, remediation actions, and validation scoping for this model.
+          </div>
+        )}
+        {aiLoading && <div className="spinner-center"><Spinner dark size={24} /></div>}
+        {aiAdvice && (
+          <div className="ai-panel">
+            <div className="ai-panel-hdr">
+              <span className="ai-icon">🧠</span>
+              AI Risk Advice
+              <span className={`ai-prio-badge ${prioCls[aiAdvice.priority] || ''}`}>{aiAdvice.priority}</span>
+            </div>
+            <div className="ai-insight">{aiAdvice.executive_summary}</div>
+            {aiAdvice.immediate_actions?.length > 0 && (
+              <div className="ai-sec">
+                <div className="ai-sec-title">Immediate Actions</div>
+                <ul className="ai-list">{aiAdvice.immediate_actions.map((a, i) => <li key={i}>{a}</li>)}</ul>
+              </div>
+            )}
+            {aiAdvice.osfi_e23_gaps?.length > 0 && (
+              <div className="ai-sec">
+                <div className="ai-sec-title">OSFI E-23 Gaps</div>
+                <ul className="ai-list">{aiAdvice.osfi_e23_gaps.map((g, i) => <li key={i}>{g}</li>)}</ul>
+              </div>
+            )}
+            {aiAdvice.validation_scope && (
+              <div className="ai-sec">
+                <div className="ai-sec-title">Validation Scope</div>
+                <div className="ai-insight">{aiAdvice.validation_scope}</div>
+              </div>
+            )}
+            {aiAdvice.estimated_effort && (
+              <div style={{ marginTop: 10, fontSize: 13 }}>
+                Estimated Effort: <strong>{aiAdvice.estimated_effort}</strong>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   RISK RATING WIZARD
+═══════════════════════════════════════════════════ */
+const MCQ = [
+  {
+    key: 'financial_impact', label: 'Financial Impact',
+    sub: 'What is the estimated financial impact if this model produces materially incorrect outputs?',
+    opts: [
+      { v: 3, l: 'Catastrophic (>$50M loss or regulatory action)', d: 'Mission-critical model with systemic exposure' },
+      { v: 2, l: 'Significant ($5M–$50M loss)', d: 'Major business line or product decision' },
+      { v: 1, l: 'Moderate ($500K–$5M loss)', d: 'Operational or product-level impact' },
+      { v: 0, l: 'Low (<$500K loss)', d: 'Minimal financial exposure' },
+    ],
+  },
+  {
+    key: 'complexity', label: 'Model Complexity',
+    sub: 'How would you characterize the technical complexity of this model?',
+    opts: [
+      { v: 3, l: 'Deep learning / AI (black-box)', d: 'Neural networks, LLMs, uninterpretable outputs' },
+      { v: 2, l: 'Machine learning (some interpretability)', d: 'Gradient boosting, random forests, SVM' },
+      { v: 1, l: 'Statistical (interpretable)', d: 'Regression, scorecards, time-series' },
+      { v: 0, l: 'Rule-based / deterministic', d: 'Business rules, lookup tables, expert systems' },
+    ],
+  },
+  {
+    key: 'decision_volume', label: 'Decision Volume',
+    sub: 'How many decisions does this model influence per month?',
+    opts: [
+      { v: 3, l: '>1M decisions/month', d: 'High-frequency automated decisioning' },
+      { v: 2, l: '10K–1M decisions/month', d: 'Mass consumer or SME product decisions' },
+      { v: 1, l: '100–10K decisions/month', d: 'Mid-volume operational decisions' },
+      { v: 0, l: '<100 decisions/month', d: 'Low-volume or manual override likely' },
+    ],
+  },
+  {
+    key: 'last_validated', label: 'Time Since Last Validation',
+    sub: 'When was this model last formally validated?',
+    opts: [
+      { v: 3, l: 'Never validated', d: 'No formal validation on record' },
+      { v: 2, l: '>2 years ago', d: 'Overdue under OSFI E-23 guidance' },
+      { v: 1, l: '1–2 years ago', d: 'Approaching validation threshold' },
+      { v: 0, l: '<1 year ago', d: 'Recently validated — compliant' },
+    ],
+  },
+  {
+    key: 'data_quality', label: 'Data Quality Risk',
+    sub: 'How would you rate the quality and reliability of the input data for this model?',
+    opts: [
+      { v: 3, l: 'Poor (significant gaps, stale, or unvalidated)', d: 'High risk of model drift or garbage-in/garbage-out' },
+      { v: 2, l: 'Fair (some gaps, partially validated)', d: 'Known data quality issues exist' },
+      { v: 1, l: 'Good (mostly complete, validated periodically)', d: 'Minor known issues, generally reliable' },
+      { v: 0, l: 'Excellent (complete, validated, governed)', d: 'Robust data governance and lineage in place' },
+    ],
+  },
+];
+
+const BOOL_FLAGS = [
+  { key: 'regulatory_use',      label: 'Regulatory Use',        desc: 'This model directly supports regulatory reporting or capital calculations (e.g. AIRB, ICAAP, LCR, FRTB)' },
+  { key: 'is_vendor',           label: 'Third-Party / Vendor',  desc: 'This model is sourced from a vendor or third-party provider with limited internal model documentation' },
+  { key: 'multi_business_unit', label: 'Cross-BU Usage',        desc: 'This model is used across multiple business units or legal entities within the institution' },
+];
+
+function RatingWizard({ modelId, setScreen, setDetailModelId }) {
+  const [step, setStep]       = useState(0);   // 0-4 MCQ, 5 booleans, 6 result
+  const [answers, setAnswers] = useState({});
+  const [flags, setFlags]     = useState({ regulatory_use: false, is_vendor: false, multi_business_unit: false });
+  const [result, setResult]   = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
+
+  const totalDots = 7; // 5 MCQ + 1 flags + 1 result
+
+  async function submit() {
+    setSubmitting(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/rate`, {
+        method: 'POST',
+        body: JSON.stringify({ ...answers, ...flags }),
+      });
+      setResult(r);
+      setStep(6);
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setSubmitting(false); }
+  }
+
+  function goBack() {
+    if (step === 0) { setDetailModelId(modelId); setScreen('model_detail'); }
+    else setStep(p => p - 1);
+  }
+
+  const q = step < 5 ? MCQ[step] : null;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(modelId); setScreen('model_detail'); }}>× Cancel</button>
+        <h2 style={{ fontSize: 16, fontWeight: 700 }}>Risk Rating Wizard</h2>
+      </div>
+      <div className="card">
+        <div className="wizard-wrap">
+          {/* Progress dots */}
+          <div className="wizard-progress">
+            {Array.from({ length: totalDots }, (_, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <div className={`wz-line${i <= step ? ' done' : ''}`} />}
+                <div className={`wz-dot ${i < step ? 'done' : i === step ? 'active' : 'pending'}`}>
+                  {i < step ? '✓' : i + 1}
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* MCQ pages */}
+          {step < 5 && q && (
+            <div>
+              <div className="wz-question">{q.label}</div>
+              <div className="wz-sub">{q.sub}</div>
+              {q.opts.map(o => (
+                <div key={o.v} className={`wz-option${answers[q.key] === o.v ? ' selected' : ''}`} onClick={() => setAnswers(p => ({ ...p, [q.key]: o.v }))}>
+                  <input type="radio" readOnly checked={answers[q.key] === o.v} />
+                  <div>
+                    <div className="wz-opt-label">{o.l}</div>
+                    <div className="wz-opt-desc">{o.d}</div>
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 22 }}>
+                <button className="btn btn-ghost" onClick={goBack}>← Back</button>
+                <button className="btn btn-primary" disabled={answers[q.key] === undefined} onClick={() => setStep(p => p + 1)}>Next →</button>
+              </div>
+            </div>
+          )}
+
+          {/* Boolean flags page */}
+          {step === 5 && (
+            <div>
+              <div className="wz-question">Additional Risk Flags</div>
+              <div className="wz-sub">Select all flags that apply. Each flag increases the risk weight in the final tier calculation.</div>
+              {BOOL_FLAGS.map(f => (
+                <div key={f.key} className={`wz-option${flags[f.key] ? ' selected' : ''}`} onClick={() => setFlags(p => ({ ...p, [f.key]: !p[f.key] }))}>
+                  <input type="checkbox" readOnly checked={!!flags[f.key]} />
+                  <div>
+                    <div className="wz-opt-label">{f.label}</div>
+                    <div className="wz-opt-desc">{f.desc}</div>
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 22 }}>
+                <button className="btn btn-ghost" onClick={() => setStep(4)}>← Back</button>
+                <button className="btn btn-primary" onClick={submit} disabled={submitting}>
+                  {submitting ? <><Spinner /> Calculating…</> : 'Calculate Rating →'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Result page */}
+          {step === 6 && result && (
+            <div className="result-center">
+              <div className={`tier-big t${result.tier}`}>Tier {result.tier}</div>
+              <div className="tier-score">Risk Score: {result.score} / 100</div>
+              <div className="tier-next">📅 Next Validation Due: {result.next_validation_due || 'Review required'}</div>
+              {result.ai_reasoning && (
+                <div className="ai-panel" style={{ textAlign: 'left', marginBottom: 20 }}>
+                  <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Reasoning</div>
+                  <div className="ai-insight">{result.ai_reasoning}</div>
+                </div>
+              )}
+              <button className="btn btn-primary" onClick={() => { setDetailModelId(modelId); setScreen('model_detail'); }}>
+                View Model →
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   VALIDATIONS
+═══════════════════════════════════════════════════ */
+const WF_STATES = ['requested', 'assigned', 'in_progress', 'findings_submitted', 'approved', 'closed'];
+
+function WorkflowStates({ current }) {
+  return (
+    <div className="wf-states">
+      {WF_STATES.map((s, i) => (
+        <React.Fragment key={s}>
+          {i > 0 && <span className="wf-arrow">→</span>}
+          <span className={`wf-state${current === s ? ' active' : ''}`}>{s.replace(/_/g, ' ')}</span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function Validations() {
+  const [vals, setVals]     = useState([]);
+  const [models, setModels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selected, setSelected]     = useState(null);
+  const toast = useToast();
+
+  function load() {
+    setLoading(true);
+    Promise.all([apiFetch('/api/validations'), apiFetch('/api/models')])
+      .then(([v, m]) => { setVals(v || []); setModels(m || []); })
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  return (
+    <div>
+      <div className="section-hdr">
+        <div>
+          <div className="section-title">Validations</div>
+          <WorkflowStates current={null} />
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ Request Validation</button>
+      </div>
+      <div className="card">
+        {loading ? (
+          <div className="spinner-center"><Spinner dark size={26} /></div>
+        ) : vals.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">✅</div>No validations yet.</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Model</th><th>Type</th><th>Status</th><th>Assigned To</th><th>Due Date</th><th>Outcome</th></tr>
+              </thead>
+              <tbody>
+                {vals.map(v => (
+                  <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(v)}>
+                    <td><strong>{v.model_name}</strong></td>
+                    <td>{(v.validation_type || '').replace(/_/g, ' ')}</td>
+                    <td><StatusBadge status={v.status} /></td>
+                    <td>{v.assigned_to || '—'}</td>
+                    <td style={{ fontSize: 13 }}>{v.due_date || '—'}</td>
+                    <td>{v.outcome ? <StatusBadge status={v.outcome} /> : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      {showCreate && <CreateValModal models={models} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
+      {selected && <ValDetailModal val={selected} onClose={() => { setSelected(null); load(); }} />}
+    </div>
+  );
+}
+
+function CreateValModal({ models, onClose, onCreated }) {
+  const [form, setForm] = useState({ model_id: '', validation_type: 'full', scope: '', due_date: '' });
+  const [saving, setSaving] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
+  const toast = useToast();
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  async function handleSubmit(e) {
+    e.preventDefault(); setSaving(true);
+    try {
+      const r = await apiFetch('/api/validations', { method: 'POST', body: JSON.stringify(form) });
+      if (r?.pre_assessment) { setAiResult(r.pre_assessment); }
+      else { toast('Validation requested', 'success'); onCreated(); }
+    } catch (e) { toast(e.message, 'error'); setSaving(false); }
+  }
+
+  if (aiResult) return (
+    <Modal title="Validation Requested" onClose={onCreated} footer={<button className="btn btn-primary" onClick={onCreated}>Done</button>}>
+      <div className="alert alert-success">Validation request submitted successfully.</div>
+      <div className="ai-panel">
+        <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Pre-Assessment</div>
+        <div className="ai-insight">{aiResult}</div>
+      </div>
+    </Modal>
+  );
+
+  return (
+    <Modal title="Request Validation" onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" form="cv-form" type="submit" disabled={saving}>
+            {saving ? <><Spinner /> Submitting…</> : 'Submit Request'}
+          </button>
+        </>
+      }>
+      <form id="cv-form" onSubmit={handleSubmit}>
+        <div className="form-grid">
+          <div className="form-group full">
+            <label className="form-label">Model *</label>
+            <select className="form-control" value={form.model_id} onChange={e => set('model_id', e.target.value)} required>
+              <option value="">Select a model…</option>
+              {models.map(m => <option key={m.id} value={m.id}>{m.name} v{m.version}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Validation Type</label>
+            <select className="form-control" value={form.validation_type} onChange={e => set('validation_type', e.target.value)}>
+              <option value="full">Full Validation</option>
+              <option value="targeted">Targeted</option>
+              <option value="monitoring">Monitoring</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Due Date</label>
+            <input className="form-control" type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)} />
+          </div>
+          <div className="form-group full">
+            <label className="form-label">Scope</label>
+            <textarea className="form-control" rows={3} value={form.scope} onChange={e => set('scope', e.target.value)} placeholder="Describe the scope and objectives of this validation…" />
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ValDetailModal({ val: initialVal, onClose }) {
+  const [v, setV]           = useState(initialVal);
+  const [actionData, setAD] = useState({});
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+  const setA = (k, x) => setAD(p => ({ ...p, [k]: x }));
+
+  async function doAction(action, extra = {}) {
+    setSaving(true);
+    try {
+      const r = await apiFetch(`/api/validations/${v.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ action, ...extra }),
+      });
+      if (r) setV(r);
+      toast('Validation updated', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <Modal title="Validation Detail" onClose={onClose} footer={<button className="btn btn-ghost" onClick={onClose}>Close</button>}>
+      <WorkflowStates current={v.status} />
+      <div className="detail-grid">
+        {[
+          ['Model',       v.model_name],
+          ['Type',        (v.validation_type || '').replace(/_/g, ' ')],
+          ['Assigned To', v.assigned_to || '—'],
+          ['Due Date',    v.due_date || '—'],
+          ['Outcome',     v.outcome || '—'],
+        ].map(([l, val]) => (
+          <div key={l} className="detail-item">
+            <div className="dl">{l}</div>
+            <div className="dv">{l === 'Outcome' && v.outcome ? <StatusBadge status={v.outcome} /> : val}</div>
+          </div>
+        ))}
+        <div className="detail-item"><div className="dl">Status</div><div className="dv"><StatusBadge status={v.status} /></div></div>
+      </div>
+      {v.scope && (
+        <div style={{ marginBottom: 14 }}>
+          <div className="dl">Scope</div>
+          <div style={{ fontSize: 13, marginTop: 3 }}>{v.scope}</div>
+        </div>
+      )}
+      {v.pre_assessment && (
+        <div className="ai-panel" style={{ marginBottom: 14 }}>
+          <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Pre-Assessment</div>
+          <div className="ai-insight">{v.pre_assessment}</div>
+        </div>
+      )}
+      {v.findings && (
+        <div style={{ marginBottom: 14 }}>
+          <div className="dl">Findings</div>
+          <div style={{ fontSize: 13, marginTop: 3, whiteSpace: 'pre-wrap' }}>{v.findings}</div>
+        </div>
+      )}
+
+      {/* Action areas */}
+      {v.status === 'requested' && (
+        <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 16, marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>Assign Validator</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className="form-control" type="email" placeholder="validator@institution.ca" value={actionData.email || ''} onChange={e => setA('email', e.target.value)} />
+            <button className="btn btn-primary" onClick={() => doAction('assign', { assigned_to_email: actionData.email })} disabled={saving || !actionData.email}>
+              {saving ? <Spinner /> : 'Assign'}
+            </button>
+          </div>
+        </div>
+      )}
+      {v.status === 'assigned' && (
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btn-primary" onClick={() => doAction('start')} disabled={saving}>
+            {saving ? <Spinner /> : 'Start Validation'}
+          </button>
+        </div>
+      )}
+      {v.status === 'in_progress' && (
+        <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 16, marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 12 }}>Submit Findings</div>
+          <div className="form-group" style={{ marginBottom: 12 }}>
+            <label className="form-label">Findings</label>
+            <textarea className="form-control" rows={4} value={actionData.findings || ''} onChange={e => setA('findings', e.target.value)} placeholder="Describe findings from the validation…" />
+          </div>
+          <div className="form-group" style={{ marginBottom: 12 }}>
+            <label className="form-label">Outcome</label>
+            <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
+              {['pass', 'conditional_pass', 'fail'].map(o => (
+                <label key={o} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13.5 }}>
+                  <input type="radio" name="outcome_sel" value={o} checked={actionData.outcome === o} onChange={() => setA('outcome', o)} />
+                  {o.replace(/_/g, ' ')}
+                </label>
+              ))}
+            </div>
+          </div>
+          {(actionData.outcome === 'conditional_pass' || actionData.outcome === 'fail') && (
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label className="form-label">Conditions / Remediation Required</label>
+              <textarea className="form-control" rows={3} value={actionData.conditions || ''} onChange={e => setA('conditions', e.target.value)} placeholder="Specify required conditions or remediation actions…" />
+            </div>
+          )}
+          <button className="btn btn-primary" disabled={saving || !actionData.findings || !actionData.outcome} onClick={() => doAction('submit', { findings: actionData.findings, outcome: actionData.outcome, conditions: actionData.conditions })}>
+            {saving ? <Spinner /> : 'Submit Findings'}
+          </button>
+        </div>
+      )}
+      {v.status === 'findings_submitted' && (
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btn-success" onClick={() => doAction('approve')} disabled={saving}>
+            {saving ? <Spinner /> : '✓ Approve Validation'}
+          </button>
+        </div>
+      )}
+      {v.status === 'approved' && (
+        <div style={{ marginTop: 12 }}>
+          <button className="btn btn-ghost" onClick={() => doAction('close')} disabled={saving}>
+            {saving ? <Spinner /> : 'Close Validation'}
+          </button>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   VENDOR ASSESSMENTS
+═══════════════════════════════════════════════════ */
+const VENDOR_CHECKS = [
+  { key: 'sla_documented',        label: 'SLA is formally documented' },
+  { key: 'data_access_documented',label: 'Data access and usage rights are documented' },
+  { key: 'audit_rights',          label: 'Contractual audit rights over the vendor exist' },
+  { key: 'exit_plan',             label: 'Exit / transition plan is documented' },
+  { key: 'concentration_risk',    label: 'Concentration risk has been assessed' },
+  { key: 'model_documentation',   label: 'Model documentation (methodology, assumptions) received from vendor' },
+  { key: 'override_capability',   label: 'Override capability exists (we can override model outputs)' },
+];
+
+function VendorAssessments() {
+  const [list, setList]     = useState([]);
+  const [models, setModels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selected, setSelected]     = useState(null);
+  const toast = useToast();
+
+  function load() {
+    setLoading(true);
+    Promise.all([apiFetch('/api/vendor-assessments'), apiFetch('/api/models')])
+      .then(([a, m]) => { setList(a || []); setModels((m || []).filter(x => x.is_third_party)); })
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  return (
+    <div>
+      <div className="section-hdr">
+        <div className="section-title">Vendor Assessments</div>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ New Assessment</button>
+      </div>
+      <div className="card">
+        {loading ? (
+          <div className="spinner-center"><Spinner dark size={26} /></div>
+        ) : list.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">🏢</div>No vendor assessments yet.</div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Model</th><th>Vendor</th><th>Risk Level</th><th>Assessed By</th><th>Next Review</th></tr></thead>
+              <tbody>
+                {list.map(a => (
+                  <tr key={a.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(a)}>
+                    <td><strong>{a.model_name}</strong></td>
+                    <td>{a.vendor_name}</td>
+                    <td><StatusBadge status={a.risk_level} /></td>
+                    <td>{a.assessed_by}</td>
+                    <td style={{ fontSize: 13 }}>{a.next_review_due || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      {showCreate && <CreateVendorModal models={models} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
+      {selected && <VendorDetailModal a={selected} onClose={() => setSelected(null)} />}
+    </div>
+  );
+}
+
+function CreateVendorModal({ models, onClose, onCreated }) {
+  const initChecks = Object.fromEntries(VENDOR_CHECKS.map(c => [c.key, false]));
+  const [checks, setChecks] = useState(initChecks);
+  const [form, setForm]     = useState({ model_id: '', findings: '' });
+  const [saving, setSaving] = useState(false);
+  const [aiResult, setAiResult] = useState(null);
+  const toast = useToast();
+
+  async function handleSubmit(e) {
+    e.preventDefault(); setSaving(true);
+    try {
+      const r = await apiFetch('/api/vendor-assessments', { method: 'POST', body: JSON.stringify({ ...form, ...checks }) });
+      if (r?.ai_assessment) { setAiResult(r.ai_assessment); }
+      else { toast('Assessment created', 'success'); onCreated(); }
+    } catch (e) { toast(e.message, 'error'); setSaving(false); }
+  }
+
+  if (aiResult) return (
+    <Modal title="Assessment Created" onClose={onCreated} footer={<button className="btn btn-primary" onClick={onCreated}>Done</button>}>
+      <div className="alert alert-success">Vendor assessment submitted successfully.</div>
+      <div className="ai-panel">
+        <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Vendor Risk Assessment</div>
+        <div className="ai-insight">{aiResult}</div>
+      </div>
+    </Modal>
+  );
+
+  return (
+    <Modal title="New Vendor Assessment" onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" form="va-form" type="submit" disabled={saving}>
+            {saving ? <><Spinner /> Submitting…</> : 'Submit Assessment'}
+          </button>
+        </>
+      }>
+      <form id="va-form" onSubmit={handleSubmit}>
+        <div className="form-group" style={{ marginBottom: 16 }}>
+          <label className="form-label">Model *</label>
+          <select className="form-control" value={form.model_id} onChange={e => setForm(p => ({ ...p, model_id: e.target.value }))} required>
+            <option value="">Select a model…</option>
+            {models.map(m => <option key={m.id} value={m.id}>{m.name} — {m.vendor_name}</option>)}
+          </select>
+          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>Only vendor/third-party models are shown.</div>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <div className="form-label" style={{ marginBottom: 8 }}>Due Diligence Checklist</div>
+          <div className="vendor-cb-list">
+            {VENDOR_CHECKS.map(c => (
+              <div key={c.key} className="vendor-cb">
+                <input type="checkbox" id={c.key} checked={!!checks[c.key]} onChange={e => setChecks(p => ({ ...p, [c.key]: e.target.checked }))} />
+                <label htmlFor={c.key}>{c.label}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Findings</label>
+          <textarea className="form-control" rows={4} value={form.findings} onChange={e => setForm(p => ({ ...p, findings: e.target.value }))} placeholder="Summarise your assessment findings and observations…" />
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function VendorDetailModal({ a, onClose }) {
+  return (
+    <Modal title="Vendor Assessment Detail" onClose={onClose} footer={<button className="btn btn-ghost" onClick={onClose}>Close</button>}>
+      <div className="detail-grid">
+        {[
+          ['Model',       a.model_name],
+          ['Vendor',      a.vendor_name],
+          ['Assessed By', a.assessed_by],
+          ['Next Review', a.next_review_due || '—'],
+        ].map(([l, v]) => (
+          <div key={l} className="detail-item"><div className="dl">{l}</div><div className="dv">{v}</div></div>
+        ))}
+        <div className="detail-item"><div className="dl">Risk Level</div><div className="dv"><StatusBadge status={a.risk_level} /></div></div>
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <div className="dl" style={{ marginBottom: 8 }}>Due Diligence Checklist</div>
+        <div className="vendor-cb-list">
+          {VENDOR_CHECKS.map(c => (
+            <div key={c.key} className="vendor-cb">
+              <span style={{ fontSize: 15 }}>{a[c.key] ? '✅' : '❌'}</span>
+              <label style={{ color: a[c.key] ? 'var(--text)' : 'var(--grey)' }}>{c.label}</label>
+            </div>
+          ))}
+        </div>
+      </div>
+      {a.findings && (
+        <div style={{ marginBottom: 14 }}>
+          <div className="dl">Findings</div>
+          <div style={{ fontSize: 13, marginTop: 4, whiteSpace: 'pre-wrap' }}>{a.findings}</div>
+        </div>
+      )}
+      {a.ai_assessment && (
+        <div className="ai-panel">
+          <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Risk Assessment</div>
+          <div className="ai-insight">{a.ai_assessment}</div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   AUDIT TRAIL
+═══════════════════════════════════════════════════ */
+function AuditTrail() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    apiFetch('/api/audit')
+      .then(setEvents)
+      .catch(e => toast(e.message, 'error'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div>
+      <div className="section-title" style={{ marginBottom: 16 }}>Audit Trail</div>
+      <div className="card">
+        {loading ? (
+          <div className="spinner-center"><Spinner dark size={26} /></div>
+        ) : events.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">📋</div>No audit events recorded yet.</div>
+        ) : (
+          events.map((e, i) => (
+            <div key={i} className="audit-row">
+              <div className="audit-ts">{e.created_at || e.timestamp}</div>
+              <div className="audit-desc">
+                {e.description || e.action}
+                {e.model_name && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Model: {e.model_name}</div>}
+              </div>
+              <div className="audit-user">{e.performed_by || e.user_email || ''}</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   BOARD REPORT
+═══════════════════════════════════════════════════ */
+function BoardReport() {
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+
+  async function downloadReport() {
+    setLoading(true);
+    try {
+      const result = await apiFetch('/api/reports/board-pack', { method: 'POST' });
+      if (result instanceof Blob) {
+        const url = URL.createObjectURL(result);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ClearMRM_BoardPack_${new Date().toISOString().slice(0, 10)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('Board pack downloaded', 'success');
+      } else {
+        toast('Board pack generated successfully', 'success');
+      }
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div>
+      <div className="section-title" style={{ marginBottom: 16 }}>Board Report</div>
+      <div className="card" style={{ maxWidth: 580 }}>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 14 }}>
+          Generate the OSFI E-23 Board Pack — a comprehensive PDF report including model inventory summary,
+          risk tier breakdown, validation status, overdue items, vendor assessment summary, and an
+          AI-generated executive summary suitable for board-level review.
+        </p>
+        <div className="alert alert-info">
+          This report includes an AI-generated executive summary with key compliance observations,
+          risk concentration analysis, and recommendations per OSFI E-23 guidance.
+        </div>
+        <button className="btn btn-primary" onClick={downloadReport} disabled={loading} style={{ fontSize: 15, padding: '12px 24px', marginTop: 4 }}>
+          {loading ? <><Spinner /> Generating PDF…</> : '📑 Download Board Pack'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   CSV IMPORT
+═══════════════════════════════════════════════════ */
+function CsvImport() {
+  const [file, setFile]   = useState(null);
+  const [drag, setDrag]   = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState(null);
+  const fileRef = useRef();
+  const toast = useToast();
+
+  function handleFile(f) {
+    if (!f) return;
+    if (!f.name.toLowerCase().endsWith('.csv')) { toast('Please select a .csv file', 'error'); return; }
+    setFile(f); setResult(null);
+  }
+
+  async function handleUpload() {
+    if (!file) return;
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const token = getToken();
+      const res = await fetch('/api/models/import-csv', {
+        method: 'POST',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: fd,
+      });
+      if (res.status === 401 || res.status === 403) { clearToken(); window.location.reload(); return; }
+      if (!res.ok) { const e = await res.json().catch(() => ({ message: `HTTP ${res.status}` })); throw new Error(e.message); }
+      const r = await res.json();
+      setResult(r);
+      setFile(null);
+      toast(`Imported ${r.imported} model(s)`, 'success');
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div>
+      <div className="section-title" style={{ marginBottom: 16 }}>Import Models from CSV</div>
+      <div className="card" style={{ maxWidth: 560 }}>
+        <div
+          className={`import-zone${drag ? ' drag-over' : ''}`}
+          onClick={() => fileRef.current.click()}
+          onDragOver={e => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}>
+          <div className="import-icon">📥</div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>
+            {file ? file.name : 'Drop a CSV file here, or click to browse'}
+          </div>
+          <div className="import-hint">
+            Supported columns: name, version, business_unit, model_owner_name, methodology_type, is_third_party, vendor_name
+          </div>
+          <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+        </div>
+        {file && (
+          <div style={{ marginTop: 14 }}>
+            <button className="btn btn-primary" onClick={handleUpload} disabled={loading}>
+              {loading ? <><Spinner /> Importing…</> : `Import ${file.name}`}
+            </button>
+          </div>
+        )}
+        {result && (
+          <div style={{ marginTop: 16 }}>
+            <div className="alert alert-success">✓ Imported <strong>{result.imported}</strong> model(s) successfully.</div>
+            {result.skipped > 0 && <div className="alert alert-warning">⚠️ {result.skipped} row(s) skipped (duplicates or invalid data).</div>}
+            {result.errors?.length > 0 && (
+              <div className="alert alert-danger">
+                <strong>Errors encountered:</strong>
+                <ul style={{ marginTop: 6, paddingLeft: 16 }}>
+                  {result.errors.map((err, i) => <li key={i} style={{ fontSize: 13 }}>{err}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════════ */
+const SCREEN_TITLES = {
+  dashboard:    'Dashboard',
+  models:       'Model Inventory',
+  model_form:   'Model Form',
+  model_detail: 'Model Detail',
+  rate_wizard:  'Risk Rating Wizard',
+  validations:  'Validations',
+  vendors:      'Vendor Assessments',
+  audit:        'Audit Trail',
+  board:        'Board Report',
+  import:       'Import CSV',
+};
+
+function AppShell({ user }) {
+  const [screen, setScreen]             = useState('dashboard');
+  const [detailModelId, setDetailModelId] = useState(null);
+  const [editModelId, setEditModelId]   = useState(null);
+  const [rateModelId, setRateModelId]   = useState(null);
+
+  function renderScreen() {
+    switch (screen) {
+      case 'dashboard':    return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+      case 'models':       return <ModelInventory setScreen={setScreen} setDetailModelId={setDetailModelId} setEditModelId={setEditModelId} />;
+      case 'model_form':   return <ModelForm modelId={editModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+      case 'model_detail': return <ModelDetail modelId={detailModelId} setScreen={setScreen} setEditModelId={setEditModelId} setRateModelId={setRateModelId} />;
+      case 'rate_wizard':  return <RatingWizard modelId={rateModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+      case 'validations':  return <Validations />;
+      case 'vendors':      return <VendorAssessments />;
+      case 'audit':        return <AuditTrail />;
+      case 'board':        return <BoardReport />;
+      case 'import':       return <CsvImport />;
+      default:             return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+    }
+  }
+
+  return (
+    <div className="app-shell">
+      <Sidebar screen={screen} setScreen={setScreen} user={user} />
+      <div className="main">
+        <div className="topbar">
+          <div className="topbar-title">{SCREEN_TITLES[screen] || 'ClearMRM'}</div>
+          <div className="topbar-meta">OSFI E-23 · {new Date().toLocaleDateString('en-CA')}</div>
+        </div>
+        <div className="content">{renderScreen()}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   ROOT APP
+═══════════════════════════════════════════════════ */
+function parseJwtPayload(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch { return {}; }
+}
+
+function App() {
+  const [user, setUser] = useState(() => {
+    const token = getToken();
+    if (!token) return null;
+    const p = parseJwtPayload(token);
+    return { email: p.email || p.sub || '', tenant_name: p.tenant_name || p.tenant || 'ClearMRM' };
+  });
+
+  function handleLogin(data) {
+    const p = parseJwtPayload(data.token);
+    setUser({ email: p.email || p.sub || '', tenant_name: p.tenant_name || p.tenant || 'ClearMRM' });
+  }
+
+  return (
+    <ToastProvider>
+      {user ? <AppShell user={user} /> : <LoginScreen onLogin={handleLogin} />}
+    </ToastProvider>
+  );
+}
+
+const rootEl = document.getElementById('root');
+ReactDOM.createRoot(rootEl).render(<App />);
+</script>
+</body>
+</html>

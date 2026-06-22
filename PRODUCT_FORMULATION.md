@@ -4,7 +4,7 @@
 
 **Project Start:** June 22, 2026
 **Last Updated:** June 22, 2026
-**Status:** MVP LIVE — `https://clearmrm.nimblestride.ca`
+**Status:** Phase 1 + Phase 2 LIVE — `https://clearmrm.nimblestride.ca`
 
 ---
 
@@ -412,25 +412,27 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 
 | Feature | ID | Status | Phase | Notes |
 |---|---|---|---|---|
-| Model Registry | F1 | **LIVE** | MVP | 14-field model form, list, detail, edit, archive |
-| Risk Rating Engine | F2 | **LIVE** | MVP | 8-question wizard, algorithmic tier, Bedrock AI reasoning |
-| Audit Trail | F5 | **LIVE** | MVP | DB-level immutability trigger; append-only; paginated UI |
-| Board Pack PDF Generator | F6-basic | **LIVE** | MVP | 3-page PDF: cover KPIs, full inventory table, Tier 1 detail |
-| Dashboard KPIs | F-dash | **LIVE** | MVP | 6 KPI cards, overdue alerts, unrated alerts, recent models |
-| CSV Import (Excel migration) | F-import | **LIVE** | MVP | Flexible column mapping; import summary with counts |
-| AI Risk Reasoning (Bedrock) | F-AI1 | **LIVE** | MVP | Moved from Phase 2; Claude Haiku, ca-central-1 |
-| Validation Tracking | F-valid | **LIVE** | MVP | Mark validated, sets next_validation_due by tier |
-| Model Archive (soft delete) | F-arch | **LIVE** | MVP | Status = archived; never hard-deleted |
-| Validation Workflow Manager | F3 | Planned | Phase 2 | Scheduling, assignment, sign-off, escalation |
-| Third-Party / Vendor Module | F4 | Planned | Phase 2 | Vendor model inventory, assessment, change notifications |
+| Model Registry | F1 | **LIVE** | Phase 1 | 14-field model form, list, detail, edit, archive |
+| Risk Rating Engine | F2 | **LIVE** | Phase 1 | 8-question wizard, algorithmic tier, Bedrock AI reasoning |
+| Audit Trail | F5 | **LIVE** | Phase 1 | DB-level immutability trigger; append-only; paginated UI |
+| Board Pack PDF + AI Summary | F6 | **LIVE** | Phase 1 | 3-page PDF + AI executive summary (Bedrock Sonnet) |
+| Dashboard + AI Briefing | F-dash | **LIVE** | Phase 1 | 7 KPI cards + AI CRO intelligence briefing panel |
+| CSV Import | F-import | **LIVE** | Phase 1 | Flexible column mapping; import summary |
+| AI Risk Rating Reasoning | F-AI1 | **LIVE** | Phase 1 | Claude Haiku generates 3-sentence tier explanation |
+| AI Smart Fill (Add Model) | F-AI3 | **LIVE** | Phase 1 | Bedrock suggests methodology, purpose, data sources from model name |
+| AI Remediation Advisor | F-AI4 | **LIVE** | Phase 1 | Bedrock Sonnet generates priority + immediate actions + OSFI gaps |
+| Validation Tracking (manual) | F-valid | **LIVE** | Phase 1 | Mark validated, sets next_validation_due by tier |
+| Model Archive (soft delete) | F-arch | **LIVE** | Phase 1 | Status = archived; never hard-deleted |
+| Validation Workflow Manager | F3 | **LIVE** | Phase 2 | Full state machine: requested→assigned→in_progress→findings→approved→closed; AI pre-assessment |
+| Third-Party Vendor Assessment | F4 | **LIVE** | Phase 2 | 7-question OSFI E-23 §5 checklist; AI vendor risk assessment |
 | OSFI Examiner Export | F7 | Planned | Phase 3 | Purpose-built Supervisory Review response format |
-| AI Model Description Generator | F-AI2 | Planned | Phase 2 | Auto-generate model description from uploaded docs |
-| Model Type Library | F-lib | Planned | Phase 2 | 200+ pre-built model types, Canadian FRFI specific |
+| AI Model Description Generator | F-AI2 | Planned | Phase 2+ | Auto-generate from uploaded docs (requires document upload) |
+| Model Type Library | F-lib | Planned | Phase 2+ | 200+ pre-built model types, Canadian FRFI specific |
 | Natural Language Model Search | F-NLS | Planned | Phase 3 | Search model inventory in plain English |
 | Industry Benchmarking Dashboard | F-bench | Planned | Year 2 | Anonymized peer comparison |
-| Microsoft Graph Integration | F-graph | Planned | Phase 2 | Pull model docs from SharePoint/OneDrive |
-| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 2 | DocuSign or AWS Simple Sign |
-| Multi-Entity / Multi-Tenant (full RLS) | F-mt | Planned | Phase 2 | Separate inventories per legal entity under one parent org |
+| Microsoft Graph Integration | F-graph | Planned | Phase 2+ | Pull model docs from SharePoint/OneDrive |
+| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 2+ | DocuSign or AWS Simple Sign |
+| Multi-Entity / Multi-Tenant (full RLS) | F-mt | Planned | Phase 2+ | PostgreSQL RLS per tenant |
 | OSFI B-15 Climate Module | F-B15 | Planned | Year 2 | Climate risk model governance |
 | AMF (Quebec) Alignment Module | F-amf | Planned | Year 2 | Quebec-specific overlay |
 
@@ -468,8 +470,10 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 
 | Milestone | Target Date | Status |
 |---|---|---|
-| MVP deployed to production (`clearmrm.nimblestride.ca`) | June 22, 2026 | **COMPLETE** |
-| Demo-ready with 5 seed models and working risk rating | June 22, 2026 | **COMPLETE** |
+| Phase 1 deployed: Model Registry, Risk Rating, Audit Trail, Board Pack, Dashboard, CSV Import | June 22, 2026 | **COMPLETE** |
+| Phase 1 AI+ deployed: AI Dashboard Briefing, AI Smart Fill, AI Remediation Advisor, AI Board Summary | June 22, 2026 | **COMPLETE** |
+| Phase 2 deployed: Validation Workflow Manager + Vendor Assessment Module | June 22, 2026 | **COMPLETE** |
+| Demo-ready with 5 seed models and all AI features active | June 22, 2026 | **COMPLETE** |
 | First lighthouse client signed (pilot) | November 2026 | Pending |
 | Second lighthouse client signed (pilot) | January 2027 | Pending |
 | Phase 3 General Availability launch | January 2027 | Pending |
@@ -516,6 +520,9 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | 2026-06-22 | **AI (Bedrock reasoning) moved from Phase 2 → MVP** | Founder confirmed AI should be in MVP; adds immediate demo value | Founder |
 | 2026-06-22 | Authentication changed to backend-mediated (no browser Cognito SDK) | `amazon-cognito-identity-js` CDN caused blank page; backend USER_PASSWORD_AUTH is cleaner | Tech |
 | 2026-06-22 | **MVP DEPLOYED to production** — `https://clearmrm.nimblestride.ca` | Full build in single session; all MVP features live | Founder + AI |
+| 2026-06-22 | **Phase 1 AI+ deployed**: AI Dashboard Briefing, AI Smart Fill, AI Remediation Advisor, AI Board Report executive summary | Founder confirmed: add AI to all Phase 1 features before Phase 2 | Founder |
+| 2026-06-22 | **Phase 2 deployed**: Validation Workflow Manager (6-state machine) + Vendor Assessment Module (OSFI E-23 §5) | Phase 2 scope confirmed in same session | Founder |
+| 2026-06-22 | Code pushed to GitHub at `myshariff123/osfi-e23-vault` under `/backend`, `/frontend`, `/db` directories | Founder requested all code in GitHub | Founder |
 
 ---
 
