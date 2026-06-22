@@ -3,8 +3,8 @@
 > This document is the living record of all strategic decisions, product definitions, feature choices, and rationale established during the formulation of ClearMRM. It serves as the guiding star for all future development decisions. Every significant decision recorded here should be treated as a binding product principle unless explicitly revisited and updated with the date of change and reason.
 
 **Project Start:** June 22, 2026
-**Last Updated:** June 22, 2026
-**Status:** Phase 1 + Phase 2 LIVE — `https://clearmrm.nimblestride.ca`
+**Last Updated:** June 22, 2026 (Session 3)
+**Status:** Phase 1 + Phase 2 + Phase 3 DEPLOYED — `https://clearmrm.nimblestride.ca`
 
 ---
 
@@ -425,14 +425,21 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | Model Archive (soft delete) | F-arch | **LIVE** | Phase 1 | Status = archived; never hard-deleted |
 | Validation Workflow Manager | F3 | **LIVE** | Phase 2 | Full state machine: requested→assigned→in_progress→findings→approved→closed; AI pre-assessment |
 | Third-Party Vendor Assessment | F4 | **LIVE** | Phase 2 | 7-question OSFI E-23 §5 checklist; AI vendor risk assessment |
-| OSFI Examiner Export | F7 | Planned | Phase 3 | Purpose-built Supervisory Review response format |
+| AI Validation Findings Analyzer | F-AI5 | **LIVE** | Phase 2+ | Sonnet: severity, OSFI §references, completeness score, approval recommendation |
+| AI Approval Readiness Check | F-AI6 | **LIVE** | Phase 2+ | Sonnet: completeness verification, requirements met/missing before approving |
+| AI Audit Closure Narrative | F-AI7 | **LIVE** | Phase 2+ | Haiku: formal §4.4 audit-grade closure narrative generated on close |
+| AI Vendor §5 Deep Dive | F-AI8 | **LIVE** | Phase 2+ | Sonnet: OSFI §5 compliance score, critical gaps, structured remediation plan, trend, concentration risk |
+| OSFI Examiner Export | F7 | **LIVE** | Phase 3 | 6-page Supervisory Review Package PDF with AI narrative + attestation page |
+| Multi-Tenant Onboarding UI | F-onboard | **LIVE** | Phase 3 | Self-serve 2-step registration; auto-provisions Cognito user + tenant + 3 demo models |
+| SSO (SAML 2.0) | F-sso | **LIVE** | Phase 3 | Domain-based SSO init, Cognito hosted UI redirect, SAML IdP registration, auto-provisioning |
+| Admin Panel | F-admin | **LIVE** | Phase 3 | User management, SSO config, tenant overview tabs |
 | AI Model Description Generator | F-AI2 | Planned | Phase 2+ | Auto-generate from uploaded docs (requires document upload) |
 | Model Type Library | F-lib | Planned | Phase 2+ | 200+ pre-built model types, Canadian FRFI specific |
-| Natural Language Model Search | F-NLS | Planned | Phase 3 | Search model inventory in plain English |
+| Natural Language Model Search | F-NLS | Planned | Phase 4 | Search model inventory in plain English |
 | Industry Benchmarking Dashboard | F-bench | Planned | Year 2 | Anonymized peer comparison |
-| Microsoft Graph Integration | F-graph | Planned | Phase 2+ | Pull model docs from SharePoint/OneDrive |
-| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 2+ | DocuSign or AWS Simple Sign |
-| Multi-Entity / Multi-Tenant (full RLS) | F-mt | Planned | Phase 2+ | PostgreSQL RLS per tenant |
+| Microsoft Graph Integration | F-graph | Planned | Phase 4 | Pull model docs from SharePoint/OneDrive |
+| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 4 | DocuSign or AWS Simple Sign |
+| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 4 | Row-level security per tenant |
 | OSFI B-15 Climate Module | F-B15 | Planned | Year 2 | Climate risk model governance |
 | AMF (Quebec) Alignment Module | F-amf | Planned | Year 2 | Quebec-specific overlay |
 
