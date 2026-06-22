@@ -1,16 +1,18 @@
-# OSFI E-23 Vault — Model Risk Management Platform for Canadian FRFIs
+# ClearMRM — OSFI E-23 Model Risk Management Platform
 
-> **Purpose-built model inventory and compliance platform for Canada's OSFI E-23 Guideline (effective May 1, 2027)**
+> **Live SaaS platform for Canadian FRFIs. Purpose-built for OSFI Guideline E-23 (effective May 1, 2027).**
+>
+> **Live URL:** https://clearmrm.nimblestride.ca
 
 ---
 
-## What Is This?
+## What Is ClearMRM?
 
-OSFI E-23 Vault is a SaaS platform that helps Canadian Federally Regulated Financial Institutions (FRFIs) build, manage, and demonstrate a compliant model inventory under OSFI Guideline E-23 — *Model Risk Management* (final version, September 2025, effective May 1, 2027).
+ClearMRM is a production SaaS platform that helps Canadian Federally Regulated Financial Institutions (FRFIs) build, manage, and demonstrate a compliant model inventory under OSFI Guideline E-23 — *Model Risk Management* (final version, September 2025, effective May 1, 2027).
 
 Every FRFI — banks, trust companies, insurance companies, mortgage insurers, and federal pension administrators — must maintain a comprehensive, auditable model inventory by May 2027. 70%+ currently manage this in Excel spreadsheets that cannot meet E-23's requirements.
 
-**This platform is the solution. Purpose-built. Canadian-hosted. Operational in 30 days.**
+**ClearMRM is the solution. Purpose-built. Canadian-hosted. Live today.**
 
 ---
 
@@ -27,25 +29,79 @@ Every FRFI — banks, trust companies, insurance companies, mortgage insurers, a
 
 ---
 
-## The Solution
+## Live Features (Phase 1 + Phase 2 — Production as of June 22, 2026)
 
-A structured, role-based, Canadian-hosted SaaS platform with five core pillars:
+### Phase 1: Core Platform
 
-1. **Model Registry** — Complete structured inventory, every model, every version
-2. **Risk Rating Engine** — Automated, defensible Tier 1/2/3 classification aligned to E-23
-3. **Validation Workflow** — Scheduled, tracked, signed-off, escalation-aware
-4. **Third-Party Model Module** — Vendor model inventory, assessment, and governance
-5. **Immutable Audit Trail + Board Reporting** — OSFI examiner-ready, one-click generation
+| Feature | Description | OSFI E-23 Section |
+|---|---|---|
+| **Model Inventory** | Structured registry with 15+ fields per model, version tracking, soft-delete | §3 |
+| **Risk Rating Engine** | 8-question wizard, automated Tier 1/2/3 scoring (max 22 pts), AI reasoning | §3.2 |
+| **Audit Trail** | Immutable append-only log (PostgreSQL trigger blocks UPDATE/DELETE) | §4.4 |
+| **Board Report PDF** | One-click 3-page PDF: KPIs, model table, Tier 1 detail | §4 |
+| **CSV Import** | Bulk model import for migration from Excel | — |
+| **Dashboard** | Live KPIs: model count, Tier 1 count, pending validations, compliance score | — |
+
+### Phase 1 AI Enhancements (Bedrock Claude, ca-central-1)
+
+| Feature | Model | Description |
+|---|---|---|
+| **Dashboard Intelligence** | Claude 3 Haiku | 2-sentence CRO morning briefing — top risk, action needed |
+| **AI Smart Fill** | Claude 3 Haiku | Type model name → auto-populate purpose, methodology, risk factors |
+| **Remediation Advisor** | Claude 3 Sonnet | Per-model: priority actions, OSFI gaps, estimated effort, compliance score |
+| **Board Report AI Summary** | Claude 3 Sonnet | Executive summary paragraph auto-generated for board pack PDF |
+
+### Phase 2: Workflow & Vendor Governance
+
+| Feature | Description | OSFI E-23 Section |
+|---|---|---|
+| **Validation Workflow** | 6-state machine: requested → assigned → in_progress → findings_submitted → approved → closed | §3.3 |
+| **AI Pre-Assessment** | Haiku generates validation scope and key risk areas when validation is requested | §3.3 |
+| **Vendor Assessment** | 7-question OSFI §5 checklist for third-party/vendor models, AI risk summary | §5 |
 
 ---
 
-## Why Now
+## Application Screens (12 total)
 
-- **OSFI E-23 effective date: May 1, 2027** — 11 months from product inception (June 2026)
-- The 2025 revision **tripled the addressable market** by expanding scope from banks to all FRFIs (insurers, pension administrators)
-- **No Canadian-native, purpose-built, OSFI-specific platform exists**
-- Enterprise alternatives (IBM OpenPages at $800K–$2.5M) are inaccessible to 90% of FRFIs
-- First-mover window closes approximately Q1 2027 when deadline urgency peaks
+1. Login (Cognito / MFA)
+2. Dashboard (KPIs + AI morning briefing)
+3. Model Inventory (filterable table)
+4. Add Model (with AI Smart Fill)
+5. Edit Model
+6. Model Detail (with Remediation Advisor)
+7. Risk Rating Wizard (8-question, auto-scores)
+8. Validations (full workflow manager)
+9. Vendor Assessments
+10. Audit Trail (immutable, read-only)
+11. Board Report (PDF generation)
+12. CSV Import
+
+---
+
+## Technology Stack (Deployed)
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18.3.1 + Babel 7.27.5 (browser, single-file SPA) |
+| **Backend** | Node.js + Express 5 (CommonJS), PM2 process manager |
+| **Database** | PostgreSQL 15 on AWS RDS ca-central-1 |
+| **AI** | AWS Bedrock — Claude 3 Haiku (fast) + Claude 3 Sonnet (primary), ca-central-1 |
+| **Auth** | AWS Cognito (USER_PASSWORD_AUTH, backend-mediated) |
+| **Infrastructure** | AWS EC2 (Ubuntu), Nginx reverse proxy, Let's Encrypt SSL |
+| **Data Residency** | 100% AWS ca-central-1 — no data leaves Canada |
+
+**All AI calls use AWS Bedrock in ca-central-1. OpenAI is never used (PIPEDA compliance — OPC/CAI/OIPC Joint Investigation of OpenAI, May 6, 2026).**
+
+---
+
+## Competitive Position
+
+| Competitor | Price | Implementation | OSFI-Native | Canadian Hosted |
+|---|---|---|---|---|
+| IBM OpenPages | $800K–$2.5M | 12–24 months | No (configured) | No |
+| SAS MRM | $500K–$1.5M | 9–18 months | No | No |
+| ValidMind | $80K–$200K | 3–6 months | No (US-framed) | No |
+| **ClearMRM** | **$30K–$180K** | **30 days** | **Yes (by design)** | **Yes (ca-central-1)** |
 
 ---
 
@@ -62,29 +118,6 @@ A structured, role-based, Canadian-hosted SaaS platform with five core pillars:
 
 ---
 
-## Competitive Position
-
-| Competitor | Price | Implementation | OSFI-Native | Canadian Hosted |
-|---|---|---|---|---|
-| IBM OpenPages | $800K–$2.5M | 12–24 months | No (configured) | No |
-| SAS MRM | $500K–$1.5M | 9–18 months | No | No |
-| ValidMind | $80K–$200K | 3–6 months | No (US-framed) | No |
-| **OSFI E-23 Vault** | **$30K–$180K** | **30 days** | **Yes (by design)** | **Yes (ca-central-1)** |
-
----
-
-## Technology Stack
-
-- **Frontend:** React 18 + TypeScript + Tailwind CSS
-- **Backend:** Node.js 20 LTS + TypeScript + Express / Fastify
-- **Database:** PostgreSQL 15 on AWS RDS ca-central-1 (with Row-Level Security)
-- **AI Layer:** AWS Bedrock + Claude (ca-central-1 — PIPEDA compliant)
-- **Infrastructure:** AWS ECS Fargate, ca-central-1 exclusively
-- **Auth:** AWS Cognito + MFA enforcement
-- **CI/CD:** GitHub Actions → ECR → ECS
-
----
-
 ## Revenue Projections
 
 | Period | Clients | ARR |
@@ -97,39 +130,47 @@ A structured, role-based, Canadian-hosted SaaS platform with five core pillars:
 
 ---
 
-## Repository Contents
+## Repository Structure
 
-| File | Description |
-|---|---|
-| `README.md` | This file — product overview and positioning |
-| `BUSINESS_PLAN.md` | Complete Harvard/Oxford faculty panel business plan and go-to-market strategy |
-| `PRODUCT_FORMULATION.md` | Full product formulation conversation log — decisions made, features defined, rationale captured |
-| `docs/TECH_STACK.md` | Detailed technology architecture |
-| `docs/COMPETITIVE_ANALYSIS.md` | Deep competitive landscape analysis |
-| `docs/TARGET_CUSTOMERS.md` | Top 10 customer profiles (Alberta + Canada) |
+```
+clearmrm/
+├── backend/
+│   ├── server.js          # Express 5 API — all endpoints, AI, auth, PDF
+│   ├── package.json       # Node dependencies
+│   └── .env.example       # Environment variable template (no secrets)
+├── frontend/
+│   └── index.html         # React 18 SPA — all 12 screens
+├── db/
+│   └── schema.sql         # PostgreSQL schema — 7 tables, triggers, indexes
+├── PRODUCT_FORMULATION.md # Full product decisions, feature register, milestone tracker
+├── BUSINESS_PLAN.md       # Go-to-market strategy and financial projections
+└── README.md              # This file
+```
 
 ---
 
-## Status
+## Development Status
 
-| Phase | Timeline | Status |
-|---|---|---|
-| Phase 0: Foundation (regulatory counsel, DPA, discovery calls) | Jun–Jul 2026 | **In Planning** |
-| Phase 1: MVP Development (Model Registry + Risk Rating + Audit Trail) | Jul–Oct 2026 | Pending |
-| Phase 2: Pilot Client Acquisition (2–3 lighthouse clients) | Oct 2026–Jan 2027 | Pending |
-| Phase 3: General Availability (Validation Workflow + Third-Party Module) | Jan–Mar 2027 | Pending |
-| Phase 4: Market Consolidation (OSFI Examiner Export, Emergency Sprint pkg) | Mar–May 2027+ | Pending |
+| Phase | Description | Status | Completed |
+|---|---|---|---|
+| **Phase 0** | Foundation — architecture decisions, DB schema, infrastructure | COMPLETE | Jun 2026 |
+| **Phase 1** | Core platform — Model Inventory, Risk Rating, Audit Trail, Board Report | COMPLETE | Jun 22, 2026 |
+| **Phase 1 AI+** | AI enhancements — Dashboard Insight, Smart Fill, Remediation Advisor, AI Board Report | COMPLETE | Jun 22, 2026 |
+| **Phase 2** | Validation Workflow + Vendor Assessment Module | COMPLETE | Jun 22, 2026 |
+| **Phase 3** | Multi-tenant onboarding, OSFI Examiner Export, SSO | Planned | Q4 2026 |
+| **Phase 4** | Market consolidation, Emergency Exam Sprint Package | Planned | Q1 2027 |
 
 ---
 
 ## Critical Compliance Requirements
 
 - **Data Residency:** All data in AWS ca-central-1. No exceptions. Contractually guaranteed.
-- **Privacy Law:** PIPEDA + Quebec Law 25 compliant DPA in place before first enterprise client
+- **AI Compliance:** All AI via AWS Bedrock Claude (ca-central-1). OpenAI is prohibited.
+- **Privacy Law:** PIPEDA + Quebec Law 25 compliant
+- **Audit Immutability:** PostgreSQL trigger enforces append-only audit_events (OSFI E-23 §4.4)
 - **SOC 2 Type I:** Target Month 4–6
 - **SOC 2 Type II:** Target Month 12–18
-- **Penetration Test:** Annual CREST-certified Canadian vendor, before first enterprise client
-- **Regulatory Counsel Opinion:** OSFI E-23 alignment memo from Canadian counsel, Month 2
+- **Penetration Test:** Annual CREST-certified Canadian vendor
 
 ---
 
@@ -142,4 +183,4 @@ A structured, role-based, Canadian-hosted SaaS platform with five core pillars:
 
 ---
 
-*Last updated: June 2026 | Nimblestride Inc.*
+*Product: ClearMRM by Nimblestride Inc. | Live: https://clearmrm.nimblestride.ca | Last updated: June 22, 2026*
