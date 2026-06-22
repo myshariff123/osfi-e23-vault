@@ -1,10 +1,10 @@
-# OSFI E-23 Vault — Product Formulation Log
+# ClearMRM — Product Formulation Log
 
-> This document is the living record of all strategic decisions, product definitions, feature choices, and rationale established during the formulation of the OSFI E-23 Vault platform. It serves as the guiding star for all future development decisions. Every significant decision recorded here should be treated as a binding product principle unless explicitly revisited and updated with the date of change and reason.
+> This document is the living record of all strategic decisions, product definitions, feature choices, and rationale established during the formulation of ClearMRM. It serves as the guiding star for all future development decisions. Every significant decision recorded here should be treated as a binding product principle unless explicitly revisited and updated with the date of change and reason.
 
 **Project Start:** June 22, 2026
 **Last Updated:** June 22, 2026
-**Status:** Pre-development — Foundation Phase
+**Status:** MVP LIVE — `https://clearmrm.nimblestride.ca`
 
 ---
 
@@ -83,11 +83,17 @@ For ongoing market intelligence, the following publicly accessible resources wer
 
 ### Product Name
 
-**Proposed:** OSFI E-23 Vault
+**Final name: ClearMRM**
 
-**Rationale:** Communicates the regulatory framework (OSFI E-23), the asset being managed (model inventory), and the security/custody metaphor (Vault). Descriptive and searchable by the target audience (CROs searching "OSFI E-23 model inventory software").
+**Working name discarded:** "OSFI E-23 Vault" was the session-1 working name.
 
-**Decision status:** Working name — confirm before public launch. Register trademark before first public announcement.
+**Rationale for ClearMRM:** Clear = transparent, audit-ready, unambiguous; MRM = Model Risk Management (industry-standard abbreviation used by every CRO, Head of Model Risk, and OSFI examiner). The name is immediately understood by the target audience without explanation.
+
+**URL:** `https://clearmrm.nimblestride.ca` (live as of June 22, 2026)
+
+**Brand parent:** Nimblestride Inc. (same legal entity and AWS account as ClearBind)
+
+**Decision status:** Final — do not revert to "OSFI E-23 Vault". Register trademark before first public announcement.
 
 ---
 
@@ -269,30 +275,162 @@ The following questions were not resolved in this session and must be answered b
 
 ---
 
+## SESSION 2 — June 22, 2026 (Continuation)
+
+### Architecture Decisions Confirmed (Session 2)
+
+All five architecture questions were answered before build began:
+
+| Decision | Question | Answer | Rationale |
+|---|---|---|---|
+| **A1: Server** | New server or existing EC2? | Same EC2 (3.96.132.125) | EC2 already running, SSL infrastructure in place, avoids new AWS cost |
+| **A2: URL / Domain** | What subdomain? | `clearmrm.nimblestride.ca` | Fits Nimblestride brand; A record added by founder June 22, 2026 |
+| **A3: Multi-tenancy** | Easiest approach? | `tenant_id` column on every table, no RLS yet | Avoids ClearBind's retroactive migration pain; RLS added in Phase 2 |
+| **A4: AI in MVP** | Include Bedrock AI or defer? | Included in MVP | Risk Rating Wizard uses Claude Haiku for OSFI E-23 reasoning; Board reports benefit immediately |
+| **A5: Codebase** | Fork ClearBind or fresh start? | Fork from `enterprise_server.js` | Saves 2–3 weeks; Bedrock client, PostgreSQL pool, Cognito JWT auth, pdf-lib, multer all battle-tested in production |
+
+---
+
+### Infrastructure Built (Session 2)
+
+**Database: `clearmrm` on existing RDS (`clearbind-db-prod.cpyuec6083jq.ca-central-1.rds.amazonaws.com`)**
+
+Five tables created June 22, 2026:
+
+| Table | Purpose |
+|---|---|
+| `tenants` | Tenant registry; seed: Nimblestride Demo (`00000000-0000-0000-0000-000000000001`) |
+| `users` | User accounts linked to tenants; seed: `myousufshariff@gmail.com` as admin |
+| `models` | Full model inventory per OSFI E-23 §3.1; 24 fields covering ownership, methodology, deployment, validation status, risk tier |
+| `risk_ratings` | Immutable record of every risk rating event; 8 questionnaire answers + computed tier + Bedrock AI reasoning |
+| `audit_events` | Append-only event log; DB trigger blocks UPDATE and DELETE; satisfies OSFI E-23 §4.4 audit requirement |
+
+**5 demo models seeded for demonstration.**
+
+**Immutability enforced at database level** — not just application level. Any attempt to UPDATE or DELETE an audit_event row throws a PostgreSQL exception. This is the correct OSFI-compliant implementation.
+
+---
+
+### Backend: `/home/ubuntu/clearmrm/server.js`
+
+Single-file Node.js (CommonJS) Express 5 server, forked from ClearBind architecture.
+
+**12 API endpoints:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/auth/login` | Backend-mediated Cognito auth (USER_PASSWORD_AUTH flow); returns IdToken |
+| GET | `/api/health` | Health check; confirms region + service name |
+| GET | `/api/me` | Current user + tenant info |
+| GET | `/api/dashboard` | KPI summary: totals, tier breakdown, overdue count, recent models |
+| GET | `/api/models` | List models; filterable by tier, status, search |
+| POST | `/api/models` | Create model |
+| GET | `/api/models/:id` | Get single model with full rating history |
+| PUT | `/api/models/:id` | Update model (all fields) |
+| DELETE | `/api/models/:id` | Soft archive (sets status = 'archived') |
+| POST | `/api/models/:id/validate` | Mark model as validated today; sets next_validation_due by tier |
+| POST | `/api/models/:id/rate` | 8-question risk assessment → computed tier → Bedrock reasoning → saves immutable rating record |
+| POST | `/api/models/import` | Bulk CSV import; maps common column name variants |
+| GET | `/api/audit` | Paginated audit trail; filterable by model_id |
+| POST | `/api/reports/board-pack` | Generate multi-page PDF board report (pdf-lib) |
+
+**Authentication:** Backend decodes Cognito JWT (base64url), extracts email, looks up `users` table. No Cognito SDK on the frontend — eliminates browser CDN dependency entirely.
+
+**Risk tier algorithm:**
+- 8 inputs scored (financial_impact 0–4, complexity 0–3, regulatory_use 0–3, decision_volume 0–3, last_validated 0–3, data_quality 0–3, vendor 0–2, multi_bu 0–1)
+- Max score: 22 points
+- Tier 1: score ≥ 11 or (regulatory_use = true) or (never_validated = true)
+- Tier 2: score 6–10
+- Tier 3: score 0–5
+
+**Validation frequency by tier (OSFI E-23 §4.3):**
+- Tier 1: annual (next_validation_due = +1 year)
+- Tier 2: biennial (+2 years)
+- Tier 3: triennial (+3 years)
+
+---
+
+### Frontend: `/home/ubuntu/clearmrm/public/index.html`
+
+Single-file React 18 SPA (Babel standalone compilation in-browser). No build step required.
+
+**8 screens implemented:**
+
+| Screen | Route | Features |
+|---|---|---|
+| Login | (modal) | Email/password → `/api/auth/login` → JWT stored in localStorage |
+| Dashboard | `/` | 6 KPI cards, overdue/unrated alerts, recent models table |
+| Model Inventory | `/models` | Full list, search, tier filter, archive action, risk rating shortcut |
+| Add Model | `/add` | 14-field form; third-party vendor conditional section |
+| Edit Model | `/edit/:id` | Same form pre-populated |
+| Model Detail | `/detail/:id` | All fields, validation history, rating history with AI reasoning |
+| Risk Rating Wizard | `/rate/:id` | 5 MCQ pages + boolean flags page + Bedrock AI result page |
+| Audit Trail | `/audit` | Chronological event log with immutability notice |
+| CSV Import | `/import` | Drag-and-drop upload; column mapping flexible |
+| Board Report | `/report` | One-click PDF generation; downloads to browser |
+
+---
+
+### Infrastructure (Session 2)
+
+| Component | Detail |
+|---|---|
+| Port | 3001 (ClearBind runs on 3000) |
+| PM2 process | `clearmrm-api` (id=1), started June 22, 2026 |
+| Nginx vhost | `/etc/nginx/sites-available/clearmrm` → proxies 443 → 127.0.0.1:3001 |
+| SSL certificate | Let's Encrypt, issued June 22, 2026, expires September 20, 2026, auto-renews |
+| node_modules | Symlinked from `/home/ubuntu/clearbind-suite/clearbind-suite/backend/node_modules` |
+| Key packages used | `express@5.2.1`, `pg@8.21.0`, `aws-sdk@2.1693.0`, `pdf-lib@1.17.1`, `multer@2.1.1` |
+
+---
+
+### DECISION 11: Authentication is backend-mediated (no browser Cognito SDK)
+
+**Decision:** Login calls `POST /api/auth/login` on our backend. The backend authenticates against Cognito using USER_PASSWORD_AUTH flow via AWS SDK and returns the IdToken. The browser never calls Cognito directly.
+
+**Rationale:** Eliminates dependency on `amazon-cognito-identity-js` CDN (which caused blank page on first deploy). Architecture is cleaner: auth validation logic stays server-side. Same Cognito user pool (`ca-central-1_72aIikL9T`) and client (`2o151kq1amtek4b736j4e3uvm5`) shared with ClearBind.
+
+---
+
+### DECISION 12: AI reasoning is in MVP, not Phase 2
+
+**Changed from Decision 6 (Session 1):** Session 1 had AI risk rating deferred to Phase 2. During Session 2 the founder confirmed AI should be included in MVP.
+
+**Implementation:** The Risk Rating Wizard sends questionnaire answers to `POST /api/models/:id/rate`. After computing the tier algorithmically, the backend calls AWS Bedrock (Claude 3 Haiku, ca-central-1) to generate a 3-sentence plain-English explanation suitable for a board director. The reasoning is stored in `risk_ratings.ai_reasoning` and displayed in the Model Detail view and Board Report PDF.
+
+---
+
+### DECISION 13: Soft delete only — models are never hard deleted
+
+All model archiving uses `status = 'archived'`. No row is ever deleted from the `models` table. This is required for OSFI E-23 audit completeness — an examiner may ask about a model that was decommissioned years ago.
+
+---
+
 ## FEATURE REGISTER (Living Document)
 
 ### Core Features — Committed
 
 | Feature | ID | Status | Phase | Notes |
 |---|---|---|---|---|
-| Model Registry | F1 | Planned | MVP | Complete structured inventory for every model |
-| Risk Rating Engine | F2 | Planned | MVP | Automated Tier 1/2/3 via questionnaire; immutable result |
-| Audit Trail | F5 | Planned | MVP | Append-only DB table; DB trigger blocks delete/update |
-| Board Pack Generator | F6-basic | Planned | MVP | PDF output; tier summary, validation status |
-| Role-Based Access Control | F-RBAC | Planned | MVP | Model Owner, Validator, CRO View, Admin |
-| CSV Import (Excel migration) | F-import | Planned | MVP | Critical for onboarding existing spreadsheet inventories |
+| Model Registry | F1 | **LIVE** | MVP | 14-field model form, list, detail, edit, archive |
+| Risk Rating Engine | F2 | **LIVE** | MVP | 8-question wizard, algorithmic tier, Bedrock AI reasoning |
+| Audit Trail | F5 | **LIVE** | MVP | DB-level immutability trigger; append-only; paginated UI |
+| Board Pack PDF Generator | F6-basic | **LIVE** | MVP | 3-page PDF: cover KPIs, full inventory table, Tier 1 detail |
+| Dashboard KPIs | F-dash | **LIVE** | MVP | 6 KPI cards, overdue alerts, unrated alerts, recent models |
+| CSV Import (Excel migration) | F-import | **LIVE** | MVP | Flexible column mapping; import summary with counts |
+| AI Risk Reasoning (Bedrock) | F-AI1 | **LIVE** | MVP | Moved from Phase 2; Claude Haiku, ca-central-1 |
+| Validation Tracking | F-valid | **LIVE** | MVP | Mark validated, sets next_validation_due by tier |
+| Model Archive (soft delete) | F-arch | **LIVE** | MVP | Status = archived; never hard-deleted |
 | Validation Workflow Manager | F3 | Planned | Phase 2 | Scheduling, assignment, sign-off, escalation |
 | Third-Party / Vendor Module | F4 | Planned | Phase 2 | Vendor model inventory, assessment, change notifications |
-| Full Board Reporting Pack | F6-full | Planned | Phase 2 | Complete OSFI-aligned board report |
 | OSFI Examiner Export | F7 | Planned | Phase 3 | Purpose-built Supervisory Review response format |
-| AI Risk Rating Suggestion | F-AI1 | Planned | Phase 2 | AWS Bedrock + Claude; must show reasoning |
 | AI Model Description Generator | F-AI2 | Planned | Phase 2 | Auto-generate model description from uploaded docs |
 | Model Type Library | F-lib | Planned | Phase 2 | 200+ pre-built model types, Canadian FRFI specific |
 | Natural Language Model Search | F-NLS | Planned | Phase 3 | Search model inventory in plain English |
 | Industry Benchmarking Dashboard | F-bench | Planned | Year 2 | Anonymized peer comparison |
 | Microsoft Graph Integration | F-graph | Planned | Phase 2 | Pull model docs from SharePoint/OneDrive |
 | E-Signature for Validation Sign-Off | F-esig | Planned | Phase 2 | DocuSign or AWS Simple Sign |
-| Multi-Entity / Multi-Tenant | F-mt | Planned | Phase 2 | Separate inventories per legal entity under one parent org |
+| Multi-Entity / Multi-Tenant (full RLS) | F-mt | Planned | Phase 2 | Separate inventories per legal entity under one parent org |
 | OSFI B-15 Climate Module | F-B15 | Planned | Year 2 | Climate risk model governance |
 | AMF (Quebec) Alignment Module | F-amf | Planned | Year 2 | Quebec-specific overlay |
 
@@ -330,7 +468,8 @@ The following questions were not resolved in this session and must be answered b
 
 | Milestone | Target Date | Status |
 |---|---|---|
-| MVP internal demo (Model Registry + Risk Rating + Audit Trail) | October 2026 | Pending |
+| MVP deployed to production (`clearmrm.nimblestride.ca`) | June 22, 2026 | **COMPLETE** |
+| Demo-ready with 5 seed models and working risk rating | June 22, 2026 | **COMPLETE** |
 | First lighthouse client signed (pilot) | November 2026 | Pending |
 | Second lighthouse client signed (pilot) | January 2027 | Pending |
 | Phase 3 General Availability launch | January 2027 | Pending |
@@ -370,9 +509,16 @@ The following questions were not resolved in this session and must be answered b
 | 2026-06-22 | Technology stack confirmed: React, Node.js, PostgreSQL, AWS ca-central-1, Bedrock | Consistency with existing Nimblestride stack; PIPEDA compliance | Founder |
 | 2026-06-22 | MVP scope set to 3 core features + audit trail + RBAC + CSV import | 30-day time-to-value constraint | Founder |
 | 2026-06-22 | Target market confirmed: Tier 2 FRFIs; avoid direct competition with IBM/SAS | Non-overlapping market segment; pricing inaccessibility of enterprise tools | Founder |
+| 2026-06-22 | **Product renamed from "OSFI E-23 Vault" to "ClearMRM"** | Clear + MRM = instantly understood by target audience (CROs, model risk teams) | Founder |
+| 2026-06-22 | URL set to `clearmrm.nimblestride.ca`; A record added to DNS | Fits Nimblestride brand; EC2 3.96.132.125 | Founder |
+| 2026-06-22 | Architecture decision: Fork from ClearBind (`enterprise_server.js`) | Saves 2–3 weeks; Bedrock, PostgreSQL pool, Cognito auth all proven in production | Founder |
+| 2026-06-22 | Architecture decision: tenant_id on every table (no RLS yet) | Avoids ClearBind's retroactive multi-tenant migration problem | Founder |
+| 2026-06-22 | **AI (Bedrock reasoning) moved from Phase 2 → MVP** | Founder confirmed AI should be in MVP; adds immediate demo value | Founder |
+| 2026-06-22 | Authentication changed to backend-mediated (no browser Cognito SDK) | `amazon-cognito-identity-js` CDN caused blank page; backend USER_PASSWORD_AUTH is cleaner | Tech |
+| 2026-06-22 | **MVP DEPLOYED to production** — `https://clearmrm.nimblestride.ca` | Full build in single session; all MVP features live | Founder + AI |
 
 ---
 
 *This document must be updated after every strategic session, product decision, customer conversation, or architecture change. The goal is that any new team member can read this document and understand exactly what we are building, why, who we are building it for, and what decisions have already been made.*
 
-*Next scheduled update: After first customer discovery call.*
+*Next scheduled update: After first customer discovery call, or after any Phase 2 feature work begins.*
