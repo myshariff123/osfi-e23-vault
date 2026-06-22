@@ -724,6 +724,635 @@ app.post('/api/reports/board-pack', aiLimiter, requireAuth, async function(req, 
   } catch(e) { console.error('[board-report]',e); res.status(500).json({ error:e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 2 AI ENHANCEMENTS — VALIDATION WORKFLOW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// AI: Analyze submitted findings against OSFI E-23
+app.post('/api/validations/:id/ai-analyze', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT v.*,m.name AS model_name,m.risk_tier,m.methodology_type,m.business_unit,m.purpose FROM validations v JOIN models m ON v.model_id=m.id WHERE v.id=$1 AND v.tenant_id=$2',
+      [req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    const v = r.rows[0];
+    if (!v.findings) return res.status(400).json({ error:'No findings submitted yet. Submit findings first.' });
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens:900, temperature:0.2,
+      messages:[{role:'user',content:
+        'You are a senior OSFI E-23 model risk examiner reviewing an independent model validation for a Canadian FRFI.\n\n'+
+        'Model: "'+v.model_name+'" | Tier: '+(v.risk_tier||'unrated')+' | Methodology: '+(v.methodology_type||'unknown')+'\n'+
+        'Business Unit: '+(v.business_unit||'unknown')+'\n'+
+        'Validation type: '+v.validation_type+'\n'+
+        'Scope: '+(v.scope||'not specified')+'\n'+
+        'Findings submitted:\n'+v.findings+'\n'+
+        'Outcome declared: '+(v.outcome||'not yet declared')+'\n'+
+        'Conditions: '+(v.conditions||'none')+'\n\n'+
+        'Return ONLY valid JSON:\n'+
+        '{"severity":"critical|high|medium|low","osfi_sections_implicated":["§X.X: finding description"],"findings_completeness_score":0,"gaps_in_findings":["gap 1"],"recommended_conditions":["condition with §ref"],"remediation_timeline":"e.g. 30 days","approval_recommendation":"approve|conditional_approve|reject","approval_rationale":"2 sentences citing OSFI E-23"}'
+      }]
+    });
+    const analysis = extractJSON(aiResp.content[0].text);
+    await pool.query('UPDATE validations SET ai_findings_analysis=$1 WHERE id=$2',[JSON.stringify(analysis),req.params.id]);
+    await audit(req.user.tenant_id,v.model_id,req.user.email,'validation_ai_analyzed',{ip:req.ip});
+    res.json(analysis);
+  } catch(e) { console.error('[val-ai-analyze]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// AI: Approval readiness check (completeness verification before approving)
+app.post('/api/validations/:id/ai-approve-check', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT v.*,m.name AS model_name,m.risk_tier,m.methodology_type FROM validations v JOIN models m ON v.model_id=m.id WHERE v.id=$1 AND v.tenant_id=$2',
+      [req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    const v = r.rows[0];
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens:700, temperature:0.15,
+      messages:[{role:'user',content:
+        'You are an OSFI E-23 model risk governance officer conducting an approval completeness check on a validation before it can be formally approved.\n\n'+
+        'Model: "'+v.model_name+'" | Tier: '+(v.risk_tier||'unrated')+' | Methodology: '+(v.methodology_type||'unknown')+'\n'+
+        'Validation type: '+v.validation_type+'\n'+
+        'Assigned validator: '+(v.assigned_to_email||'unknown')+'\n'+
+        'Findings: '+(v.findings||'NONE')+'\n'+
+        'Outcome: '+(v.outcome||'NONE')+'\n'+
+        'Conditions imposed: '+(v.conditions||'none')+'\n'+
+        'AI findings analysis performed: '+(v.ai_findings_analysis ? 'Yes — severity: '+JSON.parse(JSON.stringify(v.ai_findings_analysis)).severity : 'No')+'\n\n'+
+        'OSFI E-23 requires: independent validator, documented scope, findings with §references, pass/fail outcome, conditions if conditional, approval by authorized senior officer.\n\n'+
+        'Return ONLY valid JSON:\n'+
+        '{"approval_ready":true,"completeness_score":0,"missing_documentation":["item 1"],"osfi_e23_requirements_met":["req 1"],"osfi_e23_requirements_missing":["req 1"],"recommendation":"1-2 sentences"}'
+      }]
+    });
+    const check = extractJSON(aiResp.content[0].text);
+    await pool.query('UPDATE validations SET ai_approval_check=$1 WHERE id=$2',[JSON.stringify(check),req.params.id]);
+    res.json(check);
+  } catch(e) { console.error('[val-approve-check]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// AI: Generate formal audit-grade closure summary
+app.post('/api/validations/:id/ai-closure-summary', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT v.*,m.name AS model_name,m.risk_tier,m.methodology_type,m.business_unit,m.next_validation_due FROM validations v JOIN models m ON v.model_id=m.id WHERE v.id=$1 AND v.tenant_id=$2',
+      [req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    const v = r.rows[0];
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-haiku-20240307-v1:0', max_tokens:350, temperature:0.2,
+      messages:[{role:'user',content:
+        'You are an OSFI E-23 model risk compliance officer writing the official closure narrative for a completed validation. This text will become part of the permanent audit record per OSFI E-23 §4.4.\n\n'+
+        'Model: "'+v.model_name+'" | Tier: '+(v.risk_tier||'unrated')+' | BU: '+(v.business_unit||'unknown')+'\n'+
+        'Validation type: '+v.validation_type+' | Outcome: '+(v.outcome||'unknown')+'\n'+
+        'Assigned to: '+(v.assigned_to_email||'unknown')+' | Approved by: '+(v.approved_by_email||'unknown')+'\n'+
+        'Findings: '+(v.findings||'none recorded')+'\n'+
+        'Conditions imposed: '+(v.conditions||'none')+'\n'+
+        'Next validation due: '+(v.next_validation_due||'not set')+'\n\n'+
+        'Write exactly 3 sentences for the audit closure record: (1) validation scope, validator, and outcome per OSFI E-23 §4.3, (2) key finding and compliance status with specific §references, (3) next action or next validation due timeline. Formal, audit-grade language only.'
+      }]
+    });
+    const summary = aiResp.content[0].text.trim();
+    await pool.query('UPDATE validations SET ai_closure_summary=$1 WHERE id=$2',[summary,req.params.id]);
+    await audit(req.user.tenant_id,v.model_id,req.user.email,'validation_closure_summary_generated',{ip:req.ip});
+    res.json({ summary });
+  } catch(e) { console.error('[val-closure]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// GET validation with AI fields included
+app.get('/api/validations/:id/full', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT v.*,m.name AS model_name,m.risk_tier,m.business_unit,m.methodology_type FROM validations v JOIN models m ON v.model_id=m.id WHERE v.id=$1 AND v.tenant_id=$2',
+      [req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 2 AI ENHANCEMENTS — VENDOR ASSESSMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// AI: Full OSFI §5 deep-dive analysis with remediation plan and trend
+app.post('/api/vendor-assessments/:id/ai-deepdive', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT va.*,m.name AS model_name,m.vendor_name,m.vendor_product,m.methodology_type,m.business_unit,m.purpose FROM vendor_assessments va JOIN models m ON va.model_id=m.id WHERE va.id=$1 AND va.tenant_id=$2',
+      [req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    const a = r.rows[0];
+    const history = await pool.query(
+      'SELECT risk_level,risk_score,created_at FROM vendor_assessments WHERE model_id=$1 ORDER BY created_at DESC LIMIT 4',
+      [a.model_id]
+    );
+    const trend = history.rows.length >= 2
+      ? (history.rows[0].risk_score > history.rows[1].risk_score ? 'improving' : history.rows[0].risk_score < history.rows[1].risk_score ? 'deteriorating' : 'stable')
+      : 'first_assessment';
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens:1000, temperature:0.2,
+      messages:[{role:'user',content:
+        'You are an OSFI E-23 third-party model risk specialist. Conduct a deep-dive vendor governance analysis per OSFI E-23 §5 (Third-Party Model Risk Management).\n\n'+
+        'Vendor: '+(a.vendor_name||'unknown')+' | Product: '+(a.vendor_product||'unknown')+'\n'+
+        'Model: "'+a.model_name+'" ('+(a.methodology_type||'unknown')+')\n'+
+        'Business Unit: '+(a.business_unit||'unknown')+'\n'+
+        'Risk Level: '+a.risk_level+' (Score: '+a.risk_score+'/12)\n\n'+
+        'OSFI E-23 §5 Checklist:\n'+
+        '- SLA documented: '+a.q_sla_documented+'\n'+
+        '- Data access rights: '+a.q_data_access+'\n'+
+        '- Contractual audit rights: '+a.q_audit_rights+'\n'+
+        '- Exit/transition plan: '+a.q_exit_plan+'\n'+
+        '- Concentration risk assessed: '+a.q_concentration_risk+'\n'+
+        '- Model documentation received: '+a.q_model_doc_received+'\n'+
+        '- Override capability: '+a.q_override_capability+'\n\n'+
+        'Assessor findings: '+(a.findings||'none')+'\n'+
+        'Historical trend: '+trend+' | History: '+history.rows.map(function(h){ return h.risk_level+'('+new Date(h.created_at).toLocaleDateString('en-CA')+')'; }).join(' → ')+'\n\n'+
+        'Return ONLY valid JSON:\n'+
+        '{"osfi_section5_compliance_score":0,"critical_gaps":["gap with §ref"],"remediation_plan":[{"action":"...","owner":"CRO|Legal|IT|Procurement","timeline":"e.g. 30 days","osfi_ref":"§X.X"}],"concentration_risk_narrative":"2 sentences","regulatory_disclosure_required":false,"regulatory_disclosure_rationale":"1 sentence","trend":"'+trend+'","next_assessment_priority":"high|medium|low","next_assessment_rationale":"1 sentence"}'
+      }]
+    });
+    const deepdive = extractJSON(aiResp.content[0].text);
+    await pool.query('UPDATE vendor_assessments SET ai_deepdive=$1 WHERE id=$2',[JSON.stringify(deepdive),req.params.id]);
+    await audit(req.user.tenant_id,a.model_id,req.user.email,'vendor_ai_deepdive',{ip:req.ip});
+    res.json(deepdive);
+  } catch(e) { console.error('[vendor-deepdive]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// GET vendor assessment with deepdive included
+app.get('/api/vendor-assessments/:id', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT va.*,m.name AS model_name,m.vendor_name,m.vendor_product FROM vendor_assessments va JOIN models m ON va.model_id=m.id WHERE va.id=$1 AND va.tenant_id=$2',
+      [req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 3 — MULTI-TENANT ONBOARDING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Public: self-serve institution registration
+app.post('/api/onboarding/register', apiLimiter, async function(req, res) {
+  try {
+    const { institution_name, institution_type, asset_size_tier, contact_name, contact_email, password } = req.body;
+    if (!institution_name || !contact_email || !password)
+      return res.status(400).json({ error:'institution_name, contact_email, and password are required' });
+    const existing = await pool.query('SELECT id FROM users WHERE email=$1',[contact_email]);
+    if (existing.rows.length) return res.status(409).json({ error:'An account with this email already exists.' });
+
+    // Provision Cognito user
+    try {
+      await cognito.adminCreateUser({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: contact_email,
+        TemporaryPassword: password,
+        MessageAction: 'SUPPRESS',
+        UserAttributes: [
+          { Name:'email', Value:contact_email },
+          { Name:'email_verified', Value:'true' },
+          { Name:'name', Value:contact_name||contact_email },
+        ],
+      }).promise();
+      await cognito.adminSetUserPassword({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: contact_email,
+        Password: password,
+        Permanent: true,
+      }).promise();
+    } catch(e) {
+      if (e.code !== 'UsernameExistsException') throw e;
+    }
+
+    const domain = contact_email.split('@')[1] || null;
+    const tRes = await pool.query(
+      'INSERT INTO tenants(name,domain,institution_type,asset_size_tier,status) VALUES($1,$2,$3,$4,$5) RETURNING id',
+      [institution_name, domain, institution_type||null, asset_size_tier||null, 'active']
+    );
+    const tenantId = tRes.rows[0].id;
+    await pool.query(
+      'INSERT INTO users(tenant_id,email,full_name,role) VALUES($1,$2,$3,$4)',
+      [tenantId, contact_email, contact_name||contact_email, 'admin']
+    );
+
+    // Seed 3 demo models for immediate value
+    const demos = [
+      { name:'Credit Scoring Model', mtype:'statistical', bu:'Retail Banking', purpose:'Determines credit risk score for consumer loan applications using borrower financial history.' },
+      { name:'AML Transaction Monitor', mtype:'ml', bu:'Compliance', purpose:'Detects suspicious transaction patterns and generates SAR referrals for regulatory reporting.' },
+      { name:'IFRS 9 Expected Credit Loss (ECL) Model', mtype:'statistical', bu:'Finance', purpose:'Calculates expected credit losses across the loan portfolio for IFRS 9 provisioning.' },
+    ];
+    for (const d of demos) {
+      await pool.query(
+        'INSERT INTO models(tenant_id,name,methodology_type,business_unit,purpose,status) VALUES($1,$2,$3,$4,$5,$6)',
+        [tenantId, d.name, d.mtype, d.bu, d.purpose, 'active']
+      );
+    }
+    await audit(tenantId,null,contact_email,'tenant_onboarded',{metadata:{institution_name,institution_type},ip:req.ip});
+    res.status(201).json({ ok:true, message:'Account created. You can now sign in.' });
+  } catch(e) {
+    console.error('[onboarding]',e.code,e.message);
+    if (e.code==='InvalidPasswordException') return res.status(400).json({ error:'Password must be 8+ chars with uppercase, lowercase, number and special character.' });
+    res.status(500).json({ error:e.message });
+  }
+});
+
+// Admin: list all tenants (admin/super_admin)
+app.get('/api/admin/tenants', requireAuth, async function(req, res) {
+  try {
+    if (!['admin','super_admin'].includes(req.user.role)) return res.status(403).json({ error:'Insufficient permissions' });
+    const filter = req.user.role === 'super_admin' ? '' : ' WHERE t.id=$1';
+    const params = req.user.role === 'super_admin' ? [] : [req.user.tenant_id];
+    const r = await pool.query(
+      'SELECT t.*,(SELECT COUNT(*) FROM users WHERE tenant_id=t.id) user_count,(SELECT COUNT(*) FROM models WHERE tenant_id=t.id AND status=\'active\') model_count FROM tenants t'+filter+' ORDER BY t.created_at DESC',
+      params
+    );
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// Admin: list users for a tenant
+app.get('/api/admin/tenants/:id/users', requireAuth, async function(req, res) {
+  try {
+    if (!['admin','super_admin'].includes(req.user.role)) return res.status(403).json({ error:'Insufficient permissions' });
+    if (req.user.role === 'admin' && req.params.id !== req.user.tenant_id) return res.status(403).json({ error:'Access denied' });
+    const r = await pool.query('SELECT id,email,full_name,role,created_at FROM users WHERE tenant_id=$1 ORDER BY created_at',[req.params.id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// Admin: provision a new user into a tenant
+app.post('/api/admin/tenants/:id/users', requireAuth, async function(req, res) {
+  try {
+    if (!['admin','super_admin'].includes(req.user.role)) return res.status(403).json({ error:'Insufficient permissions' });
+    if (req.user.role === 'admin' && req.params.id !== req.user.tenant_id) return res.status(403).json({ error:'Access denied' });
+    const { email, full_name, role, temp_password } = req.body;
+    if (!email || !temp_password) return res.status(400).json({ error:'email and temp_password required' });
+    try {
+      await cognito.adminCreateUser({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: email,
+        TemporaryPassword: temp_password,
+        MessageAction: 'SUPPRESS',
+        UserAttributes: [
+          { Name:'email', Value:email },
+          { Name:'email_verified', Value:'true' },
+          { Name:'name', Value:full_name||email },
+        ],
+      }).promise();
+      await cognito.adminSetUserPassword({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: email,
+        Password: temp_password,
+        Permanent: true,
+      }).promise();
+    } catch(e) { if (e.code !== 'UsernameExistsException') throw e; }
+    const r = await pool.query(
+      'INSERT INTO users(tenant_id,email,full_name,role) VALUES($1,$2,$3,$4) ON CONFLICT(email) DO UPDATE SET tenant_id=$1,full_name=$3,role=$4 RETURNING *',
+      [req.params.id, email, full_name||email, role||'analyst']
+    );
+    await audit(req.user.tenant_id,null,req.user.email,'user_provisioned',{metadata:{email,tenant_id:req.params.id},ip:req.ip});
+    res.status(201).json(r.rows[0]);
+  } catch(e) { console.error('[provision-user]',e.code,e.message); res.status(500).json({ error:e.message }); }
+});
+
+// Admin: configure SSO for tenant
+app.put('/api/admin/tenants/:id/sso', requireAuth, async function(req, res) {
+  try {
+    if (!['admin','super_admin'].includes(req.user.role)) return res.status(403).json({ error:'Insufficient permissions' });
+    if (req.user.role === 'admin' && req.params.id !== req.user.tenant_id) return res.status(403).json({ error:'Access denied' });
+    const { sso_enabled, sso_provider_name, sso_metadata_url } = req.body;
+    if (sso_enabled && sso_provider_name && sso_metadata_url) {
+      try {
+        await cognito.createIdentityProvider({
+          UserPoolId: process.env.COGNITO_USER_POOL_ID,
+          ProviderName: sso_provider_name,
+          ProviderType: 'SAML',
+          ProviderDetails: { MetadataURL: sso_metadata_url },
+          AttributeMapping: { email:'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress' },
+        }).promise();
+      } catch(e) { if (e.code !== 'DuplicateProviderException') throw e; }
+    }
+    await pool.query(
+      'UPDATE tenants SET sso_enabled=$1,sso_provider_name=$2,sso_metadata_url=$3 WHERE id=$4',
+      [sso_enabled||false, sso_provider_name||null, sso_metadata_url||null, req.params.id]
+    );
+    await audit(req.user.tenant_id,null,req.user.email,'sso_configured',{metadata:{tenant_id:req.params.id,sso_enabled},ip:req.ip});
+    res.json({ ok:true });
+  } catch(e) { console.error('[sso-config]',e.code,e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 3 — SSO AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Check if email domain has SSO, return Cognito hosted-UI redirect URL
+app.post('/api/auth/sso-init', apiLimiter, async function(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error:'Email required' });
+    const domain = (email.split('@')[1]||'').toLowerCase();
+    if (!domain) return res.json({ sso_available:false });
+    const t = await pool.query('SELECT sso_enabled,sso_provider_name FROM tenants WHERE domain=$1 AND sso_enabled=true',[domain]);
+    if (!t.rows.length) return res.json({ sso_available:false });
+    const provider = t.rows[0].sso_provider_name;
+    const cognitoDomain = process.env.COGNITO_DOMAIN||'';
+    const clientId = process.env.COGNITO_CLIENT_ID;
+    const appUrl = process.env.APP_URL||'https://clearmrm.nimblestride.ca';
+    const redirectUri = encodeURIComponent(appUrl+'/api/auth/sso-callback');
+    const ssoUrl = 'https://'+cognitoDomain+'/oauth2/authorize?response_type=code&client_id='+clientId+'&redirect_uri='+redirectUri+'&identity_provider='+encodeURIComponent(provider)+'&scope=openid+email+profile';
+    res.json({ sso_available:true, sso_url:ssoUrl, provider_name:provider });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// SSO callback — Cognito redirects here after IdP authentication
+app.get('/api/auth/sso-callback', async function(req, res) {
+  try {
+    const { code, error, error_description } = req.query;
+    if (error) return res.redirect('/#sso-error='+encodeURIComponent(error_description||error));
+    if (!code) return res.redirect('/#sso-error=no_code');
+    const cognitoDomain = process.env.COGNITO_DOMAIN||'';
+    const clientId = process.env.COGNITO_CLIENT_ID;
+    const appUrl = process.env.APP_URL||'https://clearmrm.nimblestride.ca';
+    const redirectUri = appUrl+'/api/auth/sso-callback';
+    const body = 'grant_type=authorization_code&code='+code+'&redirect_uri='+encodeURIComponent(redirectUri)+'&client_id='+clientId;
+    const https = require('https');
+    const tokenData = await new Promise(function(resolve,reject) {
+      const opts = { hostname:cognitoDomain, path:'/oauth2/token', method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded','Content-Length':Buffer.byteLength(body)} };
+      const reqH = https.request(opts,function(r){ let d=''; r.on('data',function(c){ d+=c; }); r.on('end',function(){ try{ resolve(JSON.parse(d)); }catch(e){ reject(e); } }); });
+      reqH.on('error',reject); reqH.write(body); reqH.end();
+    });
+    if (!tokenData.id_token) return res.redirect('/#sso-error=token_exchange_failed');
+    // Auto-provision user into correct tenant if first SSO login
+    try {
+      const parts = tokenData.id_token.split('.');
+      const claims = JSON.parse(Buffer.from(parts[1],'base64url').toString('utf8'));
+      const email = claims.email||'';
+      if (email) {
+        const existing = await pool.query('SELECT id FROM users WHERE email=$1',[email]);
+        if (!existing.rows.length) {
+          const domain = (email.split('@')[1]||'').toLowerCase();
+          const tenant = await pool.query('SELECT id FROM tenants WHERE domain=$1 AND sso_enabled=true',[domain]);
+          if (tenant.rows.length) {
+            await pool.query('INSERT INTO users(tenant_id,email,full_name,role) VALUES($1,$2,$3,$4) ON CONFLICT(email) DO NOTHING',
+              [tenant.rows[0].id,email,claims.name||email,'analyst']);
+          }
+        }
+      }
+    } catch(e) { console.error('[sso-autoprovision]',e.message); }
+    res.redirect('/#sso-token='+tokenData.id_token);
+  } catch(e) { console.error('[sso-callback]',e.message); res.redirect('/#sso-error='+encodeURIComponent(e.message)); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 3 — OSFI EXAMINER EXPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [tenant, models, validations, vendors, overdueRes] = await Promise.all([
+      pool.query('SELECT * FROM tenants WHERE id=$1',[tid]),
+      pool.query(
+        "SELECT m.*,(SELECT ai_reasoning FROM risk_ratings WHERE model_id=m.id ORDER BY created_at DESC LIMIT 1) AS latest_reasoning,(SELECT score_total FROM risk_ratings WHERE model_id=m.id ORDER BY created_at DESC LIMIT 1) AS score_total FROM models m WHERE m.tenant_id=$1 AND m.status='active' ORDER BY m.risk_tier NULLS LAST,m.name",
+        [tid]
+      ),
+      pool.query('SELECT v.*,m.name AS model_name,m.risk_tier,m.business_unit FROM validations v JOIN models m ON v.model_id=m.id WHERE v.tenant_id=$1 ORDER BY v.created_at DESC',[tid]),
+      pool.query('SELECT va.*,m.name AS model_name,m.vendor_name,m.vendor_product FROM vendor_assessments va JOIN models m ON va.model_id=m.id WHERE va.tenant_id=$1 ORDER BY va.created_at DESC',[tid]),
+      pool.query("SELECT COUNT(*) c FROM models WHERE tenant_id=$1 AND status='active' AND next_validation_due < NOW()",[tid]),
+    ]);
+    const inst = (tenant.rows[0]&&tenant.rows[0].name)||'Institution';
+    const ms = models.rows;
+    const t1 = ms.filter(function(m){ return m.risk_tier===1; });
+    const t2 = ms.filter(function(m){ return m.risk_tier===2; });
+    const t3 = ms.filter(function(m){ return m.risk_tier===3; });
+    const unr = ms.filter(function(m){ return !m.risk_tier; });
+    const overdueN = parseInt(overdueRes.rows[0].c);
+    const completedVals = validations.rows.filter(function(v){ return v.status==='approved'||v.status==='closed'; });
+
+    // AI: 4-sentence examination narrative
+    let complianceNarrative = 'Compliance narrative unavailable.';
+    try {
+      const aiResp = await callBedrock({
+        model:'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens:500, temperature:0.15,
+        messages:[{role:'user',content:
+          'You are a senior OSFI examiner writing the official Model Risk Management examination narrative for '+inst+'.\n\n'+
+          'Examination date: '+new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long'})+'\n'+
+          'OSFI Guideline E-23 (September 2025, effective May 1, 2027)\n\n'+
+          'Data: Total models: '+ms.length+'. Tier 1 (High): '+t1.length+'. Tier 2: '+t2.length+'. Tier 3: '+t3.length+'. Unrated: '+unr.length+'.\n'+
+          'Overdue validations: '+overdueN+'. Completed validations: '+completedVals.length+'. Vendor assessments: '+vendors.rows.length+'.\n\n'+
+          'Write exactly 4 sentences for the official examination narrative: (1) overall OSFI E-23 compliance posture with inventory completeness, (2) governance strength with §references, (3) validation program effectiveness with §references, (4) key finding requiring management response. Formal OSFI examination language.'
+        }]
+      });
+      complianceNarrative = aiResp.content[0].text.trim();
+    } catch(e) { console.error('[examiner-ai]',e.message); }
+
+    const pdf = await PDFDocument.create();
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const fontB = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const NAVY=rgb(0.04,0.18,0.38), RED=rgb(0.72,0.11,0.11), AMB=rgb(0.75,0.45,0.0);
+    const GRN=rgb(0.10,0.55,0.20), GRY=rgb(0.5,0.5,0.5), BLK=rgb(0.05,0.05,0.05);
+    const W=595.28, H=841.89, M=56;
+
+    function exPage() {
+      const pg=pdf.addPage([W,H]);
+      pg.drawRectangle({x:0,y:H-52,width:W,height:52,color:NAVY});
+      pg.drawText('ClearMRM',{x:M,y:H-22,size:11,font:fontB,color:rgb(1,1,1)});
+      pg.drawText('OSFI E-23 SUPERVISORY REVIEW PACKAGE',{x:M+78,y:H-22,size:9,font,color:rgb(0.7,0.8,1)});
+      pg.drawText('CONFIDENTIAL — REGULATORY USE ONLY',{x:W-M-195,y:H-22,size:8,font,color:rgb(0.95,0.75,0.45)});
+      pg.drawText(inst,{x:M,y:H-38,size:8,font,color:rgb(0.7,0.8,1)});
+      pg.drawText('Examination: '+new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}),{x:W-M-185,y:H-38,size:8,font,color:rgb(0.7,0.8,1)});
+      pg.drawLine({start:{x:M,y:18},end:{x:W-M,y:18},thickness:0.4,color:GRY});
+      pg.drawText('OSFI Guideline E-23 (Sep 2025) — Effective May 1, 2027 | Generated by ClearMRM',{x:M,y:8,size:6.5,font,color:GRY});
+      return pg;
+    }
+    function tx(pg,text,x,y,opts) {
+      if (!opts) opts={};
+      pg.drawText(String(text||''),{x,y,size:opts.size||9,font:opts.bold?fontB:font,color:opts.color||BLK,maxWidth:opts.maxW});
+    }
+    function wrapTx(pg,text,x,startY,opts) {
+      if (!opts) opts={};
+      const maxW=opts.maxW||(W-2*M-10), sz=opts.size||8.5, lh=opts.lh||13;
+      const words=String(text||'').split(' ');
+      let line='', y=startY;
+      words.forEach(function(w){
+        const test=line?line+' '+w:w;
+        if (test.length*(sz*0.55)>maxW&&line){ tx(pg,line,x,y,opts); line=w; y-=lh; }
+        else { line=test; }
+      });
+      if (line){ tx(pg,line,x,y,opts); y-=lh; }
+      return y;
+    }
+    function secHdr(pg,text,y) {
+      pg.drawRectangle({x:M-4,y:y-16,width:W-2*M+8,height:22,color:rgb(0.06,0.22,0.46)});
+      tx(pg,text,M+4,y-7,{size:9,bold:true,color:rgb(1,1,1)});
+      return y-32;
+    }
+
+    // PAGE 1 — Cover
+    const p1=exPage();
+    p1.drawRectangle({x:M,y:H-240,width:W-2*M,height:160,color:rgb(0.95,0.97,1.0)});
+    p1.drawRectangle({x:M,y:H-240,width:4,height:160,color:NAVY});
+    tx(p1,'MODEL RISK MANAGEMENT',M+16,H-105,{size:18,bold:true,color:NAVY});
+    tx(p1,'SUPERVISORY REVIEW PACKAGE',M+16,H-127,{size:13,bold:true,color:NAVY});
+    tx(p1,'OSFI Guideline E-23 — Model Risk Management (September 2025)',M+16,H-148,{size:9,color:GRY});
+    tx(p1,'Prepared for OSFI Examination',M+16,H-163,{size:9,color:GRY});
+    tx(p1,'Institution: '+inst,M+16,H-183,{size:10,bold:true,color:BLK});
+    tx(p1,'Date: '+new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'}),M+16,H-198,{size:9,color:BLK});
+    tx(p1,'Prepared by: '+req.user.email,M+16,H-213,{size:9,color:BLK});
+
+    const metrics=[{l:'TOTAL',v:ms.length,c:NAVY},{l:'TIER 1',v:t1.length,c:RED},{l:'TIER 2',v:t2.length,c:AMB},{l:'TIER 3',v:t3.length,c:GRN},{l:'OVERDUE',v:overdueN,c:RED},{l:'VALIDATIONS',v:completedVals.length+' done',c:NAVY}];
+    const mw=(W-2*M-40)/6; let mx=M;
+    metrics.forEach(function(m){
+      p1.drawRectangle({x:mx,y:H-362,width:mw+4,height:82,color:rgb(0.97,0.97,1)});
+      p1.drawRectangle({x:mx,y:H-282,width:mw+4,height:3,color:m.c});
+      tx(p1,m.v,mx+6,H-335,{size:19,bold:true,color:m.c});
+      tx(p1,m.l,mx+4,H-355,{size:6.5,bold:true,color:GRY});
+      mx+=mw+6;
+    });
+
+    let ny=H-392;
+    ny=secHdr(p1,'OSFI E-23 EXAMINATION NARRATIVE (AI-GENERATED)',ny);
+    p1.drawRectangle({x:M,y:ny-62,width:W-2*M,height:65,color:rgb(0.97,0.98,1)});
+    p1.drawRectangle({x:M,y:ny-62,width:3,height:65,color:NAVY});
+    ny=wrapTx(p1,complianceNarrative,M+8,ny-5,{size:8,lh:12,maxW:W-2*M-22});
+
+    let iy=Math.min(ny-22,H-492);
+    ny=secHdr(p1,'DOCUMENT INDEX',iy);
+    ['Section 1: Complete Model Inventory Summary','Section 2: Tier 1 High-Risk Models — Validation Evidence','Section 3: Active Validation Findings','Section 4: Third-Party Vendor Governance (OSFI E-23 §5)','Section 5: Management Attestation'].forEach(function(s,i){
+      tx(p1,(i+1)+'.  '+s,M+8,ny,{size:8.5}); ny-=14;
+    });
+    tx(p1,'CONFIDENTIAL: Contains supervisory information. Distribution restricted to model risk function and OSFI examiners.',M,30,{size:6.5,color:GRY});
+
+    // PAGE 2 — Full Model Inventory
+    const p2=exPage();
+    let y2=secHdr(p2,'SECTION 1: MODEL INVENTORY — '+inst.toUpperCase()+' — '+new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long'}),H-70);
+    const cols=[{l:'Model Name',x:M,w:128},{l:'Business Unit',x:M+133,w:88},{l:'Type',x:M+225,w:60},{l:'Tier',x:M+288,w:30},{l:'Owner',x:M+320,w:80},{l:'Last Validated',x:M+403,w:72},{l:'Next Due',x:M+477,w:62}];
+    cols.forEach(function(c){ tx(p2,c.l,c.x,y2+5,{size:7.5,bold:true,color:NAVY}); });
+    y2-=10; p2.drawLine({start:{x:M,y:y2},end:{x:W-M,y:y2},thickness:0.6,color:NAVY}); y2-=13;
+    ms.forEach(function(m,idx){
+      if (y2<80) return;
+      if (idx%2===0) p2.drawRectangle({x:M-2,y:y2-4,width:W-2*M+4,height:13,color:rgb(0.97,0.97,0.99)});
+      const tc=m.risk_tier===1?RED:m.risk_tier===2?AMB:m.risk_tier===3?GRN:GRY;
+      const isOD=m.next_validation_due&&new Date(m.next_validation_due)<new Date();
+      tx(p2,(m.name||'').substring(0,21),M,y2,{size:7.5});
+      tx(p2,(m.business_unit||'—').substring(0,15),M+133,y2,{size:7.5});
+      tx(p2,(m.methodology_type||'—').replace(/_/g,' ').substring(0,9),M+225,y2,{size:7});
+      tx(p2,m.risk_tier?'T'+m.risk_tier:'—',M+288,y2,{size:7.5,bold:true,color:tc});
+      tx(p2,(m.model_owner_name||'—').substring(0,14),M+320,y2,{size:7});
+      tx(p2,m.last_validated_at?new Date(m.last_validated_at).toLocaleDateString('en-CA'):'Never',M+403,y2,{size:7,color:m.last_validated_at?BLK:RED});
+      tx(p2,m.next_validation_due?new Date(m.next_validation_due).toLocaleDateString('en-CA'):'—',M+477,y2,{size:7,color:isOD?RED:BLK});
+      y2-=13;
+    });
+    tx(p2,'Total: '+ms.length+' active models. Rated: '+(ms.length-unr.length)+'. Overdue: '+overdueN+'.',M,24,{size:7.5,color:GRY});
+
+    // PAGE 3 — Tier 1 Detail with AI reasoning
+    if (t1.length>0) {
+      const p3=exPage();
+      let y3=secHdr(p3,'SECTION 2: TIER 1 HIGH-RISK MODELS (OSFI E-23 §4.2 — Annual Validation Required)',H-70);
+      t1.forEach(function(m){
+        if (y3<100) return;
+        p3.drawRectangle({x:M-4,y:y3-54,width:W-2*M+8,height:60,color:rgb(0.999,0.97,0.97)});
+        p3.drawRectangle({x:M-4,y:y3-54,width:3,height:60,color:RED});
+        const isOD=m.next_validation_due&&new Date(m.next_validation_due)<new Date();
+        tx(p3,m.name,M+8,y3,{size:10,bold:true});
+        tx(p3,'Tier 1 · High Risk'+(isOD?' · VALIDATION OVERDUE':''),M+8,y3-14,{size:8,bold:true,color:isOD?RED:AMB});
+        tx(p3,(m.methodology_type||'').replace(/_/g,' ')+' · Owner: '+(m.model_owner_name||'Unassigned')+' · BU: '+(m.business_unit||'—'),M+8,y3-26,{size:7.5,color:GRY});
+        tx(p3,'Last validated: '+(m.last_validated_at?new Date(m.last_validated_at).toLocaleDateString('en-CA'):'Never')+' | Next due: '+(m.next_validation_due||'Not set'),M+8,y3-38,{size:7.5,color:isOD?RED:BLK});
+        if (m.latest_reasoning) {
+          y3=wrapTx(p3,'Risk basis: '+m.latest_reasoning,M+8,y3-50,{size:7,maxW:W-2*M-22,lh:10,color:rgb(0.3,0.3,0.3)});
+          y3-=8;
+        } else { y3-=62; }
+        y3-=10;
+      });
+    }
+
+    // PAGE 4 — Validation Evidence
+    const p4=exPage();
+    let y4=secHdr(p4,'SECTION 3: VALIDATION EVIDENCE (OSFI E-23 §4.3 — Independent Validation Program)',H-70);
+    if (validations.rows.length===0) {
+      tx(p4,'No validations on record.',M,y4,{size:9,color:GRY});
+    } else {
+      tx(p4,'Total: '+validations.rows.length+' validations. Completed: '+completedVals.length+'. In progress: '+(validations.rows.length-completedVals.length)+'.',M,y4,{size:8.5,bold:true,color:NAVY});
+      y4-=18;
+      validations.rows.slice(0,15).forEach(function(v){
+        if (y4<100) return;
+        const oc=v.outcome==='pass'?GRN:v.outcome==='fail'?RED:v.outcome==='conditional_pass'?AMB:GRY;
+        p4.drawRectangle({x:M-2,y:y4-28,width:W-2*M+4,height:32,color:rgb(0.97,0.97,0.99)});
+        tx(p4,v.model_name,M+4,y4,{size:8.5,bold:true});
+        tx(p4,'Tier '+(v.risk_tier||'?'),M+185,y4,{size:8,color:GRY});
+        tx(p4,v.status.replace(/_/g,' '),M+240,y4,{size:8});
+        if (v.outcome) tx(p4,v.outcome.replace(/_/g,' '),M+330,y4,{size:8,bold:true,color:oc});
+        tx(p4,v.assigned_to_email||'—',M+420,y4,{size:7,color:GRY});
+        if (v.findings) y4=wrapTx(p4,'Findings: '+v.findings.substring(0,200),M+10,y4-14,{size:7,maxW:W-2*M-22,lh:10,color:rgb(0.3,0.3,0.3)});
+        else y4-=14;
+        y4-=16;
+      });
+    }
+
+    // PAGE 5 — Vendor Assessments
+    const p5=exPage();
+    let y5=secHdr(p5,'SECTION 4: THIRD-PARTY VENDOR GOVERNANCE (OSFI E-23 §5)',H-70);
+    if (vendors.rows.length===0) {
+      tx(p5,'No vendor assessments on record.',M,y5,{size:9,color:GRY});
+    } else {
+      vendors.rows.slice(0,12).forEach(function(a){
+        if (y5<100) return;
+        const rc=a.risk_level==='high'?RED:a.risk_level==='medium'?AMB:GRN;
+        p5.drawRectangle({x:M-2,y:y5-36,width:W-2*M+4,height:40,color:rgb(0.97,0.97,0.99)});
+        tx(p5,a.model_name,M+4,y5,{size:8.5,bold:true});
+        tx(p5,a.vendor_name||'—',M+4,y5-12,{size:8,color:GRY});
+        tx(p5,(a.risk_level||'').toUpperCase()+' RISK',M+185,y5,{size:8,bold:true,color:rc});
+        tx(p5,'Score: '+(a.risk_score||0)+'/12',M+265,y5,{size:8,color:GRY});
+        tx(p5,'Assessed: '+(a.assessed_by_email||'—'),M+340,y5,{size:7.5,color:GRY});
+        tx(p5,'Next review: '+(a.next_review_due||'—'),M+440,y5,{size:7.5,color:GRY});
+        const chks=['q_sla_documented','q_data_access','q_audit_rights','q_exit_plan','q_model_doc_received','q_override_capability'];
+        const passed=chks.filter(function(k){ return a[k]; }).length;
+        tx(p5,'§5 Checklist: '+passed+'/'+chks.length+' items satisfied',M+4,y5-24,{size:7.5,color:GRY});
+        if (a.ai_assessment) y5=wrapTx(p5,'AI: '+a.ai_assessment.substring(0,170),M+130,y5-24,{size:7,maxW:W-2*M-138,lh:10,color:rgb(0.25,0.25,0.55)});
+        else y5-=24;
+        y5-=18;
+      });
+    }
+
+    // PAGE 6 — Management Attestation
+    const p6=exPage();
+    let y6=secHdr(p6,'SECTION 5: MANAGEMENT ATTESTATION',H-70);
+    const attest=[
+      'This supervisory review package has been prepared by '+inst+' pursuant to OSFI Guideline E-23 (Model Risk Management),',
+      'effective May 1, 2027. The information contained herein is accurate to the best of management\'s knowledge as at',
+      new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})+'. This document is provided in confidence to the Office of the Superintendent of Financial Institutions.',
+      '',
+      'The institution confirms:',
+      '1. The model inventory represents all material models in active use, classified per OSFI E-23 §3 tiering criteria.',
+      '2. Risk tier classifications reflect the institution\'s OSFI E-23 §4.2-aligned risk framework.',
+      '3. Independent validation activities have been conducted per §4.3 by qualified, independent validators.',
+      '4. Third-party model governance complies with or is remediating to OSFI E-23 §5 requirements.',
+      '5. Audit trail records are maintained in append-only, immutable format per §4.4.',
+      '',
+      'Material exceptions or open findings are documented in Section 3 of this package.',
+    ];
+    attest.forEach(function(l){ tx(p6,l,M,y6,{size:9}); y6-=14; });
+    y6-=28;
+    tx(p6,'Authorized Signatory:',M,y6,{size:9,bold:true}); y6-=32;
+    p6.drawLine({start:{x:M,y:y6},end:{x:M+220,y:y6},thickness:0.5,color:BLK}); y6-=16;
+    tx(p6,'Chief Risk Officer — Model Risk Function',M,y6,{size:8,color:GRY}); y6-=14;
+    tx(p6,'Date: ____________________________________________',M,y6,{size:9,bold:true}); y6-=36;
+    tx(p6,'Generated by ClearMRM (clearmrm.nimblestride.ca) · AWS ca-central-1 · PIPEDA compliant · '+new Date().toISOString().split('T')[0],M,28,{size:7,color:GRY});
+
+    await audit(tid,null,req.user.email,'examiner_export_generated',{metadata:{model_count:ms.length,tier1:t1.length},ip:req.ip});
+    const pdfBytes=await pdf.save();
+    res.setHeader('Content-Type','application/pdf');
+    res.setHeader('Content-Disposition','attachment; filename="ClearMRM-OSFI-Examiner-Export-'+new Date().toISOString().split('T')[0]+'.pdf"');
+    res.send(Buffer.from(pdfBytes));
+  } catch(e) { console.error('[examiner-export]',e.message); res.status(500).json({ error:e.message }); }
+});
+
 // ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get('/{*path}', function(req, res) {
   res.sendFile(path.join(__dirname,'public','index.html'));
@@ -731,5 +1360,5 @@ app.get('/{*path}', function(req, res) {
 
 const PORT=process.env.PORT||3001;
 app.listen(PORT, function() {
-  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1+2');
+  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1+2+3');
 });

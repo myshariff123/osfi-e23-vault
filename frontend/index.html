@@ -239,6 +239,55 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .audit-ts { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; min-width: 140px; }
 .audit-desc { flex: 1; font-size: 13.5px; }
 .audit-user { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+/* AI ANALYSIS PANELS */
+.ai-analysis-panel { border: 1.5px solid #bfdbfe; border-radius: var(--radius); overflow: hidden; margin-top: 14px; }
+.ai-analysis-hdr { background: linear-gradient(135deg,#1d4ed8,#4f46e5); padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+.ai-analysis-hdr-title { color: #fff; font-weight: 700; font-size: 13px; flex: 1; }
+.ai-analysis-body { padding: 14px 16px; background: #f0f7ff; }
+.ai-meta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.ai-score-chip { background: #dbeafe; color: #1d4ed8; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.ai-section { margin-bottom: 12px; }
+.ai-section:last-child { margin-bottom: 0; }
+.ai-section-label { font-size: 10.5px; font-weight: 800; color: #3730a3; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 5px; }
+.ai-item-list { list-style: none; }
+.ai-item-list li { font-size: 12.5px; color: #1e3a8a; padding: 2px 0; }
+.ai-item-list li::before { content: '▸ '; font-size: 11px; }
+.remediation-item { background: #fff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 9px 12px; margin-bottom: 8px; }
+.remediation-item:last-child { margin-bottom: 0; }
+.remediation-action { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.remediation-meta { display: flex; gap: 12px; font-size: 11.5px; color: var(--text-muted); flex-wrap: wrap; }
+
+/* EXAMINER EXPORT */
+.examiner-banner { background: linear-gradient(135deg,#0b2d5f,#1e3a8a); border-radius: var(--radius); padding: 28px 32px; color: #fff; margin-bottom: 20px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.examiner-banner-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.examiner-banner-sub { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.7; max-width: 480px; }
+.examiner-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.examiner-section-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; }
+.examiner-section-num { width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+.examiner-section-info { flex: 1; }
+.examiner-section-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.examiner-section-desc { font-size: 12px; color: var(--text-muted); }
+
+/* ONBOARDING */
+.onboard-page { min-height: 100vh; background: linear-gradient(150deg,#0b2d5f 0%,#1e4080 55%,#0f3460 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.onboard-card { background: var(--white); border-radius: 12px; padding: 36px; width: 100%; max-width: 520px; box-shadow: 0 24px 64px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+.onboard-steps { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.onboard-step { width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; color: var(--grey); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.onboard-step.active { background: var(--navy); color: #fff; }
+.onboard-step.done { background: var(--green); color: #fff; }
+.onboard-line { flex: 1; height: 2px; background: #e2e8f0; }
+
+/* ADMIN PANEL */
+.admin-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+.admin-tab { padding: 9px 20px; font-size: 13.5px; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; }
+.admin-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+.sso-config-form { max-width: 520px; }
+.sso-toggle-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.toggle { width: 44px; height: 24px; border-radius: 12px; background: #e2e8f0; cursor: pointer; position: relative; transition: background 0.2s; border: none; flex-shrink: 0; }
+.toggle.on { background: var(--navy); }
+.toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.toggle.on::after { left: 23px; }
 </style>
 </head>
 <body>
@@ -346,10 +395,11 @@ const StatusBadge = ({ status }) => {
 /* ═══════════════════════════════════════════════════
    LOGIN SCREEN
 ═══════════════════════════════════════════════════ */
-function LoginScreen({ onLogin }) {
+function LoginScreen({ onLogin, showOnboarding, setShowOnboarding }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSubmit(e) {
@@ -365,6 +415,23 @@ function LoginScreen({ onLogin }) {
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally { setLoading(false); }
+  }
+
+  async function handleSsoInit() {
+    if (!email) { setError('Enter your email address to use SSO sign-in.'); return; }
+    setSsoLoading(true); setError('');
+    try {
+      const r = await fetch('/api/auth/sso-init', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      }).then(r => r.json());
+      if (r.sso_available && r.sso_url) {
+        window.location.href = r.sso_url;
+      } else {
+        setError('SSO is not configured for your institution. Sign in with your password.');
+      }
+    } catch(e) { setError('SSO check failed. Please try again.'); }
+    finally { setSsoLoading(false); }
   }
 
   return (
@@ -390,7 +457,22 @@ function LoginScreen({ onLogin }) {
             {loading ? <><Spinner /> Signing in…</> : 'Sign In'}
           </button>
         </form>
-        <div className="login-footer">Secured · Canadian-hosted · PIPEDA compliant</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0' }}>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        </div>
+        <button className="btn btn-outline" style={{ width: '100%', padding: '10px', fontSize: 14 }} onClick={handleSsoInit} disabled={ssoLoading}>
+          {ssoLoading ? <><Spinner dark /> Checking SSO…</> : '🔐 Sign in with SSO (SAML / Azure AD)'}
+        </button>
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13 }}>
+          <span style={{ color: 'var(--text-muted)' }}>New institution? </span>
+          <button style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontWeight: 600, fontSize: 13, padding: 0 }}
+            onClick={() => setShowOnboarding(true)}>
+            Create an account →
+          </button>
+        </div>
+        <div className="login-footer">Secured · AWS ca-central-1 · PIPEDA compliant</div>
       </div>
     </div>
   );
@@ -400,13 +482,15 @@ function LoginScreen({ onLogin }) {
    SIDEBAR
 ═══════════════════════════════════════════════════ */
 const NAV_ITEMS = [
-  { key: 'dashboard',   label: 'Dashboard',           icon: '📊' },
-  { key: 'models',      label: 'Model Inventory',      icon: '🗂️' },
-  { key: 'validations', label: 'Validations',          icon: '✅' },
-  { key: 'vendors',     label: 'Vendor Assessments',   icon: '🏢' },
-  { key: 'audit',       label: 'Audit Trail',          icon: '📋' },
-  { key: 'board',       label: 'Board Report',         icon: '📑' },
-  { key: 'import',      label: 'Import CSV',           icon: '📥' },
+  { key: 'dashboard',        label: 'Dashboard',           icon: '📊' },
+  { key: 'models',           label: 'Model Inventory',     icon: '🗂️' },
+  { key: 'validations',      label: 'Validations',         icon: '✅' },
+  { key: 'vendors',          label: 'Vendor Assessments',  icon: '🏢' },
+  { key: 'audit',            label: 'Audit Trail',         icon: '📋' },
+  { key: 'board',            label: 'Board Report',        icon: '📑' },
+  { key: 'examiner_export',  label: 'Examiner Export',     icon: '🏛️' },
+  { key: 'import',           label: 'Import CSV',          icon: '📥' },
+  { key: 'admin',            label: 'Admin Panel',         icon: '⚙️' },
 ];
 
 function Sidebar({ screen, setScreen, user }) {
@@ -525,7 +609,7 @@ function Dashboard({ setScreen, setDetailModelId }) {
                   <tr key={m.id}>
                     <td><strong>{m.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>v{m.version}</span></td>
                     <td>{m.model_owner_name || '—'}</td>
-                    <td><TierBadge tier={m.current_tier} /></td>
+                    <td><TierBadge tier={m.risk_tier} /></td>
                     <td style={{ fontSize: 13 }}>{m.next_validation_due || '—'}</td>
                     <td>
                       <button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(m.id); setScreen('model_detail'); }}>View</button>
@@ -609,7 +693,7 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
                     <td>{m.business_unit || '—'}</td>
                     <td>{m.model_owner_name || '—'}</td>
                     <td style={{ fontSize: 12.5 }}>{(m.methodology_type || '').replace(/_/g, ' ') || '—'}</td>
-                    <td><TierBadge tier={m.current_tier} /></td>
+                    <td><TierBadge tier={m.risk_tier} /></td>
                     <td style={{ fontSize: 13 }}>{m.next_validation_due || '—'}</td>
                     <td>{m.is_third_party ? <span className="badge badge-vendor">Vendor</span> : '—'}</td>
                     <td>
@@ -1305,11 +1389,28 @@ function CreateValModal({ models, onClose, onCreated }) {
 }
 
 function ValDetailModal({ val: initialVal, onClose }) {
-  const [v, setV]           = useState(initialVal);
-  const [actionData, setAD] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [v, setV]                 = useState(initialVal);
+  const [actionData, setAD]       = useState({});
+  const [saving, setSaving]       = useState(false);
+  const [aiAnalysis, setAiAnalysis]   = useState(v.ai_findings_analysis || null);
+  const [aiApprCheck, setAiApprCheck] = useState(v.ai_approval_check || null);
+  const [aiClosure, setAiClosure]     = useState(v.ai_closure_summary ? { summary: v.ai_closure_summary } : null);
+  const [aiLoading, setAiLoading]     = useState({ analyze: false, check: false, closure: false });
   const toast = useToast();
   const setA = (k, x) => setAD(p => ({ ...p, [k]: x }));
+
+  async function runAI(type) {
+    setAiLoading(p => ({ ...p, [type]: true }));
+    try {
+      const pathMap = { analyze: 'ai-analyze', check: 'ai-approve-check', closure: 'ai-closure-summary' };
+      const r = await apiFetch(`/api/validations/${v.id}/${pathMap[type]}`, { method: 'POST' });
+      if (type === 'analyze') setAiAnalysis(r);
+      else if (type === 'check') setAiApprCheck(r);
+      else setAiClosure(r);
+      toast('AI analysis complete', 'success');
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setAiLoading(p => ({ ...p, [type]: false })); }
+  }
 
   async function doAction(action, extra = {}) {
     setSaving(true);
@@ -1348,16 +1449,124 @@ function ValDetailModal({ val: initialVal, onClose }) {
           <div style={{ fontSize: 13, marginTop: 3 }}>{v.scope}</div>
         </div>
       )}
-      {v.pre_assessment && (
+      {(v.ai_pre_assessment || v.pre_assessment) && (
         <div className="ai-panel" style={{ marginBottom: 14 }}>
           <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Pre-Assessment</div>
-          <div className="ai-insight">{v.pre_assessment}</div>
+          <div className="ai-insight">{v.ai_pre_assessment || v.pre_assessment}</div>
         </div>
       )}
       {v.findings && (
         <div style={{ marginBottom: 14 }}>
           <div className="dl">Findings</div>
           <div style={{ fontSize: 13, marginTop: 3, whiteSpace: 'pre-wrap' }}>{v.findings}</div>
+        </div>
+      )}
+
+      {/* AI: Findings Analysis */}
+      {(v.findings || aiAnalysis) && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--navy)' }}>AI Findings Analyzer</span>
+            <button className="btn btn-ai btn-sm" onClick={() => runAI('analyze')} disabled={aiLoading.analyze}>
+              {aiLoading.analyze ? <><Spinner /> Analyzing…</> : aiAnalysis ? '↻ Re-analyze' : '🔍 Analyze Findings'}
+            </button>
+          </div>
+          {aiAnalysis && (
+            <div className="ai-analysis-panel">
+              <div className="ai-analysis-hdr">
+                <span className="ai-icon">🧠</span>
+                <span className="ai-analysis-hdr-title">OSFI E-23 Findings Analysis</span>
+                <span className={`badge badge-${aiAnalysis.severity === 'critical' || aiAnalysis.severity === 'high' ? 'red' : aiAnalysis.severity === 'medium' ? 'amber' : 'green'}`} style={{ textTransform: 'capitalize' }}>{aiAnalysis.severity}</span>
+              </div>
+              <div className="ai-analysis-body">
+                <div className="ai-meta-row">
+                  <span className="ai-score-chip">Completeness: {aiAnalysis.findings_completeness_score}%</span>
+                  <span className={`badge badge-${aiAnalysis.approval_recommendation === 'approve' ? 'green' : aiAnalysis.approval_recommendation === 'reject' ? 'red' : 'amber'}`}>{(aiAnalysis.approval_recommendation || '').replace(/_/g, ' ')}</span>
+                  {aiAnalysis.remediation_timeline && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Remediation: {aiAnalysis.remediation_timeline}</span>}
+                </div>
+                {aiAnalysis.approval_rationale && <div style={{ fontSize: 13, color: '#1e3a8a', marginBottom: 10, lineHeight: 1.6 }}>{aiAnalysis.approval_rationale}</div>}
+                {aiAnalysis.osfi_sections_implicated?.length > 0 && (
+                  <div className="ai-section">
+                    <div className="ai-section-label">OSFI Sections Implicated</div>
+                    <ul className="ai-item-list">{aiAnalysis.osfi_sections_implicated.map((s, i) => <li key={i}>{s}</li>)}</ul>
+                  </div>
+                )}
+                {aiAnalysis.gaps_in_findings?.length > 0 && (
+                  <div className="ai-section">
+                    <div className="ai-section-label">Gaps in Findings</div>
+                    <ul className="ai-item-list">{aiAnalysis.gaps_in_findings.map((g, i) => <li key={i}>{g}</li>)}</ul>
+                  </div>
+                )}
+                {aiAnalysis.recommended_conditions?.length > 0 && (
+                  <div className="ai-section">
+                    <div className="ai-section-label">Recommended Conditions</div>
+                    <ul className="ai-item-list">{aiAnalysis.recommended_conditions.map((c, i) => <li key={i}>{c}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI: Approval Readiness Check */}
+      {(v.status === 'findings_submitted' || aiApprCheck) && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--navy)' }}>AI Approval Check</span>
+            <button className="btn btn-ai btn-sm" onClick={() => runAI('check')} disabled={aiLoading.check}>
+              {aiLoading.check ? <><Spinner /> Checking…</> : aiApprCheck ? '↻ Re-check' : '✅ Check Approval Readiness'}
+            </button>
+          </div>
+          {aiApprCheck && (
+            <div className="ai-analysis-panel">
+              <div className="ai-analysis-hdr">
+                <span className="ai-icon">🧠</span>
+                <span className="ai-analysis-hdr-title">Approval Readiness Check</span>
+                <span className={`badge badge-${aiApprCheck.approval_ready ? 'green' : 'red'}`}>{aiApprCheck.approval_ready ? 'Ready to Approve' : 'Not Ready'}</span>
+                <span className="ai-score-chip" style={{ marginLeft: 6 }}>Completeness: {aiApprCheck.completeness_score}%</span>
+              </div>
+              <div className="ai-analysis-body">
+                {aiApprCheck.recommendation && <div style={{ fontSize: 13, color: '#1e3a8a', marginBottom: 10, lineHeight: 1.6 }}>{aiApprCheck.recommendation}</div>}
+                {aiApprCheck.osfi_e23_requirements_met?.length > 0 && (
+                  <div className="ai-section">
+                    <div className="ai-section-label" style={{ color: 'var(--green)' }}>Requirements Met</div>
+                    <ul className="ai-item-list">{aiApprCheck.osfi_e23_requirements_met.map((r, i) => <li key={i} style={{ color: 'var(--green)' }}>{r}</li>)}</ul>
+                  </div>
+                )}
+                {aiApprCheck.osfi_e23_requirements_missing?.length > 0 && (
+                  <div className="ai-section">
+                    <div className="ai-section-label" style={{ color: 'var(--red)' }}>Requirements Missing</div>
+                    <ul className="ai-item-list">{aiApprCheck.osfi_e23_requirements_missing.map((r, i) => <li key={i} style={{ color: 'var(--red)' }}>{r}</li>)}</ul>
+                  </div>
+                )}
+                {aiApprCheck.missing_documentation?.length > 0 && (
+                  <div className="ai-section">
+                    <div className="ai-section-label">Missing Documentation</div>
+                    <ul className="ai-item-list">{aiApprCheck.missing_documentation.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* AI: Closure Summary */}
+      {(v.status === 'approved' || v.status === 'closed' || aiClosure) && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--navy)' }}>AI Audit Closure Summary</span>
+            <button className="btn btn-ai btn-sm" onClick={() => runAI('closure')} disabled={aiLoading.closure}>
+              {aiLoading.closure ? <><Spinner /> Generating…</> : aiClosure ? '↻ Regenerate' : '📝 Generate Closure Narrative'}
+            </button>
+          </div>
+          {aiClosure && (
+            <div className="ai-panel">
+              <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>Audit Closure Narrative (OSFI E-23 §4.4)</div>
+              <div className="ai-insight">{aiClosure.summary || aiClosure}</div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1431,13 +1640,13 @@ function ValDetailModal({ val: initialVal, onClose }) {
    VENDOR ASSESSMENTS
 ═══════════════════════════════════════════════════ */
 const VENDOR_CHECKS = [
-  { key: 'sla_documented',        label: 'SLA is formally documented' },
-  { key: 'data_access_documented',label: 'Data access and usage rights are documented' },
-  { key: 'audit_rights',          label: 'Contractual audit rights over the vendor exist' },
-  { key: 'exit_plan',             label: 'Exit / transition plan is documented' },
-  { key: 'concentration_risk',    label: 'Concentration risk has been assessed' },
-  { key: 'model_documentation',   label: 'Model documentation (methodology, assumptions) received from vendor' },
-  { key: 'override_capability',   label: 'Override capability exists (we can override model outputs)' },
+  { key: 'q_sla_documented',     label: 'SLA is formally documented' },
+  { key: 'q_data_access',        label: 'Data access and usage rights are documented' },
+  { key: 'q_audit_rights',       label: 'Contractual audit rights over the vendor exist' },
+  { key: 'q_exit_plan',          label: 'Exit / transition plan is documented' },
+  { key: 'q_concentration_risk', label: 'Concentration risk has been assessed' },
+  { key: 'q_model_doc_received', label: 'Model documentation (methodology, assumptions) received from vendor' },
+  { key: 'q_override_capability',label: 'Override capability exists (we can override model outputs)' },
 ];
 
 function VendorAssessments() {
@@ -1559,22 +1768,45 @@ function CreateVendorModal({ models, onClose, onCreated }) {
   );
 }
 
-function VendorDetailModal({ a, onClose }) {
+function VendorDetailModal({ a: initialA, onClose }) {
+  const [a, setA] = useState(initialA);
+  const [deepdive, setDeepdive] = useState(a.ai_deepdive || null);
+  const [ddLoading, setDdLoading] = useState(false);
+  const toast = useToast();
+
+  async function runDeepdive() {
+    setDdLoading(true);
+    try {
+      const r = await apiFetch(`/api/vendor-assessments/${a.id}/ai-deepdive`, { method: 'POST' });
+      setDeepdive(r);
+      toast('AI deep dive complete', 'success');
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setDdLoading(false); }
+  }
+
+  const trendColor = { improving: 'var(--green)', deteriorating: 'var(--red)', stable: 'var(--amber)', first_assessment: 'var(--grey)' };
+
   return (
     <Modal title="Vendor Assessment Detail" onClose={onClose} footer={<button className="btn btn-ghost" onClick={onClose}>Close</button>}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button className="btn btn-ai btn-sm" onClick={runDeepdive} disabled={ddLoading}>
+          {ddLoading ? <><Spinner /> Analysing…</> : deepdive ? '↻ Refresh Deep Dive' : '🔬 AI OSFI §5 Deep Dive'}
+        </button>
+      </div>
       <div className="detail-grid">
         {[
           ['Model',       a.model_name],
           ['Vendor',      a.vendor_name],
-          ['Assessed By', a.assessed_by],
+          ['Assessed By', a.assessed_by_email || a.assessed_by],
           ['Next Review', a.next_review_due || '—'],
         ].map(([l, v]) => (
           <div key={l} className="detail-item"><div className="dl">{l}</div><div className="dv">{v}</div></div>
         ))}
         <div className="detail-item"><div className="dl">Risk Level</div><div className="dv"><StatusBadge status={a.risk_level} /></div></div>
+        <div className="detail-item"><div className="dl">Score</div><div className="dv">{a.risk_score}/12</div></div>
       </div>
       <div style={{ marginBottom: 14 }}>
-        <div className="dl" style={{ marginBottom: 8 }}>Due Diligence Checklist</div>
+        <div className="dl" style={{ marginBottom: 8 }}>OSFI §5 Due Diligence Checklist</div>
         <div className="vendor-cb-list">
           {VENDOR_CHECKS.map(c => (
             <div key={c.key} className="vendor-cb">
@@ -1591,9 +1823,58 @@ function VendorDetailModal({ a, onClose }) {
         </div>
       )}
       {a.ai_assessment && (
-        <div className="ai-panel">
-          <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Risk Assessment</div>
+        <div className="ai-panel" style={{ marginBottom: 14 }}>
+          <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Risk Assessment (Initial)</div>
           <div className="ai-insight">{a.ai_assessment}</div>
+        </div>
+      )}
+      {deepdive && (
+        <div className="ai-analysis-panel">
+          <div className="ai-analysis-hdr">
+            <span className="ai-icon">🔬</span>
+            <span className="ai-analysis-hdr-title">OSFI §5 Deep Dive Analysis</span>
+            <span className="ai-score-chip">§5 Score: {deepdive.osfi_section5_compliance_score}%</span>
+          </div>
+          <div className="ai-analysis-body">
+            <div className="ai-meta-row">
+              {deepdive.trend && <span style={{ fontSize: 12, fontWeight: 700, color: trendColor[deepdive.trend] || 'var(--grey)' }}>Trend: {deepdive.trend.replace(/_/g, ' ')}</span>}
+              {deepdive.next_assessment_priority && <span className={`badge badge-${deepdive.next_assessment_priority === 'high' ? 'red' : deepdive.next_assessment_priority === 'medium' ? 'amber' : 'green'}`}>Re-assess Priority: {deepdive.next_assessment_priority}</span>}
+              {deepdive.regulatory_disclosure_required && <span className="badge badge-red">Regulatory Disclosure Required</span>}
+            </div>
+            {deepdive.concentration_risk_narrative && (
+              <div className="ai-section">
+                <div className="ai-section-label">Concentration Risk</div>
+                <div style={{ fontSize: 13, color: '#1e3a8a', lineHeight: 1.6 }}>{deepdive.concentration_risk_narrative}</div>
+              </div>
+            )}
+            {deepdive.critical_gaps?.length > 0 && (
+              <div className="ai-section">
+                <div className="ai-section-label" style={{ color: 'var(--red)' }}>Critical Gaps</div>
+                <ul className="ai-item-list">{deepdive.critical_gaps.map((g, i) => <li key={i} style={{ color: 'var(--red)' }}>{g}</li>)}</ul>
+              </div>
+            )}
+            {deepdive.remediation_plan?.length > 0 && (
+              <div className="ai-section">
+                <div className="ai-section-label">Remediation Plan</div>
+                {deepdive.remediation_plan.map((item, i) => (
+                  <div key={i} className="remediation-item">
+                    <div className="remediation-action">{item.action}</div>
+                    <div className="remediation-meta">
+                      <span>Owner: <strong>{item.owner}</strong></span>
+                      <span>Timeline: <strong>{item.timeline}</strong></span>
+                      {item.osfi_ref && <span>Reference: <strong>{item.osfi_ref}</strong></span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {deepdive.regulatory_disclosure_rationale && (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, fontStyle: 'italic' }}>{deepdive.regulatory_disclosure_rationale}</div>
+            )}
+            {deepdive.next_assessment_rationale && (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Next assessment: {deepdive.next_assessment_rationale}</div>
+            )}
+          </div>
         </div>
       )}
     </Modal>
@@ -1713,7 +1994,7 @@ function CsvImport() {
       const fd = new FormData();
       fd.append('file', file);
       const token = getToken();
-      const res = await fetch('/api/models/import-csv', {
+      const res = await fetch('/api/models/import', {
         method: 'POST',
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: fd,
@@ -1774,26 +2055,447 @@ function CsvImport() {
 }
 
 /* ═══════════════════════════════════════════════════
+   ONBOARDING SCREEN (pre-login)
+═══════════════════════════════════════════════════ */
+function OnboardingScreen({ onBack }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    institution_name: '', institution_type: '', asset_size_tier: '',
+    contact_name: '', contact_email: '', password: '', confirm_password: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (form.password !== form.confirm_password) { setError('Passwords do not match.'); return; }
+    setSaving(true); setError('');
+    try {
+      await fetch('/api/onboarding/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      }).then(async r => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Registration failed');
+        return d;
+      });
+      setDone(true);
+    } catch(e) { setError(e.message); }
+    finally { setSaving(false); }
+  }
+
+  if (done) return (
+    <div className="onboard-page">
+      <div className="onboard-card" style={{ textAlign: 'center', padding: '48px 36px' }}>
+        <div style={{ fontSize: 52, marginBottom: 16 }}>🎉</div>
+        <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8, color: 'var(--navy)' }}>Account Created!</div>
+        <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 28, lineHeight: 1.7 }}>
+          Your ClearMRM account for <strong>{form.institution_name}</strong> is ready. We've seeded 3 demo models so you can explore immediately.
+        </div>
+        <div className="alert alert-success" style={{ textAlign: 'left', marginBottom: 20 }}>✓ Tenant provisioned · 3 demo models seeded · Sign in now to start your OSFI E-23 inventory</div>
+        <button className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: 15 }} onClick={onBack}>
+          Sign In to ClearMRM →
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="onboard-page">
+      <div className="onboard-card">
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div className="brand" style={{ fontSize: 24, marginBottom: 6 }}>Clear<span style={{ color: '#f97316' }}>MRM</span></div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>OSFI E-23 Model Risk Management — Institution Registration</div>
+        </div>
+        <div className="onboard-steps">
+          {[1, 2].map((s, i) => (
+            <React.Fragment key={s}>
+              {i > 0 && <div className="onboard-line" />}
+              <div className={`onboard-step ${step > s ? 'done' : step === s ? 'active' : ''}`}>{step > s ? '✓' : s}</div>
+            </React.Fragment>
+          ))}
+        </div>
+        {error && <div className="alert alert-danger" style={{ marginBottom: 14 }}>{error}</div>}
+        <form onSubmit={handleSubmit}>
+          {step === 1 && (
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16, color: 'var(--navy)' }}>Institution Details</div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Institution Name *</label>
+                <input className="form-control" value={form.institution_name} onChange={e => set('institution_name', e.target.value)} placeholder="e.g. ATB Financial" required />
+              </div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Institution Type *</label>
+                <select className="form-control" value={form.institution_type} onChange={e => set('institution_type', e.target.value)} required>
+                  <option value="">Select type…</option>
+                  <option value="bank">Bank (Schedule I/II/III)</option>
+                  <option value="trust">Trust Company</option>
+                  <option value="insurance">Federal Insurance Company</option>
+                  <option value="credit_union">Credit Union / Caisse Populaire</option>
+                  <option value="other">Other FRFI</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 20 }}>
+                <label className="form-label">Asset Size Tier</label>
+                <select className="form-control" value={form.asset_size_tier} onChange={e => set('asset_size_tier', e.target.value)}>
+                  <option value="">Select size…</option>
+                  <option value="community">Community (Under $1B assets)</option>
+                  <option value="regional">Regional ($1B–$20B assets)</option>
+                  <option value="national">National ($20B–$100B assets)</option>
+                  <option value="enterprise">Enterprise (Over $100B assets)</option>
+                </select>
+              </div>
+              <button type="button" className="btn btn-primary" style={{ width: '100%', padding: '11px' }} disabled={!form.institution_name || !form.institution_type} onClick={() => setStep(2)}>
+                Next →
+              </button>
+            </div>
+          )}
+          {step === 2 && (
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16, color: 'var(--navy)' }}>Primary Contact & Credentials</div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Contact Name *</label>
+                <input className="form-control" value={form.contact_name} onChange={e => set('contact_name', e.target.value)} placeholder="Chief Risk Officer" required />
+              </div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Email Address *</label>
+                <input className="form-control" type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} placeholder="cro@institution.ca" required />
+              </div>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label className="form-label">Password *</label>
+                <input className="form-control" type="password" value={form.password} onChange={e => set('password', e.target.value)} placeholder="Min 8 chars, uppercase, number, special char" required />
+              </div>
+              <div className="form-group" style={{ marginBottom: 20 }}>
+                <label className="form-label">Confirm Password *</label>
+                <input className="form-control" type="password" value={form.confirm_password} onChange={e => set('confirm_password', e.target.value)} placeholder="••••••••" required />
+              </div>
+              <div className="alert alert-info" style={{ marginBottom: 14, fontSize: 12.5 }}>
+                Your account will be provisioned with 3 demo models and your institution's OSFI E-23 inventory workspace.
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" className="btn btn-ghost" onClick={() => { setStep(1); setError(''); }}>← Back</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '11px' }} disabled={saving}>
+                  {saving ? <><Spinner /> Creating Account…</> : 'Create Account'}
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
+        <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12.5, color: 'var(--text-muted)' }}>
+          Already have an account? <button style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontWeight: 600, fontSize: 12.5, padding: 0 }} onClick={onBack}>Sign in</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   EXAMINER EXPORT SCREEN
+═══════════════════════════════════════════════════ */
+function ExaminerExport() {
+  const [loading, setLoading] = useState(false);
+  const [generated, setGenerated] = useState(false);
+  const toast = useToast();
+
+  async function generate() {
+    setLoading(true);
+    try {
+      const result = await apiFetch('/api/reports/examiner-export', { method: 'POST' });
+      if (result instanceof Blob) {
+        const url = URL.createObjectURL(result);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ClearMRM-OSFI-Examiner-Export-${new Date().toISOString().slice(0, 10)}.pdf`;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+        setGenerated(true);
+        toast('OSFI Examiner Export downloaded', 'success');
+      }
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  }
+
+  const sections = [
+    { num: 1, title: 'Complete Model Inventory', desc: 'All active models with tier, owner, validation status, and OSFI E-23 §3 classification.' },
+    { num: 2, title: 'Tier 1 High-Risk Model Detail', desc: 'Per-model risk justification with AI reasoning and overdue validation flags per §4.2.' },
+    { num: 3, title: 'Validation Evidence', desc: 'Full validation history including findings, outcomes, and conditions per §4.3.' },
+    { num: 4, title: 'Third-Party Vendor Governance', desc: 'OSFI §5 compliance checklist and AI risk assessment for each vendor model.' },
+    { num: 5, title: 'Management Attestation', desc: 'Formal signatory page with OSFI E-23 compliance declarations.' },
+  ];
+
+  return (
+    <div>
+      <div className="examiner-banner">
+        <div>
+          <div className="examiner-banner-title">🏛️ OSFI Examiner Export</div>
+          <div className="examiner-banner-sub">
+            A purpose-built Supervisory Review Package in the format OSFI examiners expect. Includes a 6-page structured PDF with AI-generated compliance narrative, complete model inventory, validation evidence, and vendor governance assessment — ready to submit in response to an OSFI examination request.
+          </div>
+        </div>
+        <button className="btn btn-primary" style={{ fontSize: 15, padding: '13px 26px', whiteSpace: 'nowrap', flexShrink: 0 }} onClick={generate} disabled={loading}>
+          {loading ? <><Spinner /> Generating PDF…</> : generated ? '↻ Regenerate Export' : '📤 Generate Examiner Export'}
+        </button>
+      </div>
+      {generated && (
+        <div className="alert alert-success" style={{ marginBottom: 18 }}>
+          ✓ OSFI Examiner Export generated and downloaded. This export has been logged in the audit trail per OSFI E-23 §4.4.
+        </div>
+      )}
+      <div style={{ marginBottom: 14, fontWeight: 700, color: 'var(--navy)' }}>What's included in the export:</div>
+      <div className="examiner-sections">
+        {sections.map(s => (
+          <div key={s.num} className="examiner-section-card">
+            <div className="examiner-section-num">{s.num}</div>
+            <div className="examiner-section-info">
+              <div className="examiner-section-title">{s.title}</div>
+              <div className="examiner-section-desc">{s.desc}</div>
+            </div>
+          </div>
+        ))}
+        <div className="examiner-section-card" style={{ background: 'linear-gradient(135deg,#eff6ff,#f5f3ff)', border: '1px solid #bfdbfe' }}>
+          <div className="examiner-section-num" style={{ background: 'linear-gradient(135deg,#1d4ed8,#7c3aed)' }}>AI</div>
+          <div className="examiner-section-info">
+            <div className="examiner-section-title">AI Compliance Narrative</div>
+            <div className="examiner-section-desc">Claude Sonnet generates a 4-sentence examination narrative covering posture, governance, validation effectiveness, and key findings.</div>
+          </div>
+        </div>
+      </div>
+      <div className="card" style={{ maxWidth: 560 }}>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>Important Notes</div>
+        <ul style={{ paddingLeft: 18, fontSize: 13.5, lineHeight: 2, color: 'var(--text-muted)' }}>
+          <li>Export is generated from live data — always generate immediately before submission</li>
+          <li>The AI compliance narrative is explicitly labelled AI-generated in the document</li>
+          <li>Each generation is logged as an immutable audit event per OSFI E-23 §4.4</li>
+          <li>Data never leaves AWS ca-central-1 (PIPEDA / Canadian data residency)</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   ADMIN PANEL SCREEN
+═══════════════════════════════════════════════════ */
+function AdminPanel({ user }) {
+  const [activeTab, setActiveTab] = useState('users');
+  const [tenants, setTenants] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [ssoForm, setSsoForm] = useState({ sso_enabled: false, sso_provider_name: '', sso_metadata_url: '' });
+  const [ssoSaving, setSsoSaving] = useState(false);
+  const [addUserForm, setAddUserForm] = useState({ email: '', full_name: '', role: 'analyst', temp_password: '' });
+  const [addUserSaving, setAddUserSaving] = useState(false);
+  const toast = useToast();
+
+  const tenantId = user?.tenant_id || '';
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [t, u] = await Promise.all([
+        apiFetch('/api/admin/tenants'),
+        apiFetch(`/api/admin/tenants/${tenantId}/users`),
+      ]);
+      setTenants(t || []);
+      setUsers(u || []);
+      const myTenant = (t || []).find(x => x.id === tenantId);
+      if (myTenant) setSsoForm({ sso_enabled: myTenant.sso_enabled || false, sso_provider_name: myTenant.sso_provider_name || '', sso_metadata_url: myTenant.sso_metadata_url || '' });
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { loadData(); }, []);
+
+  async function handleAddUser(e) {
+    e.preventDefault(); setAddUserSaving(true);
+    try {
+      await apiFetch(`/api/admin/tenants/${tenantId}/users`, { method: 'POST', body: JSON.stringify(addUserForm) });
+      toast('User provisioned successfully', 'success');
+      setShowAddUser(false);
+      setAddUserForm({ email: '', full_name: '', role: 'analyst', temp_password: '' });
+      loadData();
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setAddUserSaving(false); }
+  }
+
+  async function saveSSO(e) {
+    e.preventDefault(); setSsoSaving(true);
+    try {
+      await apiFetch(`/api/admin/tenants/${tenantId}/sso`, { method: 'PUT', body: JSON.stringify(ssoForm) });
+      toast('SSO configuration saved', 'success');
+      loadData();
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setSsoSaving(false); }
+  }
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+
+  return (
+    <div>
+      <div className="admin-tabs">
+        {[['users', 'User Management'], ['sso', 'SSO Configuration'], ['tenants', 'All Tenants']].map(([k, l]) => (
+          <button key={k} className={`admin-tab${activeTab === k ? ' active' : ''}`} onClick={() => setActiveTab(k)}>{l}</button>
+        ))}
+      </div>
+
+      {activeTab === 'users' && (
+        <div>
+          <div className="section-hdr">
+            <div className="section-title">Users in This Tenant</div>
+            <button className="btn btn-primary" onClick={() => setShowAddUser(true)}>+ Provision User</button>
+          </div>
+          <div className="card" style={{ marginBottom: 18 }}>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Added</th></tr></thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id}>
+                      <td>{u.email}</td>
+                      <td>{u.full_name || '—'}</td>
+                      <td><span className="badge badge-blue">{u.role}</span></td>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{new Date(u.created_at).toLocaleDateString('en-CA')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {showAddUser && (
+            <div className="card" style={{ maxWidth: 500 }}>
+              <div style={{ fontWeight: 700, marginBottom: 14, fontSize: 15 }}>Provision New User</div>
+              <form onSubmit={handleAddUser}>
+                <div className="form-grid">
+                  <div className="form-group"><label className="form-label">Email *</label><input className="form-control" type="email" value={addUserForm.email} onChange={e => setAddUserForm(p => ({ ...p, email: e.target.value }))} required /></div>
+                  <div className="form-group"><label className="form-label">Full Name</label><input className="form-control" value={addUserForm.full_name} onChange={e => setAddUserForm(p => ({ ...p, full_name: e.target.value }))} /></div>
+                  <div className="form-group"><label className="form-label">Role</label>
+                    <select className="form-control" value={addUserForm.role} onChange={e => setAddUserForm(p => ({ ...p, role: e.target.value }))}>
+                      <option value="analyst">Analyst</option>
+                      <option value="validator">Validator</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div className="form-group"><label className="form-label">Temporary Password *</label><input className="form-control" type="password" value={addUserForm.temp_password} onChange={e => setAddUserForm(p => ({ ...p, temp_password: e.target.value }))} placeholder="Min 8 chars, uppercase, number, special" required /></div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                  <button type="button" className="btn btn-ghost" onClick={() => setShowAddUser(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={addUserSaving}>
+                    {addUserSaving ? <><Spinner /> Provisioning…</> : 'Provision User'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'sso' && (
+        <div>
+          <div className="section-title" style={{ marginBottom: 16 }}>SSO Configuration (SAML 2.0 / Azure AD)</div>
+          <div className="card sso-config-form">
+            <div className="alert alert-info" style={{ marginBottom: 18, fontSize: 13 }}>
+              SSO allows your users to authenticate via your institution's identity provider (Azure AD, Okta, PingFederate). After saving, your IdP administrator must register ClearMRM as a SAML service provider.
+            </div>
+            <form onSubmit={saveSSO}>
+              <div className="sso-toggle-row">
+                <button type="button" className={`toggle${ssoForm.sso_enabled ? ' on' : ''}`} onClick={() => setSsoForm(p => ({ ...p, sso_enabled: !p.sso_enabled }))} />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Enable SSO for this tenant</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Users from your domain will see a "Sign in with SSO" option</div>
+                </div>
+              </div>
+              {ssoForm.sso_enabled && (
+                <>
+                  <div className="form-group" style={{ marginBottom: 14 }}>
+                    <label className="form-label">Identity Provider Name *</label>
+                    <input className="form-control" value={ssoForm.sso_provider_name} onChange={e => setSsoForm(p => ({ ...p, sso_provider_name: e.target.value }))} placeholder="e.g. AzureAD-YourInstitution" required={ssoForm.sso_enabled} />
+                    <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>Alphanumeric + hyphens only. Must match the provider name registered in AWS Cognito.</div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 18 }}>
+                    <label className="form-label">SAML Metadata URL *</label>
+                    <input className="form-control" value={ssoForm.sso_metadata_url} onChange={e => setSsoForm(p => ({ ...p, sso_metadata_url: e.target.value }))} placeholder="https://login.microsoftonline.com/{tenant}/federationmetadata/2007-06/federationmetadata.xml" required={ssoForm.sso_enabled} />
+                    <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>Azure AD: Settings → Single Sign-On → Metadata URL. Okta: Identity Provider metadata URL.</div>
+                  </div>
+                  <div className="card" style={{ background: 'var(--bg)', marginBottom: 18 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 13 }}>Configure your IdP with these ClearMRM SAML values:</div>
+                    <div style={{ fontSize: 12.5, lineHeight: 2.2, fontFamily: 'monospace', color: 'var(--text)' }}>
+                      <div><strong>Entity ID (Audience URI):</strong> urn:amazon:cognito:sp:ca-central-1_72aIikL9T</div>
+                      <div><strong>ACS URL (Reply URL):</strong> https://clearmrm.auth.ca-central-1.amazoncognito.com/saml2/idpresponse</div>
+                      <div><strong>Attribute Mapping (email):</strong> http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress</div>
+                    </div>
+                  </div>
+                </>
+              )}
+              <button type="submit" className="btn btn-primary" disabled={ssoSaving}>
+                {ssoSaving ? <><Spinner /> Saving…</> : 'Save SSO Configuration'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'tenants' && (
+        <div>
+          <div className="section-title" style={{ marginBottom: 16 }}>All Tenants ({tenants.length})</div>
+          <div className="card">
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Institution</th><th>Type</th><th>Domain</th><th>Users</th><th>Models</th><th>SSO</th><th>Status</th></tr></thead>
+                <tbody>
+                  {tenants.map(t => (
+                    <tr key={t.id}>
+                      <td><strong>{t.name}</strong></td>
+                      <td style={{ fontSize: 12 }}>{(t.institution_type || '—').replace(/_/g, ' ')}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.domain || '—'}</td>
+                      <td>{t.user_count || 0}</td>
+                      <td>{t.model_count || 0}</td>
+                      <td>{t.sso_enabled ? <span className="badge badge-green">SSO</span> : '—'}</td>
+                      <td><span className={`badge badge-${t.status === 'active' ? 'green' : 'grey'}`}>{t.status || 'active'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════════════ */
 const SCREEN_TITLES = {
-  dashboard:    'Dashboard',
-  models:       'Model Inventory',
-  model_form:   'Model Form',
-  model_detail: 'Model Detail',
-  rate_wizard:  'Risk Rating Wizard',
-  validations:  'Validations',
-  vendors:      'Vendor Assessments',
-  audit:        'Audit Trail',
-  board:        'Board Report',
-  import:       'Import CSV',
+  dashboard:       'Dashboard',
+  models:          'Model Inventory',
+  model_form:      'Model Form',
+  model_detail:    'Model Detail',
+  rate_wizard:     'Risk Rating Wizard',
+  validations:     'Validations',
+  vendors:         'Vendor Assessments',
+  audit:           'Audit Trail',
+  board:           'Board Report',
+  examiner_export: 'OSFI Examiner Export',
+  import:          'Import CSV',
+  admin:           'Admin Panel',
 };
 
-function AppShell({ user }) {
-  const [screen, setScreen]             = useState('dashboard');
+function AppShell({ user: userProp }) {
+  const [user, setUser]                   = useState(userProp);
+  const [screen, setScreen]               = useState('dashboard');
   const [detailModelId, setDetailModelId] = useState(null);
-  const [editModelId, setEditModelId]   = useState(null);
-  const [rateModelId, setRateModelId]   = useState(null);
+  const [editModelId, setEditModelId]     = useState(null);
+  const [rateModelId, setRateModelId]     = useState(null);
+
+  // Fetch full user profile (needed for tenant_id in AdminPanel)
+  useEffect(() => {
+    apiFetch('/api/me').then(d => {
+      if (d && d.user) setUser(prev => ({ ...prev, ...d.user, tenant_name: (d.tenant && d.tenant.name) || prev.tenant_name }));
+    }).catch(() => {});
+  }, []);
 
   function renderScreen() {
     switch (screen) {
@@ -1802,12 +2504,14 @@ function AppShell({ user }) {
       case 'model_form':   return <ModelForm modelId={editModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
       case 'model_detail': return <ModelDetail modelId={detailModelId} setScreen={setScreen} setEditModelId={setEditModelId} setRateModelId={setRateModelId} />;
       case 'rate_wizard':  return <RatingWizard modelId={rateModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
-      case 'validations':  return <Validations />;
-      case 'vendors':      return <VendorAssessments />;
-      case 'audit':        return <AuditTrail />;
-      case 'board':        return <BoardReport />;
-      case 'import':       return <CsvImport />;
-      default:             return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+      case 'validations':     return <Validations />;
+      case 'vendors':         return <VendorAssessments />;
+      case 'audit':           return <AuditTrail />;
+      case 'board':           return <BoardReport />;
+      case 'examiner_export': return <ExaminerExport />;
+      case 'import':          return <CsvImport />;
+      case 'admin':           return <AdminPanel user={user} />;
+      default:                return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;
     }
   }
 
@@ -1836,20 +2540,47 @@ function parseJwtPayload(token) {
 
 function App() {
   const [user, setUser] = useState(() => {
+    // Handle SSO callback: token or error in URL hash
+    const hash = window.location.hash;
+    if (hash.includes('sso-token=')) {
+      const token = hash.split('sso-token=')[1];
+      storeToken(token);
+      window.history.replaceState(null, '', window.location.pathname);
+      const p = parseJwtPayload(token);
+      return { email: p.email || p.sub || '', tenant_name: p.tenant_name || p.tenant || 'ClearMRM' };
+    }
+    if (hash.includes('sso-error=')) {
+      const err = decodeURIComponent(hash.split('sso-error=')[1]);
+      window.history.replaceState(null, '', window.location.pathname);
+      // Will show error via toast after mount — store in sessionStorage for display
+      sessionStorage.setItem('sso_error', err);
+    }
     const token = getToken();
     if (!token) return null;
     const p = parseJwtPayload(token);
     return { email: p.email || p.sub || '', tenant_name: p.tenant_name || p.tenant || 'ClearMRM' };
   });
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const ssoErr = sessionStorage.getItem('sso_error');
+    if (ssoErr) {
+      sessionStorage.removeItem('sso_error');
+      // Toast won't be available until rendered — show alert fallback
+      alert('SSO sign-in failed: ' + ssoErr);
+    }
+  }, []);
 
   function handleLogin(data) {
     const p = parseJwtPayload(data.token);
     setUser({ email: p.email || p.sub || '', tenant_name: p.tenant_name || p.tenant || 'ClearMRM' });
   }
 
+  if (showOnboarding) return <ToastProvider><OnboardingScreen onBack={() => setShowOnboarding(false)} /></ToastProvider>;
+
   return (
     <ToastProvider>
-      {user ? <AppShell user={user} /> : <LoginScreen onLogin={handleLogin} />}
+      {user ? <AppShell user={user} /> : <LoginScreen onLogin={handleLogin} showOnboarding={showOnboarding} setShowOnboarding={setShowOnboarding} />}
     </ToastProvider>
   );
 }
