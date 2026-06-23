@@ -7,8 +7,38 @@ const AWS       = require('aws-sdk');
 const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const rateLimit = require('express-rate-limit');
 const path      = require('path');
+const crypto    = require('crypto');
 
 process.on('uncaughtException', (err) => console.error('[CRITICAL]', err.message));
+
+// ── Merkle Hash Chain ─────────────────────────────────────────────────────────
+const GENESIS_HASH = '0x' + '0'.repeat(64);
+
+function sha256hex(data) {
+  return crypto.createHash('sha256').update(String(data), 'utf8').digest('hex');
+}
+
+function computeEventHash(prevHash, ev) {
+  const leaf = JSON.stringify({
+    t: ev.tenant_id, m: ev.model_id || null,
+    a: ev.actor_email, e: ev.event_type,
+    ts: ev.ts, seq: ev.chain_seq,
+  });
+  return '0x' + sha256hex((prevHash || GENESIS_HASH) + leaf);
+}
+
+function computeMerkleRoot(hashes) {
+  if (!hashes.length) return GENESIS_HASH;
+  let layer = hashes.map(h => h.replace(/^0x/, ''));
+  while (layer.length > 1) {
+    const next = [];
+    for (let i = 0; i < layer.length; i += 2) {
+      next.push(sha256hex(layer[i] + (layer[i+1] || layer[i])));
+    }
+    layer = next;
+  }
+  return '0x' + layer[0];
+}
 
 // ── DB ────────────────────────────────────────────────────────────────────────
 const pool = new Pool({
@@ -76,6 +106,11 @@ async function requireAuth(req, res, next) {
     const parts = auth.split('.');
     if (parts.length < 2) return res.status(401).json({ error:'Bad token' });
     const claims = JSON.parse(Buffer.from(parts[1],'base64url').toString('utf8'));
+    // Enforce JWT expiry — Cognito IdTokens expire in 1 hour by default
+    const now = Math.floor(Date.now() / 1000);
+    if (claims.exp && claims.exp < now) {
+      return res.status(401).json({ error:'Session expired. Please sign in again.', code:'SESSION_EXPIRED' });
+    }
     const email  = claims.email || claims['cognito:username'] || '';
     if (!email) return res.status(401).json({ error:'No email in token' });
     const r = await pool.query('SELECT id,tenant_id,email,full_name,role FROM users WHERE email=$1',[email]);
@@ -85,14 +120,27 @@ async function requireAuth(req, res, next) {
   } catch(e) { console.error('[auth]',e.message); res.status(401).json({ error:'Authentication failed' }); }
 }
 
-// ── Audit ─────────────────────────────────────────────────────────────────────
+// ── Audit (with Merkle hash chain) ───────────────────────────────────────────
 async function audit(tenantId, modelId, actorEmail, eventType, meta) {
   if (!meta) meta = {};
   try {
+    // Get previous event's hash and seq to extend the chain
+    const prev = await pool.query(
+      `SELECT event_hash, chain_seq FROM audit_events
+       WHERE tenant_id=$1 AND event_hash IS NOT NULL ORDER BY chain_seq DESC LIMIT 1`,
+      [tenantId]);
+    const prevHash = prev.rows[0]?.event_hash || GENESIS_HASH;
+    const chainSeq = ((prev.rows[0]?.chain_seq) || 0) + 1;
+    const ts = new Date().toISOString();
+    const eventHash = computeEventHash(prevHash, {
+      tenant_id: tenantId, model_id: modelId || null,
+      actor_email: actorEmail, event_type: eventType, ts, chain_seq: chainSeq,
+    });
     await pool.query(
-      'INSERT INTO audit_events(tenant_id,model_id,actor_email,event_type,field_changed,old_value,new_value,metadata,ip_address) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
-      [tenantId,modelId||null,actorEmail,eventType,meta.field||null,meta.old||null,meta.new||null,
-       meta.metadata ? JSON.stringify(meta.metadata) : null, meta.ip||null]
+      `INSERT INTO audit_events(tenant_id,model_id,actor_email,event_type,field_changed,old_value,new_value,metadata,ip_address,event_hash,chain_seq,created_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [tenantId, modelId||null, actorEmail, eventType, meta.field||null, meta.old||null, meta.new||null,
+       meta.metadata ? JSON.stringify(meta.metadata) : null, meta.ip||null, eventHash, chainSeq, ts]
     );
   } catch(e) { console.error('[audit]',e.message); }
 }
@@ -397,12 +445,54 @@ app.get('/api/audit', requireAuth, async function(req, res) {
   try {
     const {model_id}=req.query;
     const limit=parseInt(req.query.limit)||100, offset=parseInt(req.query.offset)||0;
-    let q='SELECT * FROM audit_events WHERE tenant_id=$1';
+    let q=`SELECT ae.*,m.name AS model_name
+           FROM audit_events ae LEFT JOIN models m ON m.id=ae.model_id
+           WHERE ae.tenant_id=$1`;
     const p=[req.user.tenant_id];
-    if (model_id) { q+=' AND model_id=$'+(p.length+1); p.push(model_id); }
-    q+=' ORDER BY created_at DESC LIMIT $'+(p.length+1)+' OFFSET $'+(p.length+2);
+    if (model_id) { q+=' AND ae.model_id=$'+(p.length+1); p.push(model_id); }
+    q+=' ORDER BY ae.created_at DESC LIMIT $'+(p.length+1)+' OFFSET $'+(p.length+2);
     p.push(limit,offset);
     res.json((await pool.query(q,p)).rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ── Audit Integrity Verification (Merkle chain) ───────────────────────────────
+app.get('/api/audit/verify-integrity', requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const events = await pool.query(
+      `SELECT tenant_id,model_id,actor_email,event_type,created_at,event_hash,chain_seq
+       FROM audit_events WHERE tenant_id=$1 AND event_hash IS NOT NULL ORDER BY chain_seq ASC`,
+      [tid]);
+    const rows = events.rows;
+    let valid = true, firstBreach = null, prevHash = GENESIS_HASH;
+    for (const ev of rows) {
+      const expected = computeEventHash(prevHash, {
+        tenant_id: ev.tenant_id, model_id: ev.model_id,
+        actor_email: ev.actor_email, event_type: ev.event_type,
+        ts: ev.created_at instanceof Date ? ev.created_at.toISOString() : ev.created_at,
+        chain_seq: ev.chain_seq,
+      });
+      if (ev.event_hash !== expected) {
+        valid = false;
+        firstBreach = { seq: ev.chain_seq, event_type: ev.event_type, created_at: ev.created_at };
+        break;
+      }
+      prevHash = ev.event_hash;
+    }
+    const merkleRoot = computeMerkleRoot(rows.map(e => e.event_hash));
+    const legacy = await pool.query(
+      'SELECT COUNT(*) c FROM audit_events WHERE tenant_id=$1 AND event_hash IS NULL', [tid]);
+    res.json({
+      valid,
+      total_verified: rows.length,
+      total_legacy: parseInt(legacy.rows[0].c),
+      chain_tip: prevHash,
+      merkle_root: merkleRoot,
+      first_breach: firstBreach || null,
+      genesis_hash: GENESIS_HASH,
+      verified_at: new Date().toISOString(),
+    });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 

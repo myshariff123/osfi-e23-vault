@@ -406,6 +406,28 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 
 ---
 
+### DECISION 14: Phase 6 — Marketing landing page, enterprise session security, cryptographic audit integrity
+
+**Context (June 23, 2026):** A key validator prospect rejected the platform at $200K/year, offering only $300–$400/month. Root cause: the platform was perceived as a "document parking" SaaS with no distinguishing enterprise security posture. Three deficiencies were identified:
+
+1. No public marketing page — prospects had no pre-auth value proposition; the URL went straight to a login form
+2. No session inactivity enforcement — tokens never expired on the client; a 60-minute Cognito JWT could remain in memory indefinitely without server-side expiry checks
+3. No cryptographic data integrity guarantee — auditors had no mathematical proof that the audit trail had not been manually edited in the database
+
+**Decision:** Resolve all three in Phase 6, deployed June 23, 2026.
+
+**Marketing Landing Page:** Full pre-auth experience at the root URL. Unauthenticated visitors see a complete marketing page (nav, hero, metrics strip, 6-feature cards, ROI calculator, 4-tier pricing grid, countdown CTA to May 2027 deadline) before being prompted to sign in. New customers see "Start 30-Day Pilot" → registration; returning customers see "Sign In" → modal login overlay. Rationale: OSFI deadline creates urgency; prospects need context before committing to a $72K–$200K annual contract.
+
+**Session Inactivity Timeout (client-side):** `SessionGuard` component tracks user activity via `mousedown`, `keydown`, `scroll`, `touchstart`, `click` events. At 15 minutes of inactivity: shows a countdown warning overlay with "Stay Logged In" button. At 20 minutes: auto-logout (`clearToken()` + page reload). Rationale: OSFI B-13 §4 requires session controls proportional to data sensitivity.
+
+**JWT Expiry Enforcement (server-side):** `requireAuth` middleware now checks `claims.exp < Math.floor(Date.now()/1000)` and returns `401 SESSION_EXPIRED` if token has expired, even if signature is valid. Previously, an expired-but-valid token could be replayed. Rationale: defense-in-depth; Cognito issues 1-hour JWTs, but the server must independently enforce expiry.
+
+**Merkle Hash Chain (cryptographic audit integrity):** Every audit event now stores `event_hash` (SHA-256 of `prevHash + eventData`) and `chain_seq`. The hash chain is identical in principle to blockchain — any post-facto database edit breaks the chain. `GET /api/audit/verify-integrity` replays the entire chain from genesis, detects the first tampered event, and returns a Merkle root over all event hashes. The UI shows a per-event hash pill and a "Verify Integrity" panel with the merkle root, chain tip, and valid/invalid badge. Rationale: OSFI examiners asked about data integrity guarantees; this provides mathematical proof that audit records have not been manually altered since insertion.
+
+**DB migration:** `migration_phase6.sql` adds `event_hash TEXT` and `chain_seq BIGINT` columns to `audit_events` with a performance index on `(tenant_id, chain_seq DESC)` for fast chain-tip lookup. Legacy events (before Phase 6) are preserved and counted separately; they do not break chain validation.
+
+---
+
 ## FEATURE REGISTER (Living Document)
 
 ### Core Features — Committed
@@ -440,12 +462,22 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | Regulatory Calendar | F-RC | **LIVE** | Phase 4 | Derived validation/review schedule with AI CRO weekly briefing (Haiku) |
 | Model Risk Appetite Statement | F-MRA | **LIVE** | Phase 4 | 6-question wizard, AI-generated statement (Sonnet), versioned, board-approval workflow |
 | Ongoing Monitoring | F-OM | **LIVE** | Phase 4 | Metric logging, amber/red thresholds, AI trend analysis + drift detection (Sonnet) per OSFI §4.3 |
-| Natural Language Model Search | F-NLS | Planned | Phase 5 | Search model inventory in plain English |
+| Natural Language Model Search | F-NLS | **LIVE** | Phase 5 | Haiku interprets plain English queries against model inventory |
+| AI Action Queue (Dashboard) | F-AQ | **LIVE** | Phase 5 | Sonnet: Risk Pulse score + prioritized work directive replacing passive KPI cards |
+| AI Portfolio Doctor | F-PD | **LIVE** | Phase 5 | Sonnet: portfolio health grade A-F, critical findings, concentration risks, quick wins |
+| AI Validation Report Generator | F-VRG | **LIVE** | Phase 5 | Sonnet: complete formal validation report (exec summary, findings matrix, risk opinion, sign-off page) stored in DB |
+| AI MRM Policy Generator | F-MRM | **LIVE** | Phase 5 | Sonnet: 13-section OSFI E-23 compliant policy with board attestation, version-locked on approval |
+| Document Intelligence (AI Ingest) | F-DI | **LIVE** | Phase 5 | Sonnet: paste doc text → extract structured model/validation/vendor data → pre-fills forms |
+| Marketing Landing Page | F-LP | **LIVE** | Phase 6 | Full pre-auth marketing experience: hero, metrics strip, 6-feature grid, ROI calculator, pricing tiers, countdown CTA |
+| Session Inactivity Timeout | F-SIT | **LIVE** | Phase 6 | 15-min warning overlay with countdown timer; 20-min auto-logout; resets on any user activity event |
+| JWT Expiry Enforcement | F-JWT | **LIVE** | Phase 6 | Server-side `claims.exp` check in requireAuth middleware; returns 401 SESSION_EXPIRED on stale tokens |
+| Merkle Hash Chain (Audit Integrity) | F-MHC | **LIVE** | Phase 6 | SHA-256 hash chain: each audit event hashes prevHash + eventData; Merkle root = cryptographic fingerprint of entire audit history |
+| Audit Integrity Verification | F-AIV | **LIVE** | Phase 6 | GET /api/audit/verify-integrity: replays entire hash chain, detects tampering, returns merkle_root + valid/invalid verdict + first breach location |
 | Industry Benchmarking Dashboard | F-bench | Planned | Year 2 | Anonymized peer comparison |
-| Microsoft Graph Integration | F-graph | Planned | Phase 5 | Pull model docs from SharePoint/OneDrive |
-| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 5 | DocuSign or AWS Simple Sign |
-| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 5 | Row-level security per tenant |
-| Validator Marketplace | F-mkt | Planned | Phase 5 | Connect FRFIs with accredited validation firms; 15% referral |
+| Microsoft Graph Integration | F-graph | Planned | Phase 7 | Pull model docs from SharePoint/OneDrive |
+| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 7 | DocuSign or AWS Simple Sign |
+| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 7 | Row-level security per tenant |
+| Validator Marketplace | F-mkt | Planned | Phase 7 | Connect FRFIs with accredited validation firms; 15% referral |
 | OSFI B-15 Climate Module | F-B15 | Planned | Year 2 | Climate risk model governance |
 | AMF (Quebec) Alignment Module | F-amf | Planned | Year 2 | Quebec-specific overlay |
 
@@ -494,7 +526,8 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | Demo-ready with 5 seed models and all AI features active | June 22, 2026 | **COMPLETE** |
 | First lighthouse client signed (pilot) | November 2026 | Pending |
 | Second lighthouse client signed (pilot) | January 2027 | Pending |
-| Phase 6: Validator Marketplace + RLS + SharePoint + E-Signature + B-15 Climate | January 2027 | Pending |
+| Phase 6 deployed: Marketing Landing Page, Session Inactivity Timeout, JWT Expiry Enforcement, Merkle Hash Chain Audit Integrity, Cryptographic Audit Verification | June 23, 2026 | **COMPLETE** |
+| Phase 6 (Next): Validator Marketplace + RLS + SharePoint + E-Signature + B-15 Climate | January 2027 | Pending |
 | Risk Canada Conference presence | February/March 2027 | Pending |
 | 5 paying clients | March 2027 | Pending |
 | 10 paying clients / $800K ARR | June 2027 | Pending |

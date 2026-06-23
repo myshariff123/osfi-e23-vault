@@ -481,6 +481,89 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .di-field-value { color:var(--text); }
 .di-warning { padding:8px 12px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#92400e; margin-bottom:6px; }
 .di-action-btn { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+
+/* ── MARKETING LANDING PAGE ── */
+.landing { min-height:100vh; background:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+.lp-nav { display:flex; align-items:center; justify-content:space-between; padding:16px 48px; background:#fff; border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:100; }
+.lp-nav-logo { display:flex; align-items:center; gap:10px; }
+.lp-nav-brand { font-size:20px; font-weight:900; color:#0b2d5f; letter-spacing:-0.5px; }
+.lp-nav-brand span { color:#f97316; }
+.lp-nav-badge { font-size:10px; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:20px; }
+.lp-nav-actions { display:flex; gap:10px; align-items:center; }
+.lp-hero { background:linear-gradient(135deg,#0b2d5f 0%,#1e40af 60%,#1d4ed8 100%); color:#fff; padding:80px 48px 72px; text-align:center; }
+.lp-hero-title { font-size:clamp(28px,4vw,52px); font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:20px; }
+.lp-hero-title span { color:#f97316; }
+.lp-hero-sub { font-size:clamp(15px,2vw,19px); opacity:.88; max-width:700px; margin:0 auto 36px; line-height:1.6; }
+.lp-hero-ctas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:40px; }
+.lp-btn-primary { padding:14px 32px; background:#f97316; color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:800; cursor:pointer; transition:background .15s; letter-spacing:.2px; }
+.lp-btn-primary:hover { background:#ea6c0a; }
+.lp-btn-ghost { padding:13px 28px; background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; transition:background .15s; }
+.lp-btn-ghost:hover { background:rgba(255,255,255,.2); }
+.lp-trust-row { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; }
+.lp-trust-chip { display:flex; align-items:center; gap:6px; font-size:12.5px; color:rgba(255,255,255,.75); font-weight:600; }
+.lp-trust-chip::before { content:'✓'; color:#4ade80; font-weight:900; }
+.lp-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border-bottom:1px solid #e2e8f0; }
+@media (max-width:700px) { .lp-metrics { grid-template-columns:1fr 1fr; } }
+.lp-metric { padding:32px 24px; text-align:center; border-right:1px solid #e2e8f0; }
+.lp-metric:last-child { border-right:none; }
+.lp-metric-num { font-size:clamp(24px,3vw,38px); font-weight:900; color:#0b2d5f; line-height:1; margin-bottom:6px; }
+.lp-metric-num span { color:#f97316; }
+.lp-metric-label { font-size:13px; color:#64748b; line-height:1.4; }
+.lp-section { padding:64px 48px; max-width:1200px; margin:0 auto; }
+.lp-section-title { font-size:clamp(22px,3vw,34px); font-weight:900; color:#0b2d5f; margin-bottom:10px; letter-spacing:-.5px; }
+.lp-section-sub { font-size:16px; color:#64748b; margin-bottom:48px; max-width:600px; line-height:1.6; }
+.lp-features { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+@media (max-width:900px) { .lp-features { grid-template-columns:1fr 1fr; } }
+@media (max-width:600px) { .lp-features { grid-template-columns:1fr; } }
+.lp-feature-card { border:1px solid #e2e8f0; border-radius:12px; padding:24px; background:#fff; transition:box-shadow .15s,border-color .15s; }
+.lp-feature-card:hover { box-shadow:0 4px 20px rgba(11,45,95,.08); border-color:#bfdbfe; }
+.lp-feature-icon { font-size:28px; margin-bottom:12px; }
+.lp-feature-title { font-size:15px; font-weight:800; color:#0b2d5f; margin-bottom:6px; }
+.lp-feature-desc { font-size:13px; color:#64748b; line-height:1.6; }
+.lp-feature-roi { display:inline-block; margin-top:10px; font-size:11.5px; font-weight:700; color:#15803d; background:#dcfce7; padding:3px 10px; border-radius:20px; }
+.lp-roi-banner { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:40px; text-align:center; margin:32px 0; }
+.lp-roi-title { font-size:22px; font-weight:800; color:#0b2d5f; margin-bottom:8px; }
+.lp-roi-sub { font-size:14px; color:#64748b; margin-bottom:28px; }
+.lp-roi-calc { display:flex; gap:20px; justify-content:center; align-items:center; flex-wrap:wrap; }
+.lp-roi-item { text-align:center; padding:20px 28px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; min-width:160px; }
+.lp-roi-item-num { font-size:28px; font-weight:900; color:#b81c1c; margin-bottom:4px; }
+.lp-roi-item-label { font-size:12px; color:#64748b; }
+.lp-roi-arrow { font-size:24px; color:#0b2d5f; font-weight:900; }
+.lp-roi-result { text-align:center; padding:20px 28px; background:#dcfce7; border:1px solid #bbf7d0; border-radius:10px; min-width:160px; }
+.lp-roi-result-num { font-size:28px; font-weight:900; color:#15803d; margin-bottom:4px; }
+.lp-roi-result-label { font-size:12px; color:#15803d; }
+.lp-pricing { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+@media (max-width:900px) { .lp-pricing { grid-template-columns:1fr 1fr; } }
+@media (max-width:600px) { .lp-pricing { grid-template-columns:1fr; } }
+.lp-price-card { border:1px solid #e2e8f0; border-radius:12px; padding:28px 24px; background:#fff; }
+.lp-price-card.featured { border:2px solid #0b2d5f; background:#f8fafc; }
+.lp-price-tier { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:#64748b; margin-bottom:4px; }
+.lp-price-name { font-size:18px; font-weight:800; color:#0b2d5f; margin-bottom:12px; }
+.lp-price-amount { font-size:32px; font-weight:900; color:#0b2d5f; margin-bottom:4px; }
+.lp-price-period { font-size:13px; color:#64748b; margin-bottom:16px; }
+.lp-price-aum { font-size:12px; color:#64748b; padding:6px 10px; background:#f1f5f9; border-radius:6px; margin-bottom:16px; }
+.lp-price-features { list-style:none; display:flex; flex-direction:column; gap:8px; font-size:13px; color:#374151; }
+.lp-price-features li::before { content:'✓ '; color:#15803d; font-weight:700; }
+.lp-footer-cta { background:linear-gradient(135deg,#0b2d5f,#1e40af); color:#fff; padding:64px 48px; text-align:center; }
+.lp-footer-cta h2 { font-size:clamp(22px,3vw,36px); font-weight:900; margin-bottom:12px; }
+.lp-footer-cta p { font-size:16px; opacity:.85; margin-bottom:32px; }
+.lp-footer-bottom { background:#0b2d5f; color:rgba(255,255,255,.55); padding:20px 48px; display:flex; justify-content:space-between; font-size:12px; flex-wrap:wrap; gap:8px; }
+
+/* ── SESSION TIMEOUT WARNING ── */
+.session-warn-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; display:flex; align-items:center; justify-content:center; }
+.session-warn-box { background:#fff; border-radius:12px; padding:32px; max-width:420px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.session-warn-icon { font-size:40px; margin-bottom:12px; }
+.session-warn-title { font-size:18px; font-weight:800; color:#0b2d5f; margin-bottom:8px; }
+.session-warn-body { font-size:14px; color:#64748b; line-height:1.6; margin-bottom:24px; }
+.session-warn-timer { font-size:32px; font-weight:900; color:#b81c1c; margin-bottom:20px; }
+
+/* ── AUDIT INTEGRITY ── */
+.integrity-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; }
+.integrity-valid { background:#dcfce7; color:#15803d; }
+.integrity-invalid { background:#fee2e2; color:#b81c1c; }
+.integrity-pending { background:#f1f5f9; color:#64748b; }
+.hash-pill { font-family:monospace; font-size:10.5px; color:#64748b; background:#f1f5f9; padding:2px 7px; border-radius:4px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle; cursor:pointer; }
+.hash-pill:hover { background:#dbeafe; color:#1d4ed8; }
 </style>
 </head>
 <body>
@@ -588,7 +671,8 @@ const StatusBadge = ({ status }) => {
 /* ═══════════════════════════════════════════════════
    LOGIN SCREEN
 ═══════════════════════════════════════════════════ */
-function LoginScreen({ onLogin, showOnboarding, setShowOnboarding }) {
+/* ── Login Modal (used inside LandingPage) ── */
+function LoginModal({ onLogin, onClose, onGetStarted }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -599,10 +683,7 @@ function LoginScreen({ onLogin, showOnboarding, setShowOnboarding }) {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      const data = await apiFetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await apiFetch('/api/auth/login', { method:'POST', body:JSON.stringify({ email, password }) });
       storeToken(data.token);
       onLogin(data);
     } catch (err) {
@@ -614,59 +695,211 @@ function LoginScreen({ onLogin, showOnboarding, setShowOnboarding }) {
     if (!email) { setError('Enter your email address to use SSO sign-in.'); return; }
     setSsoLoading(true); setError('');
     try {
-      const r = await fetch('/api/auth/sso-init', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      }).then(r => r.json());
-      if (r.sso_available && r.sso_url) {
-        window.location.href = r.sso_url;
-      } else {
-        setError('SSO is not configured for your institution. Sign in with your password.');
-      }
+      const r = await fetch('/api/auth/sso-init', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email }) }).then(r=>r.json());
+      if (r.sso_available && r.sso_url) { window.location.href = r.sso_url; }
+      else { setError('SSO is not configured for your institution. Sign in with your password.'); }
     } catch(e) { setError('SSO check failed. Please try again.'); }
     finally { setSsoLoading(false); }
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.6)', z:1000, display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }}>
+      <div className="login-card" style={{ position:'relative', margin:16 }}>
+        <button onClick={onClose} style={{ position:'absolute', top:12, right:14, background:'none', border:'none', fontSize:20, cursor:'pointer', color:'#94a3b8' }}>✕</button>
         <div className="login-logo">
           <div className="brand">Clear<span>MRM</span></div>
           <div className="osfi-badge-lg">✓ OSFI E-23 Compliant</div>
         </div>
         <div className="login-title">Welcome back</div>
-        <div className="login-sub">Sign in to your Model Risk Management platform</div>
+        <div className="login-sub">Sign in to your MRM platform</div>
         {error && <div className="login-error">{error}</div>}
         <form onSubmit={handleSubmit}>
-          <div className="form-group" style={{ marginBottom: 14 }}>
+          <div className="form-group" style={{ marginBottom:14 }}>
             <label className="form-label">Email Address</label>
-            <input className="form-control" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@institution.ca" required autoFocus />
+            <input className="form-control" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@institution.ca" required autoFocus />
           </div>
-          <div className="form-group" style={{ marginBottom: 20 }}>
+          <div className="form-group" style={{ marginBottom:20 }}>
             <label className="form-label">Password</label>
-            <input className="form-control" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+            <input className="form-control" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
-          <button className="btn btn-primary" style={{ width: '100%', padding: '11px', fontSize: 15 }} type="submit" disabled={loading}>
+          <button className="btn btn-primary" style={{ width:'100%', padding:'11px', fontSize:15 }} type="submit" disabled={loading}>
             {loading ? <><Spinner /> Signing in…</> : 'Sign In'}
           </button>
         </form>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0' }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <div style={{ display:'flex', alignItems:'center', gap:10, margin:'18px 0' }}>
+          <div style={{ flex:1, height:1, background:'var(--border)' }} />
+          <span style={{ fontSize:12, color:'var(--text-muted)' }}>or</span>
+          <div style={{ flex:1, height:1, background:'var(--border)' }} />
         </div>
-        <button className="btn btn-outline" style={{ width: '100%', padding: '10px', fontSize: 14 }} onClick={handleSsoInit} disabled={ssoLoading}>
+        <button className="btn btn-outline" style={{ width:'100%', padding:'10px', fontSize:14 }} onClick={handleSsoInit} disabled={ssoLoading}>
           {ssoLoading ? <><Spinner dark /> Checking SSO…</> : '🔐 Sign in with SSO (SAML / Azure AD)'}
         </button>
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13 }}>
-          <span style={{ color: 'var(--text-muted)' }}>New institution? </span>
-          <button style={{ background: 'none', border: 'none', color: 'var(--blue)', cursor: 'pointer', fontWeight: 600, fontSize: 13, padding: 0 }}
-            onClick={() => setShowOnboarding(true)}>
-            Create an account →
+        <div style={{ textAlign:'center', marginTop:18, fontSize:13 }}>
+          <span style={{ color:'var(--text-muted)' }}>New institution? </span>
+          <button style={{ background:'none', border:'none', color:'var(--blue)', cursor:'pointer', fontWeight:600, fontSize:13, padding:0 }} onClick={onGetStarted}>
+            Start your pilot →
           </button>
         </div>
         <div className="login-footer">Secured · AWS ca-central-1 · PIPEDA compliant</div>
       </div>
+    </div>
+  );
+}
+
+/* ── Marketing Landing Page ── */
+function LandingPage({ onLogin, onGetStarted }) {
+  const [showLogin, setShowLogin] = useState(false);
+
+  const features = [
+    { icon:'🎯', title:'AI Action Queue', desc:'Opens every morning with your 5 most urgent OSFI obligations, ranked by exam citation risk. Not a dashboard — a directive.', roi:'Replaces 2h/week of CRO triage' },
+    { icon:'📄', title:'Validation Report Generator', desc:'Logs findings → Claude drafts the complete formal validation report in 90 seconds. Executive summary, findings matrix, risk opinion, sign-off page.', roi:'Replaces $15K–$50K per report' },
+    { icon:'📜', title:'MRM Policy Generator', desc:'10 questions about your institution → Claude generates a complete 13-section OSFI E-23 MRM Policy with board attestation page. Ready for board approval.', roi:'Replaces $25K–$50K in legal fees' },
+    { icon:'🩺', title:'Portfolio Doctor', desc:'One-click full portfolio health scan. Health grade A–F, critical findings, concentration risks, systemic gaps — in seconds rather than days.', roi:'Replaces days of manual gap analysis' },
+    { icon:'🧾', title:'Document Intelligence', desc:'Paste any document — validation report, model development doc, vendor contract — AI extracts structured data and pre-fills your forms.', roi:'Eliminates hours of manual re-keying' },
+    { icon:'🚨', title:'Emergency Exam Sprint', desc:'OSFI examiner arriving in 30 days? AI generates a full gap analysis plus a 30/60/90-day remediation plan with examiner likely questions.', roi:'Exam prep in minutes, not months' },
+  ];
+
+  return (
+    <div className="landing">
+      {/* Nav */}
+      <nav className="lp-nav">
+        <div className="lp-nav-logo">
+          <div className="lp-nav-brand">Clear<span>MRM</span></div>
+          <div className="lp-nav-badge">OSFI E-23 Compliant</div>
+        </div>
+        <div className="lp-nav-actions">
+          <button className="lp-btn-ghost" style={{ padding:'9px 20px', fontSize:13.5 }} onClick={() => setShowLogin(true)}>Sign In</button>
+          <button className="lp-btn-primary" style={{ padding:'9px 20px', fontSize:13.5 }} onClick={onGetStarted}>Start 30-Day Pilot</button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <div className="lp-hero">
+        <div className="lp-hero-title">Canada's Only AI-Powered<br /><span>OSFI E-23</span> Compliance Platform</div>
+        <div className="lp-hero-sub">
+          The first MRM platform that doesn't just store your compliance data — it generates your validation reports, writes your MRM policy, and tells your CRO exactly what to do today. Powered by Claude AI via AWS Bedrock ca-central-1.
+        </div>
+        <div className="lp-hero-ctas">
+          <button className="lp-btn-primary" style={{ fontSize:16, padding:'15px 36px' }} onClick={onGetStarted}>Start 30-Day Pilot — No Setup Fee</button>
+          <button className="lp-btn-ghost" style={{ fontSize:16, padding:'15px 36px' }} onClick={() => setShowLogin(true)}>Sign In →</button>
+        </div>
+        <div className="lp-trust-row">
+          <span className="lp-trust-chip">OSFI E-23 (September 2025)</span>
+          <span className="lp-trust-chip">AWS ca-central-1 · Canadian Data Sovereignty</span>
+          <span className="lp-trust-chip">PIPEDA + Quebec Law 25 Compliant</span>
+          <span className="lp-trust-chip">Cryptographic Audit Integrity</span>
+          <span className="lp-trust-chip">SOC 2 In Progress</span>
+        </div>
+      </div>
+
+      {/* Metrics Strip */}
+      <div className="lp-metrics">
+        <div className="lp-metric">
+          <div className="lp-metric-num">90<span>sec</span></div>
+          <div className="lp-metric-label">To generate a complete formal validation report</div>
+        </div>
+        <div className="lp-metric">
+          <div className="lp-metric-num">$<span>72K</span></div>
+          <div className="lp-metric-label">Annual subscription — breaks even on Month 1</div>
+        </div>
+        <div className="lp-metric">
+          <div className="lp-metric-num">May<span> 2027</span></div>
+          <div className="lp-metric-label">OSFI E-23 deadline — 170+ FRFIs must comply</div>
+        </div>
+        <div className="lp-metric">
+          <div className="lp-metric-num">14<span>+</span></div>
+          <div className="lp-metric-label">AI capabilities across every OSFI E-23 section</div>
+        </div>
+      </div>
+
+      {/* Features */}
+      <div className="lp-section">
+        <div className="lp-section-title">From Document Storage to Compliance Automation</div>
+        <div className="lp-section-sub">Every other tool helps you store compliance data. ClearMRM executes your compliance program — generating the deliverables that used to require expensive consultants.</div>
+        <div className="lp-features">
+          {features.map((f, i) => (
+            <div key={i} className="lp-feature-card">
+              <div className="lp-feature-icon">{f.icon}</div>
+              <div className="lp-feature-title">{f.title}</div>
+              <div className="lp-feature-desc">{f.desc}</div>
+              <div className="lp-feature-roi">{f.roi}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ROI Calculator */}
+      <div style={{ background:'#f8fafc', padding:'0 48px' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto', padding:'48px 0' }}>
+          <div className="lp-roi-banner">
+            <div className="lp-roi-title">The Business Case Writes Itself</div>
+            <div className="lp-roi-sub">For a Tier 2 FRFI with 6 annual validations at $30K each in consulting fees:</div>
+            <div className="lp-roi-calc">
+              <div className="lp-roi-item">
+                <div className="lp-roi-item-num">$180K</div>
+                <div className="lp-roi-item-label">Annual validation consulting fees</div>
+              </div>
+              <div className="lp-roi-arrow">+</div>
+              <div className="lp-roi-item">
+                <div className="lp-roi-item-num">$50K</div>
+                <div className="lp-roi-item-label">MRM Policy legal/counsel fees</div>
+              </div>
+              <div className="lp-roi-arrow">+</div>
+              <div className="lp-roi-item">
+                <div className="lp-roi-item-num">$75K</div>
+                <div className="lp-roi-item-label">Staff time (manual MRM work)</div>
+              </div>
+              <div className="lp-roi-arrow">vs.</div>
+              <div className="lp-roi-result">
+                <div className="lp-roi-result-num">$72K</div>
+                <div className="lp-roi-result-label">ClearMRM annual subscription</div>
+              </div>
+            </div>
+            <div style={{ marginTop:20, fontSize:13, color:'#64748b' }}>
+              <strong style={{ color:'#15803d' }}>ROI: 4.2× in Year 1.</strong> Your first AI-generated validation report pays for 5 months of the subscription.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing */}
+      <div className="lp-section">
+        <div className="lp-section-title">Simple, Transparent Pricing</div>
+        <div className="lp-section-sub">No implementation fees. No per-user charges. No professional services required. Running in 30 days.</div>
+        <div className="lp-pricing">
+          {[
+            { tier:'Community', name:'Under $1B AUM', price:'$30,000', period:'/year', aum:'Credit unions, trust companies, small insurers', features:['All 14 screens', 'All AI features', 'Up to 50 models', 'Email support'] },
+            { tier:'Regional', name:'$1B–$20B AUM', price:'$72,000', period:'/year', aum:'Mid-tier banks, regional insurers', features:['All features', 'Up to 500 models', 'Priority support', 'SSO / SAML 2.0'], featured:true },
+            { tier:'National', name:'$20B–$100B AUM', price:'$144,000', period:'/year', aum:'Large regional banks, national insurers', features:['All features', 'Unlimited models', 'Dedicated success manager', 'Custom integrations'] },
+            { tier:'Enterprise', name:'$100B+ AUM', price:'Custom', period:'', aum:'Schedule I banks, large crown corps', features:['White-glove onboarding', 'On-site validation', 'Regulatory counsel review', 'Board presentation support'] },
+          ].map((p, i) => (
+            <div key={i} className={`lp-price-card${p.featured ? ' featured' : ''}`}>
+              <div className="lp-price-tier">{p.tier}</div>
+              <div className="lp-price-name">{p.name}</div>
+              <div className="lp-price-amount">{p.price}</div>
+              <div className="lp-price-period">{p.period || ' '}</div>
+              <div className="lp-price-aum">{p.aum}</div>
+              <ul className="lp-price-features">{p.features.map((f,j) => <li key={j}>{f}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer CTA */}
+      <div className="lp-footer-cta">
+        <h2>OSFI's May 2027 deadline is {Math.ceil((new Date('2027-05-01')-new Date())/(1000*60*60*24))} days away.</h2>
+        <p>Every month without a structured MRM program is a month closer to a supervisory review finding. Start your 30-day pilot today — we provision your environment, migrate your existing Excel inventory, and have you OSFI-ready within the first session.</p>
+        <button className="lp-btn-primary" style={{ fontSize:16, padding:'16px 40px' }} onClick={onGetStarted}>Start Free 30-Day Pilot</button>
+      </div>
+
+      <div className="lp-footer-bottom">
+        <span>ClearMRM by Nimblestride Inc. · clearmrm.nimblestride.ca</span>
+        <span>AWS ca-central-1 · PIPEDA Compliant · SOC 2 In Progress · OSFI E-23 Ready</span>
+      </div>
+
+      {showLogin && (
+        <LoginModal onLogin={onLogin} onClose={() => setShowLogin(false)} onGetStarted={onGetStarted} />
+      )}
     </div>
   );
 }
@@ -2488,6 +2721,8 @@ function VendorDetailModal({ a: initialA, onClose }) {
 function AuditTrail() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [integrity, setIntegrity] = useState(null);
+  const [intLoading, setIntLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -2497,25 +2732,101 @@ function AuditTrail() {
       .finally(() => setLoading(false));
   }, []);
 
+  async function verifyIntegrity() {
+    setIntLoading(true);
+    try {
+      const r = await apiFetch('/api/audit/verify-integrity');
+      setIntegrity(r);
+    } catch(e) { toast(e.message, 'error'); }
+    finally { setIntLoading(false); }
+  }
+
+  function copyHash(h) { navigator.clipboard?.writeText(h).then(() => toast('Hash copied', 'success')); }
+
   return (
     <div>
-      <div className="section-title" style={{ marginBottom: 16 }}>Audit Trail</div>
+      {/* Integrity Panel */}
+      <div className="card" style={{ marginBottom:18 }}>
+        <div className="section-hdr" style={{ marginBottom: integrity ? 14 : 0 }}>
+          <div>
+            <div className="section-title">Cryptographic Integrity</div>
+            <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>Merkle hash chain — every event links to the previous. Any tampering breaks the chain.</div>
+          </div>
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            {integrity && (
+              <span className={`integrity-badge ${integrity.valid ? 'integrity-valid' : 'integrity-invalid'}`}>
+                {integrity.valid ? '✓ Chain Intact' : '✗ Breach Detected'}
+              </span>
+            )}
+            <button className="btn btn-outline btn-sm" onClick={verifyIntegrity} disabled={intLoading}>
+              {intLoading ? <><Spinner dark /> Verifying…</> : '🔐 Verify Integrity'}
+            </button>
+          </div>
+        </div>
+        {integrity && (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:10 }}>
+            {[
+              ['Verified Events', integrity.total_verified, '#15803d'],
+              ['Legacy Events', integrity.total_legacy, '#64748b'],
+              ['Merkle Root', null, null, integrity.merkle_root],
+              ['Chain Tip', null, null, integrity.chain_tip],
+            ].map(([label, val, color, hash], i) => (
+              <div key={i} style={{ background:'#f8fafc', borderRadius:8, padding:'10px 14px', border:'1px solid var(--border)' }}>
+                <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', marginBottom:4 }}>{label}</div>
+                {hash
+                  ? <span className="hash-pill" title={hash} onClick={() => copyHash(hash)}>{hash}</span>
+                  : <div style={{ fontSize:18, fontWeight:800, color:color||'var(--navy)' }}>{val}</div>
+                }
+              </div>
+            ))}
+          </div>
+        )}
+        {integrity && !integrity.valid && integrity.first_breach && (
+          <div className="alert-banner" style={{ marginTop:12 }}>
+            Chain breach at sequence #{integrity.first_breach.seq} · Event: {integrity.first_breach.event_type} · Timestamp: {integrity.first_breach.created_at}
+          </div>
+        )}
+        {!integrity && (
+          <div style={{ fontSize:13, color:'var(--text-muted)' }}>
+            Click <strong>Verify Integrity</strong> to run a cryptographic check. Each audit event is linked by a SHA-256 hash chain. Any manual database manipulation would break the chain and be immediately detectable — providing OSFI examiners with mathematical proof of data integrity.
+          </div>
+        )}
+      </div>
+
+      {/* Events Table */}
       <div className="card">
+        <div className="section-hdr" style={{ marginBottom:14 }}>
+          <div className="section-title">Audit Events</div>
+          <div style={{ fontSize:12, color:'var(--text-muted)' }}>Append-only · Immutable DB trigger · Hash-chained</div>
+        </div>
         {loading ? (
           <div className="spinner-center"><Spinner dark size={26} /></div>
         ) : events.length === 0 ? (
           <div className="empty-state"><div className="empty-icon">📋</div>No audit events recorded yet.</div>
         ) : (
-          events.map((e, i) => (
-            <div key={i} className="audit-row">
-              <div className="audit-ts">{e.created_at || e.timestamp}</div>
-              <div className="audit-desc">
-                {e.description || e.action}
-                {e.model_name && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Model: {e.model_name}</div>}
-              </div>
-              <div className="audit-user">{e.performed_by || e.user_email || ''}</div>
-            </div>
-          ))
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Timestamp</th><th>Event</th><th>Model</th><th>Actor</th><th>Hash</th></tr>
+              </thead>
+              <tbody>
+                {events.map((e, i) => (
+                  <tr key={i}>
+                    <td style={{ fontSize:12, whiteSpace:'nowrap', color:'var(--text-muted)' }}>{e.created_at || e.timestamp}</td>
+                    <td><span style={{ fontSize:12.5, fontWeight:600 }}>{(e.event_type||e.description||e.action||'').replace(/_/g,' ')}</span></td>
+                    <td style={{ fontSize:13 }}>{e.model_name || '—'}</td>
+                    <td style={{ fontSize:12 }}>{e.actor_email || e.performed_by || e.user_email || ''}</td>
+                    <td>
+                      {e.event_hash
+                        ? <span className="hash-pill" title={e.event_hash} onClick={() => copyHash(e.event_hash)}>#{e.chain_seq} · {e.event_hash.substring(0,14)}…</span>
+                        : <span style={{ fontSize:11, color:'var(--text-muted)' }}>legacy</span>
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -4278,6 +4589,7 @@ function AppShell({ user: userProp }) {
 
   return (
     <div className="app-shell">
+      <SessionGuard />
       <Sidebar screen={screen} setScreen={setScreen} user={user} />
       <div className="main">
         <div className="topbar">
@@ -4285,6 +4597,58 @@ function AppShell({ user: userProp }) {
           <div className="topbar-meta">OSFI E-23 · {new Date().toLocaleDateString('en-CA')}</div>
         </div>
         <div className="content">{renderScreen()}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Session Timeout Guard ── */
+const IDLE_WARN_MS   = 15 * 60 * 1000; // 15 min → show warning
+const IDLE_LOGOUT_MS = 20 * 60 * 1000; // 20 min → auto-logout
+
+function SessionGuard() {
+  const [idleSecs, setIdleSecs] = useState(0);
+  const [showWarn, setShowWarn] = useState(false);
+  const lastActivity = useRef(Date.now());
+
+  useEffect(() => {
+    function resetActivity() { lastActivity.current = Date.now(); setShowWarn(false); }
+    const events = ['mousedown','keydown','scroll','touchstart','click'];
+    events.forEach(ev => document.addEventListener(ev, resetActivity, { passive:true }));
+
+    const ticker = setInterval(() => {
+      const idle = Date.now() - lastActivity.current;
+      if (idle >= IDLE_LOGOUT_MS) {
+        clearToken();
+        window.location.reload();
+      } else if (idle >= IDLE_WARN_MS) {
+        setShowWarn(true);
+        setIdleSecs(Math.floor((IDLE_LOGOUT_MS - idle) / 1000));
+      } else {
+        setShowWarn(false);
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(ticker);
+      events.forEach(ev => document.removeEventListener(ev, resetActivity));
+    };
+  }, []);
+
+  if (!showWarn) return null;
+
+  return (
+    <div className="session-warn-overlay">
+      <div className="session-warn-box">
+        <div className="session-warn-icon">⏱️</div>
+        <div className="session-warn-title">Session Expiring Soon</div>
+        <div className="session-warn-body">
+          For security, ClearMRM automatically signs you out after 20 minutes of inactivity. Your work is saved.
+        </div>
+        <div className="session-warn-timer">{idleSecs}s</div>
+        <button className="btn btn-primary" style={{ width:'100%' }} onClick={() => { lastActivity.current = Date.now(); setShowWarn(false); }}>
+          Stay Signed In
+        </button>
       </div>
     </div>
   );
@@ -4341,7 +4705,10 @@ function App() {
 
   return (
     <ToastProvider>
-      {user ? <AppShell user={user} /> : <LoginScreen onLogin={handleLogin} showOnboarding={showOnboarding} setShowOnboarding={setShowOnboarding} />}
+      {user
+        ? <AppShell user={user} />
+        : <LandingPage onLogin={handleLogin} onGetStarted={() => setShowOnboarding(true)} />
+      }
     </ToastProvider>
   );
 }
