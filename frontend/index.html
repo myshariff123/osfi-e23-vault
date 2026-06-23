@@ -564,6 +564,44 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .integrity-pending { background:#f1f5f9; color:#64748b; }
 .hash-pill { font-family:monospace; font-size:10.5px; color:#64748b; background:#f1f5f9; padding:2px 7px; border-radius:4px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle; cursor:pointer; }
 .hash-pill:hover { background:#dbeafe; color:#1d4ed8; }
+
+/* ── PHASE 7: INSURANCE MRM ── */
+.ins-category-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:6px; font-size:11.5px; font-weight:700; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.ins-flag { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+.ins-flag-spreadsheet { background:#fef9c3; color:#854d0e; border:1px solid #fde68a; }
+.ins-flag-ifrs17      { background:#f3e8ff; color:#6b21a8; border:1px solid #d8b4fe; }
+.ins-flag-capital     { background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; }
+.ins-profile-card { background:#f8fafc; border-radius:8px; padding:14px 18px; border:1px solid #e2e8f0; margin-bottom:16px; }
+.ins-profile-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-top:10px; }
+
+/* Spreadsheet warning */
+.spreadsheet-warn { background:#fefce8; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#713f12; margin-top:8px; display:flex; align-items:flex-start; gap:8px; }
+
+/* Assumption Register */
+.assumption-row { display:grid; grid-template-columns:1fr 1fr auto auto; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+.assumption-row:last-child { border-bottom:none; }
+.assumption-name { font-size:13px; font-weight:600; color:var(--navy); }
+.assumption-value { font-size:13px; color:var(--text); }
+.assumption-prior { font-size:11px; color:var(--text-muted); }
+.assumption-unit { font-size:11px; background:#f1f5f9; padding:1px 6px; border-radius:4px; color:#475569; }
+.assumption-form { background:#f8fafc; border-radius:8px; padding:14px; border:1px solid var(--border); margin-top:12px; }
+
+/* Backtesting Log */
+.backtest-row { display:grid; grid-template-columns:1fr 80px 80px 80px auto 90px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+.backtest-row:last-child { border-bottom:none; }
+.verdict-pass { color:#15803d; font-weight:700; background:#dcfce7; padding:2px 8px; border-radius:10px; font-size:11px; }
+.verdict-fail { color:#b91c1c; font-weight:700; background:#fee2e2; padding:2px 8px; border-radius:10px; font-size:11px; }
+.verdict-inconclusive { color:#92400e; font-weight:700; background:#fef3c7; padding:2px 8px; border-radius:10px; font-size:11px; }
+.backtest-form { background:#f8fafc; border-radius:8px; padding:14px; border:1px solid var(--border); margin-top:12px; }
+.backtest-form-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+/* Model Dependency Map */
+.dep-map { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.dep-column-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); margin-bottom:8px; }
+.dep-item { display:flex; align-items:center; justify-content:space-between; padding:7px 12px; background:#f8fafc; border-radius:6px; border:1px solid var(--border); margin-bottom:6px; font-size:13px; }
+.dep-arrow-up   { color:#15803d; font-size:14px; margin-right:6px; }
+.dep-arrow-down { color:#1d4ed8; font-size:14px; margin-right:6px; }
+.dep-add-form { background:#f8fafc; border-radius:8px; padding:12px 14px; border:1px solid var(--border); margin-top:10px; }
 </style>
 </head>
 <body>
@@ -1277,6 +1315,9 @@ function ModelForm({ modelId, setScreen, setDetailModelId }) {
     methodology_type: 'statistical', input_data_sources: '',
     production_system: '', deployed_at: '',
     is_third_party: false, vendor_name: '', vendor_product: '',
+    insurance_category: '', is_spreadsheet_model: false, spreadsheet_location: '',
+    is_ifrs17_model: false, ifrs17_component: '',
+    regulatory_capital_linked: false, capital_framework: '',
   });
 
   useEffect(() => {
@@ -1411,6 +1452,106 @@ function ModelForm({ modelId, setScreen, setDetailModelId }) {
                 </div>
               </>
             )}
+
+            {/* ── Insurance Classification (Phase 7) ── */}
+            <div className="form-group full" style={{ marginTop:8 }}>
+              <div style={{ fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', marginBottom:10, paddingTop:10, borderTop:'1px solid var(--border)' }}>
+                Insurance Classification
+              </div>
+            </div>
+            <div className="form-group full">
+              <label className="form-label">Insurance Model Category</label>
+              <select className="form-control" value={form.insurance_category} onChange={e => {
+                const v = e.target.value;
+                set('insurance_category', v);
+                if (v === 'ifrs17') set('is_ifrs17_model', true);
+                else set('is_ifrs17_model', false);
+                if (['capital_orsa','stress_testing'].includes(v)) set('regulatory_capital_linked', true);
+              }}>
+                <option value="">— Select category —</option>
+                <optgroup label="Actuarial">
+                  <option value="actuarial_reserving">Actuarial Reserving (IBNR / Chain Ladder / BF)</option>
+                  <option value="pricing_rating">Pricing / Rating (GLM, GBM, Experience Rating)</option>
+                  <option value="claims">Claims Frequency / Severity</option>
+                </optgroup>
+                <optgroup label="Risk & Capital">
+                  <option value="catastrophe">Catastrophe / Natural Peril (RMS, AIR, Verisk)</option>
+                  <option value="capital_orsa">Capital / ORSA / DFA</option>
+                  <option value="stress_testing">Stress Testing / Scenario Analysis</option>
+                  <option value="alm">ALM / Investment Risk</option>
+                </optgroup>
+                <optgroup label="Financial Reporting">
+                  <option value="ifrs17">IFRS 17 (CSM, Risk Adjustment, Discount Curve)</option>
+                </optgroup>
+                <optgroup label="Underwriting & Compliance">
+                  <option value="underwriting_scoring">Underwriting Scoring / Appetite</option>
+                  <option value="fraud_detection">Fraud Detection</option>
+                  <option value="aml">AML / Transaction Monitoring</option>
+                  <option value="credit_risk">Credit Risk</option>
+                  <option value="market_risk">Market Risk / VaR</option>
+                  <option value="operational_risk">Operational Risk</option>
+                </optgroup>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            {form.is_ifrs17_model && (
+              <div className="form-group">
+                <label className="form-label">IFRS 17 Component</label>
+                <select className="form-control" value={form.ifrs17_component} onChange={e => set('ifrs17_component', e.target.value)}>
+                  <option value="">— Select component —</option>
+                  <option value="csm">Contractual Service Margin (CSM)</option>
+                  <option value="risk_adjustment">Risk Adjustment</option>
+                  <option value="discount_curve">Discount Curve / Rate</option>
+                  <option value="fulfilment_cashflows">Fulfilment Cash Flows</option>
+                  <option value="pat">Premium Allocation Approach (PAA)</option>
+                </select>
+              </div>
+            )}
+
+            {form.regulatory_capital_linked && (
+              <div className="form-group">
+                <label className="form-label">Capital Framework</label>
+                <select className="form-control" value={form.capital_framework} onChange={e => set('capital_framework', e.target.value)}>
+                  <option value="">— Select framework —</option>
+                  <option value="MCT">MCT (Minimum Capital Test — P&C)</option>
+                  <option value="LICAT">LICAT (Life Insurance Capital Adequacy Test)</option>
+                  <option value="ORSA">ORSA (Own Risk &amp; Solvency Assessment)</option>
+                  <option value="DFA">DFA (Dynamic Financial Analysis)</option>
+                  <option value="ICA">ICA (Internal Capital Assessment)</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            )}
+
+            <div className="form-group full">
+              <div className="checkbox-row">
+                <input type="checkbox" id="is_ss" checked={!!form.is_spreadsheet_model}
+                  onChange={e => set('is_spreadsheet_model', e.target.checked)} />
+                <label htmlFor="is_ss" style={{ fontWeight:500, fontSize:14, cursor:'pointer' }}>
+                  This model is implemented in a Spreadsheet / Excel workbook
+                </label>
+              </div>
+              {form.is_spreadsheet_model && (
+                <div style={{ marginTop:8 }}>
+                  <input className="form-control" placeholder="Spreadsheet location (SharePoint path, network drive, etc.)"
+                    value={form.spreadsheet_location} onChange={e => set('spreadsheet_location', e.target.value)} />
+                  <div className="spreadsheet-warn">
+                    ⚠️ <span><strong>Enhanced controls required.</strong> Spreadsheet models require Tier 1 treatment with version-controlled workbook, cell-level protection, and annual independent validation per OSFI E-23 §4.2. Ensure an offline backup copy exists.</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group full">
+              <div className="checkbox-row">
+                <input type="checkbox" id="is_cap" checked={!!form.regulatory_capital_linked}
+                  onChange={e => set('regulatory_capital_linked', e.target.checked)} />
+                <label htmlFor="is_cap" style={{ fontWeight:500, fontSize:14, cursor:'pointer' }}>
+                  This model feeds a regulatory capital calculation (MCT / LICAT / ORSA)
+                </label>
+              </div>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setScreen('models')}>Cancel</button>
@@ -1430,14 +1571,17 @@ function ModelForm({ modelId, setScreen, setDetailModelId }) {
 function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
   const [model, setModel] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [allModels, setAllModels] = useState([]);
   const [aiAdvice, setAiAdvice] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const toast = useToast();
 
   function reload() {
     setLoading(true);
-    apiFetch(`/api/models/${modelId}`)
-      .then(setModel)
+    Promise.all([
+      apiFetch(`/api/models/${modelId}`),
+      apiFetch('/api/models'),
+    ]).then(([m, all]) => { setModel(m); setAllModels(all); })
       .catch(e => toast(e.message, 'error'))
       .finally(() => setLoading(false));
   }
@@ -1529,6 +1673,41 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
         </div>
       </div>
 
+      {/* ── Insurance Profile (Phase 7) ── */}
+      {(model.insurance_category || model.is_spreadsheet_model || model.is_ifrs17_model || model.regulatory_capital_linked) && (() => {
+        const INS_LABEL = {
+          actuarial_reserving:'Actuarial Reserving', pricing_rating:'Pricing / Rating',
+          catastrophe:'Catastrophe / Natural Peril', capital_orsa:'Capital / ORSA / DFA',
+          ifrs17:'IFRS 17', underwriting_scoring:'Underwriting Scoring',
+          claims:'Claims Frequency / Severity', fraud_detection:'Fraud Detection',
+          alm:'ALM / Investment Risk', stress_testing:'Stress Testing',
+          credit_risk:'Credit Risk', market_risk:'Market Risk / VaR',
+          operational_risk:'Operational Risk', aml:'AML / Transaction Monitoring', other:'Other',
+        };
+        const IFRS17_LABEL = { csm:'CSM', risk_adjustment:'Risk Adjustment', discount_curve:'Discount Curve', fulfilment_cashflows:'Fulfilment CFs', pat:'PAA' };
+        return (
+          <div className="ins-profile-card" style={{ marginBottom:16 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8 }}>
+              <span style={{ fontSize:12.5, fontWeight:700, color:'var(--navy)' }}>Insurance Profile</span>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {model.insurance_category && <span className="ins-category-badge">🏛 {INS_LABEL[model.insurance_category] || model.insurance_category}</span>}
+                {model.is_spreadsheet_model && <span className="ins-flag ins-flag-spreadsheet">📊 Spreadsheet Model</span>}
+                {model.is_ifrs17_model && <span className="ins-flag ins-flag-ifrs17">📋 IFRS 17{model.ifrs17_component ? ` — ${IFRS17_LABEL[model.ifrs17_component]||model.ifrs17_component}` : ''}</span>}
+                {model.regulatory_capital_linked && <span className="ins-flag ins-flag-capital">🏦 Capital Linked{model.capital_framework ? ` (${model.capital_framework})` : ''}</span>}
+              </div>
+            </div>
+            {model.is_spreadsheet_model && (
+              <div className="spreadsheet-warn" style={{ marginTop:10 }}>
+                ⚠️ <span><strong>Enhanced validation controls required.</strong> Spreadsheet models carry elevated operational risk. Ensure version-controlled workbook, cell protection, offline backup, and annual independent validation. OSFI E-23 §4.2.</span>
+              </div>
+            )}
+            {model.spreadsheet_location && (
+              <div style={{ marginTop:8, fontSize:12.5 }}><span style={{ color:'var(--text-muted)' }}>Location: </span>{model.spreadsheet_location}</div>
+            )}
+          </div>
+        );
+      })()}
+
       {model.ratings && model.ratings.length > 0 && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="section-title" style={{ marginBottom: 14 }}>Rating History</div>
@@ -1566,6 +1745,9 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
           ))}
         </div>
       )}
+
+      <AssumptionRegister modelId={modelId} />
+      <ModelDependencies modelId={modelId} allModels={allModels} />
 
       <div className="card">
         <div className="section-hdr">
@@ -1826,6 +2008,332 @@ const BOOL_FLAGS = [
   { key: 'is_vendor',           label: 'Third-Party / Vendor',  desc: 'This model is sourced from a vendor or third-party provider with limited internal model documentation' },
   { key: 'multi_business_unit', label: 'Cross-BU Usage',        desc: 'This model is used across multiple business units or legal entities within the institution' },
 ];
+
+/* ═══════════════════════════════════════════════════
+   PHASE 7 — ASSUMPTION REGISTER
+═══════════════════════════════════════════════════ */
+function AssumptionRegister({ modelId }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const blankForm = { assumption_name:'', current_value:'', prior_value:'', unit:'', approved_by:'', effective_date:'', change_reason:'' };
+  const [form, setForm] = useState(blankForm);
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  function reload() {
+    apiFetch(`/api/models/${modelId}/assumptions`)
+      .then(setItems).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
+  }
+  useEffect(() => { reload(); }, [modelId]);
+
+  function startEdit(a) { setEditId(a.id); setForm({ assumption_name:a.assumption_name, current_value:a.current_value, prior_value:a.prior_value||'', unit:a.unit||'', approved_by:a.approved_by||'', effective_date:a.effective_date||'', change_reason:a.change_reason||'' }); setShowForm(true); }
+  function startAdd() { setEditId(null); setForm(blankForm); setShowForm(true); }
+
+  async function save() {
+    if (!form.assumption_name || !form.current_value) { toast('Name and current value are required','error'); return; }
+    setSaving(true);
+    try {
+      if (editId) await apiFetch(`/api/models/${modelId}/assumptions/${editId}`, { method:'PUT', body:JSON.stringify(form) });
+      else        await apiFetch(`/api/models/${modelId}/assumptions`, { method:'POST', body:JSON.stringify(form) });
+      toast(editId ? 'Assumption updated' : 'Assumption added','success');
+      setShowForm(false); reload();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function del(id) {
+    if (!confirm('Remove this assumption?')) return;
+    await apiFetch(`/api/models/${modelId}/assumptions/${id}`, { method:'DELETE' });
+    reload();
+  }
+
+  return (
+    <div className="card" style={{ marginBottom:16 }}>
+      <div className="section-hdr" style={{ marginBottom:items.length ? 12 : 0 }}>
+        <div>
+          <div className="section-title">Actuarial Assumption Register</div>
+          <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>Key inputs that drive this model — versioned, approved, audit-ready</div>
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={startAdd}>+ Add Assumption</button>
+      </div>
+      {loading ? <div className="spinner-center"><Spinner dark size={20}/></div> : items.length === 0 && !showForm ? (
+        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No assumptions recorded. Add the key parameters that govern this model's outputs (e.g. tail factors, discount rate, lapse rate).</div>
+      ) : (
+        <div>
+          {items.length > 0 && (
+            <div>
+              <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr 1fr 0.6fr auto auto', gap:8, padding:'4px 0 6px', borderBottom:'1px solid var(--border)', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)' }}>
+                <span>Assumption</span><span>Current Value</span><span>Prior Value</span><span>Unit</span><span>Approved By</span><span></span>
+              </div>
+              {items.map(a => (
+                <div key={a.id} style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr 1fr 0.6fr auto auto', gap:8, alignItems:'center', padding:'7px 0', borderBottom:'1px solid var(--border)', fontSize:13 }}>
+                  <div>
+                    <div className="assumption-name">{a.assumption_name}</div>
+                    {a.change_reason && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{a.change_reason}</div>}
+                  </div>
+                  <div style={{ fontWeight:600 }}>{a.current_value}{a.unit ? <span className="assumption-unit" style={{ marginLeft:4 }}>{a.unit}</span> : null}</div>
+                  <div className="assumption-prior">{a.prior_value || '—'}</div>
+                  <div style={{ fontSize:11, color:'var(--text-muted)' }}>{a.unit || '—'}</div>
+                  <div style={{ fontSize:11 }}>{a.approved_by || '—'}</div>
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button className="btn btn-ghost btn-sm" style={{ padding:'2px 7px', fontSize:11 }} onClick={() => startEdit(a)}>Edit</button>
+                    <button className="btn btn-ghost btn-sm" style={{ padding:'2px 7px', fontSize:11, color:'#b91c1c' }} onClick={() => del(a.id)}>×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {showForm && (
+            <div className="assumption-form">
+              <div style={{ fontSize:12.5, fontWeight:700, marginBottom:10 }}>{editId ? 'Edit Assumption' : 'Add Assumption'}</div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                <div><label className="form-label">Assumption Name *</label><input className="form-control" placeholder="e.g. Tail Factor @ 60 months" value={form.assumption_name} onChange={e => setForm(p=>({...p,assumption_name:e.target.value}))}/></div>
+                <div><label className="form-label">Current Value *</label><input className="form-control" placeholder="e.g. 1.025" value={form.current_value} onChange={e => setForm(p=>({...p,current_value:e.target.value}))}/></div>
+                <div><label className="form-label">Prior Value</label><input className="form-control" placeholder="e.g. 1.018" value={form.prior_value} onChange={e => setForm(p=>({...p,prior_value:e.target.value}))}/></div>
+                <div><label className="form-label">Unit</label><input className="form-control" placeholder="%, ratio, $" value={form.unit} onChange={e => setForm(p=>({...p,unit:e.target.value}))}/></div>
+                <div><label className="form-label">Approved By</label><input className="form-control" placeholder="Name / title" value={form.approved_by} onChange={e => setForm(p=>({...p,approved_by:e.target.value}))}/></div>
+                <div><label className="form-label">Effective Date</label><input className="form-control" type="date" value={form.effective_date} onChange={e => setForm(p=>({...p,effective_date:e.target.value}))}/></div>
+              </div>
+              <div style={{ marginBottom:10 }}><label className="form-label">Change Reason</label><textarea className="form-control" rows={2} placeholder="Why was this assumption set or changed?" value={form.change_reason} onChange={e => setForm(p=>({...p,change_reason:e.target.value}))}/></div>
+              <div style={{ display:'flex', gap:8 }}>
+                <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>{saving ? <Spinner/> : editId ? 'Update' : 'Add'}</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 7 — MODEL DEPENDENCY MAP
+═══════════════════════════════════════════════════ */
+function ModelDependencies({ modelId, allModels }) {
+  const [deps, setDeps] = useState({ feeds_into:[], fed_by:[] });
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ direction:'upstream', other_model_id:'', dependency_type:'feeds_into', notes:'' });
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  function reload() {
+    apiFetch(`/api/models/${modelId}/dependencies`)
+      .then(setDeps).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
+  }
+  useEffect(() => { reload(); }, [modelId]);
+
+  async function add() {
+    if (!form.other_model_id) { toast('Select a model','error'); return; }
+    setSaving(true);
+    try {
+      await apiFetch(`/api/models/${modelId}/dependencies`, { method:'POST', body:JSON.stringify(form) });
+      toast('Dependency added','success'); setShowForm(false); reload();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function del(depId) {
+    await apiFetch(`/api/models/${modelId}/dependencies/${depId}`, { method:'DELETE' });
+    reload();
+  }
+
+  const tierColor = { 1:'#b91c1c', 2:'#d97706', 3:'#15803d' };
+  const available = (allModels||[]).filter(m => m.id !== modelId);
+
+  return (
+    <div className="card" style={{ marginBottom:16 }}>
+      <div className="section-hdr" style={{ marginBottom: (deps.feeds_into.length || deps.fed_by.length) ? 12 : 0 }}>
+        <div>
+          <div className="section-title">Model Dependency Map</div>
+          <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>Upstream/downstream cascade risk — a failure here propagates to linked models</div>
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(!showForm)}>+ Link Model</button>
+      </div>
+      {loading ? <div className="spinner-center"><Spinner dark size={20}/></div> : (
+        <div>
+          {!deps.feeds_into.length && !deps.fed_by.length && !showForm && (
+            <div style={{ fontSize:13, color:'var(--text-muted)' }}>No dependencies mapped. Link upstream models that provide inputs to this model, or downstream models that consume its outputs.</div>
+          )}
+          <div className="dep-map">
+            <div>
+              <div className="dep-column-label">⬆ This model feeds into</div>
+              {deps.feeds_into.length === 0 ? <div style={{ fontSize:12, color:'var(--text-muted)' }}>None</div> : deps.feeds_into.map(d => (
+                <div key={d.id} className="dep-item">
+                  <span><span className="dep-arrow-up">→</span>{d.downstream_name}</span>
+                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                    {d.downstream_tier && <span style={{ fontSize:10, fontWeight:700, color: tierColor[d.downstream_tier] }}>T{d.downstream_tier}</span>}
+                    <button style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14, lineHeight:1 }} onClick={() => del(d.id)} title="Remove link">×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="dep-column-label">⬇ This model receives from</div>
+              {deps.fed_by.length === 0 ? <div style={{ fontSize:12, color:'var(--text-muted)' }}>None</div> : deps.fed_by.map(d => (
+                <div key={d.id} className="dep-item">
+                  <span><span className="dep-arrow-down">←</span>{d.upstream_name}</span>
+                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                    {d.upstream_tier && <span style={{ fontSize:10, fontWeight:700, color: tierColor[d.upstream_tier] }}>T{d.upstream_tier}</span>}
+                    <button style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14, lineHeight:1 }} onClick={() => del(d.id)} title="Remove link">×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {showForm && (
+            <div className="dep-add-form" style={{ marginTop:12 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1.5fr 1fr', gap:10, alignItems:'end' }}>
+                <div>
+                  <label className="form-label">Direction</label>
+                  <select className="form-control" value={form.direction} onChange={e => setForm(p=>({...p,direction:e.target.value}))}>
+                    <option value="upstream">This model feeds INTO selected</option>
+                    <option value="downstream">Selected model feeds INTO this</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Linked Model</label>
+                  <select className="form-control" value={form.other_model_id} onChange={e => setForm(p=>({...p,other_model_id:e.target.value}))}>
+                    <option value="">— Select model —</option>
+                    {available.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Dependency Type</label>
+                  <select className="form-control" value={form.dependency_type} onChange={e => setForm(p=>({...p,dependency_type:e.target.value}))}>
+                    <option value="feeds_into">Feeds Into (output → input)</option>
+                    <option value="validates_against">Validates Against</option>
+                    <option value="benchmarks">Benchmarks / Challenges</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginTop:8 }}>
+                <input className="form-control" placeholder="Notes (optional)" value={form.notes} onChange={e => setForm(p=>({...p,notes:e.target.value}))}/>
+              </div>
+              <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                <button className="btn btn-primary btn-sm" onClick={add} disabled={saving}>{saving ? <Spinner/> : 'Add Link'}</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowForm(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 7 — BACKTESTING LOG (used inside ValDetailModal)
+═══════════════════════════════════════════════════ */
+function BacktestingLog({ validationId }) {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const blankForm = { test_name:'', period_start:'', period_end:'', predicted_value:'', actual_value:'', tolerance_threshold:'', variance_pct:'', verdict:'pass', notes:'' };
+  const [form, setForm] = useState(blankForm);
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  function reload() {
+    apiFetch(`/api/validations/${validationId}/backtesting`)
+      .then(setLogs).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
+  }
+  useEffect(() => { reload(); }, [validationId]);
+
+  async function save() {
+    if (!form.test_name) { toast('Test name is required','error'); return; }
+    setSaving(true);
+    try {
+      await apiFetch(`/api/validations/${validationId}/backtesting`, { method:'POST', body:JSON.stringify(form) });
+      toast('Backtest result logged','success'); setShowForm(false); setForm(blankForm); reload();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function del(id) {
+    await apiFetch(`/api/validations/${validationId}/backtesting/${id}`, { method:'DELETE' });
+    reload();
+  }
+
+  const verdictBadge = v => <span className={`verdict-${v||'inconclusive'}`}>{(v||'—').charAt(0).toUpperCase()+(v||'').slice(1)}</span>;
+
+  return (
+    <div style={{ marginBottom:14 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+        <span style={{ fontSize:12.5, fontWeight:700, color:'var(--navy)' }}>Backtesting Log</span>
+        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(!showForm)}>+ Add Test Result</button>
+      </div>
+      {loading ? <div className="spinner-center"><Spinner dark size={18}/></div> : (
+        <>
+          {logs.length === 0 && !showForm ? (
+            <div style={{ fontSize:12.5, color:'var(--text-muted)', padding:'6px 0' }}>No backtesting results logged. Record predicted vs. actual comparisons to demonstrate model performance over time.</div>
+          ) : (
+            <div>
+              {logs.length > 0 && (
+                <div style={{ overflowX:'auto' }}>
+                  <table style={{ width:'100%', fontSize:12.5, borderCollapse:'collapse' }}>
+                    <thead>
+                      <tr style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', color:'var(--text-muted)', borderBottom:'1px solid var(--border)' }}>
+                        <th style={{ textAlign:'left', padding:'4px 6px' }}>Test Name</th>
+                        <th style={{ textAlign:'left', padding:'4px 6px' }}>Period</th>
+                        <th style={{ textAlign:'right', padding:'4px 6px' }}>Predicted</th>
+                        <th style={{ textAlign:'right', padding:'4px 6px' }}>Actual</th>
+                        <th style={{ textAlign:'right', padding:'4px 6px' }}>Variance</th>
+                        <th style={{ textAlign:'center', padding:'4px 6px' }}>Verdict</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {logs.map(l => (
+                        <tr key={l.id} style={{ borderBottom:'1px solid var(--border)' }}>
+                          <td style={{ padding:'6px', fontWeight:600 }}>{l.test_name}</td>
+                          <td style={{ padding:'6px', color:'var(--text-muted)' }}>{l.period_start ? `${l.period_start} → ${l.period_end||'?'}` : '—'}</td>
+                          <td style={{ padding:'6px', textAlign:'right' }}>{l.predicted_value||'—'}</td>
+                          <td style={{ padding:'6px', textAlign:'right' }}>{l.actual_value||'—'}</td>
+                          <td style={{ padding:'6px', textAlign:'right' }}>{l.variance_pct != null ? `${l.variance_pct}%` : '—'}</td>
+                          <td style={{ padding:'6px', textAlign:'center' }}>{verdictBadge(l.verdict)}</td>
+                          <td style={{ padding:'6px' }}><button style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14 }} onClick={() => del(l.id)}>×</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {showForm && (
+                <div className="backtest-form">
+                  <div className="backtest-form-grid" style={{ marginBottom:10 }}>
+                    <div><label className="form-label">Test Name *</label><input className="form-control" placeholder="e.g. Reserve Adequacy — AY 2023" value={form.test_name} onChange={e=>setForm(p=>({...p,test_name:e.target.value}))}/></div>
+                    <div><label className="form-label">Period Start</label><input className="form-control" type="date" value={form.period_start} onChange={e=>setForm(p=>({...p,period_start:e.target.value}))}/></div>
+                    <div><label className="form-label">Period End</label><input className="form-control" type="date" value={form.period_end} onChange={e=>setForm(p=>({...p,period_end:e.target.value}))}/></div>
+                    <div><label className="form-label">Predicted Value</label><input className="form-control" placeholder="e.g. $4.2M" value={form.predicted_value} onChange={e=>setForm(p=>({...p,predicted_value:e.target.value}))}/></div>
+                    <div><label className="form-label">Actual Value</label><input className="form-control" placeholder="e.g. $3.9M" value={form.actual_value} onChange={e=>setForm(p=>({...p,actual_value:e.target.value}))}/></div>
+                    <div><label className="form-label">Tolerance Threshold</label><input className="form-control" placeholder="e.g. ±5%" value={form.tolerance_threshold} onChange={e=>setForm(p=>({...p,tolerance_threshold:e.target.value}))}/></div>
+                    <div><label className="form-label">Variance %</label><input className="form-control" type="number" step="0.01" placeholder="e.g. -7.14" value={form.variance_pct} onChange={e=>setForm(p=>({...p,variance_pct:e.target.value}))}/></div>
+                    <div><label className="form-label">Verdict *</label>
+                      <select className="form-control" value={form.verdict} onChange={e=>setForm(p=>({...p,verdict:e.target.value}))}>
+                        <option value="pass">Pass</option>
+                        <option value="fail">Fail</option>
+                        <option value="inconclusive">Inconclusive</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ marginBottom:10 }}><label className="form-label">Notes</label><textarea className="form-control" rows={2} placeholder="Methodology, caveats, OSFI implications..." value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}/></div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>{saving ? <Spinner/> : 'Log Result'}</button>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>{setShowForm(false);setForm(blankForm);}}>Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 function RatingWizard({ modelId, setScreen, setDetailModelId }) {
   const [step, setStep]       = useState(0);   // 0-4 MCQ, 5 booleans, 6 result
@@ -2295,6 +2803,9 @@ function ValDetailModal({ val: initialVal, onClose }) {
           <div style={{ fontSize: 13, marginTop: 3, whiteSpace: 'pre-wrap' }}>{v.findings}</div>
         </div>
       )}
+
+      {/* Phase 7: Backtesting Log */}
+      <BacktestingLog validationId={v.id} />
 
       {/* AI: Findings Analysis */}
       {(v.findings || aiAnalysis) && (

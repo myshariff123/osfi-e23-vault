@@ -331,8 +331,18 @@ app.post('/api/models', requireAuth, async function(req, res) {
   try {
     const b=req.body;
     const r=await pool.query(
-      'INSERT INTO models(tenant_id,name,version,description,purpose,business_unit,model_owner_name,model_owner_email,methodology_type,input_data_sources,production_system,deployed_at,is_third_party,vendor_name,vendor_product,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *',
-      [req.user.tenant_id,b.name,b.version||'1.0',b.description,b.purpose,b.business_unit,b.model_owner_name,b.model_owner_email,b.methodology_type||'other',b.input_data_sources,b.production_system,b.deployed_at||null,b.is_third_party||false,b.vendor_name||null,b.vendor_product||null,'active']
+      `INSERT INTO models(
+        tenant_id,name,version,description,purpose,business_unit,
+        model_owner_name,model_owner_email,methodology_type,input_data_sources,
+        production_system,deployed_at,is_third_party,vendor_name,vendor_product,status,
+        insurance_category,is_spreadsheet_model,spreadsheet_location,
+        is_ifrs17_model,ifrs17_component,regulatory_capital_linked,capital_framework
+      ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
+      [req.user.tenant_id,b.name,b.version||'1.0',b.description,b.purpose,b.business_unit,
+       b.model_owner_name,b.model_owner_email,b.methodology_type||'other',b.input_data_sources,
+       b.production_system,b.deployed_at||null,b.is_third_party||false,b.vendor_name||null,b.vendor_product||null,'active',
+       b.insurance_category||null,b.is_spreadsheet_model||false,b.spreadsheet_location||null,
+       b.is_ifrs17_model||false,b.ifrs17_component||null,b.regulatory_capital_linked||false,b.capital_framework||null]
     );
     await audit(req.user.tenant_id,r.rows[0].id,req.user.email,'model_created',{metadata:{name:r.rows[0].name},ip:req.ip});
     res.status(201).json(r.rows[0]);
@@ -357,8 +367,21 @@ app.put('/api/models/:id', requireAuth, async function(req, res) {
     const prev=await pool.query('SELECT * FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,req.user.tenant_id]);
     if (!prev.rows.length) return res.status(404).json({ error:'Not found' });
     const r=await pool.query(
-      'UPDATE models SET name=$1,version=$2,description=$3,purpose=$4,business_unit=$5,model_owner_name=$6,model_owner_email=$7,methodology_type=$8,input_data_sources=$9,production_system=$10,deployed_at=$11,is_third_party=$12,vendor_name=$13,vendor_product=$14 WHERE id=$15 AND tenant_id=$16 RETURNING *',
-      [b.name,b.version,b.description,b.purpose,b.business_unit,b.model_owner_name,b.model_owner_email,b.methodology_type,b.input_data_sources,b.production_system,b.deployed_at||null,b.is_third_party||false,b.vendor_name||null,b.vendor_product||null,req.params.id,req.user.tenant_id]
+      `UPDATE models SET
+        name=$1,version=$2,description=$3,purpose=$4,business_unit=$5,
+        model_owner_name=$6,model_owner_email=$7,methodology_type=$8,
+        input_data_sources=$9,production_system=$10,deployed_at=$11,
+        is_third_party=$12,vendor_name=$13,vendor_product=$14,
+        insurance_category=$15,is_spreadsheet_model=$16,spreadsheet_location=$17,
+        is_ifrs17_model=$18,ifrs17_component=$19,regulatory_capital_linked=$20,capital_framework=$21
+       WHERE id=$22 AND tenant_id=$23 RETURNING *`,
+      [b.name,b.version,b.description,b.purpose,b.business_unit,
+       b.model_owner_name,b.model_owner_email,b.methodology_type,
+       b.input_data_sources,b.production_system,b.deployed_at||null,
+       b.is_third_party||false,b.vendor_name||null,b.vendor_product||null,
+       b.insurance_category||null,b.is_spreadsheet_model||false,b.spreadsheet_location||null,
+       b.is_ifrs17_model||false,b.ifrs17_component||null,b.regulatory_capital_linked||false,b.capital_framework||null,
+       req.params.id,req.user.tenant_id]
     );
     await audit(req.user.tenant_id,req.params.id,req.user.email,'model_updated',{metadata:{fields_changed:Object.keys(b)},ip:req.ip});
     res.json(r.rows[0]);
@@ -369,6 +392,144 @@ app.delete('/api/models/:id', requireAuth, async function(req, res) {
   try {
     await pool.query("UPDATE models SET status='archived' WHERE id=$1 AND tenant_id=$2",[req.params.id,req.user.tenant_id]);
     await audit(req.user.tenant_id,req.params.id,req.user.email,'model_archived',{ip:req.ip});
+    res.json({ ok:true });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ── Phase 7: Assumption Register ──────────────────────────────────────────────
+app.get('/api/models/:id/assumptions', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT * FROM model_assumptions WHERE model_id=$1 AND tenant_id=$2 ORDER BY assumption_name ASC',
+      [req.params.id, req.user.tenant_id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/assumptions', requireAuth, async function(req, res) {
+  try {
+    const { assumption_name,current_value,prior_value,unit,approved_by,approved_at,effective_date,change_reason } = req.body;
+    if (!assumption_name || !current_value) return res.status(400).json({ error:'assumption_name and current_value are required' });
+    const r = await pool.query(
+      `INSERT INTO model_assumptions(model_id,tenant_id,assumption_name,current_value,prior_value,unit,approved_by,approved_at,effective_date,change_reason,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [req.params.id, req.user.tenant_id, assumption_name, current_value,
+       prior_value||null, unit||null, approved_by||null, approved_at||null,
+       effective_date||null, change_reason||null, req.user.email]);
+    await audit(req.user.tenant_id, req.params.id, req.user.email, 'assumption_added',
+      { metadata:{ assumption_name, current_value }, ip:req.ip });
+    res.status(201).json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.put('/api/models/:id/assumptions/:aId', requireAuth, async function(req, res) {
+  try {
+    const { assumption_name,current_value,prior_value,unit,approved_by,approved_at,effective_date,change_reason } = req.body;
+    const r = await pool.query(
+      `UPDATE model_assumptions SET assumption_name=$1,current_value=$2,prior_value=$3,unit=$4,
+       approved_by=$5,approved_at=$6,effective_date=$7,change_reason=$8
+       WHERE id=$9 AND model_id=$10 AND tenant_id=$11 RETURNING *`,
+      [assumption_name, current_value, prior_value||null, unit||null,
+       approved_by||null, approved_at||null, effective_date||null, change_reason||null,
+       req.params.aId, req.params.id, req.user.tenant_id]);
+    if (!r.rows.length) return res.status(404).json({ error:'Not found' });
+    await audit(req.user.tenant_id, req.params.id, req.user.email, 'assumption_updated',
+      { metadata:{ assumption_name }, ip:req.ip });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.delete('/api/models/:id/assumptions/:aId', requireAuth, async function(req, res) {
+  try {
+    await pool.query('DELETE FROM model_assumptions WHERE id=$1 AND model_id=$2 AND tenant_id=$3',
+      [req.params.aId, req.params.id, req.user.tenant_id]);
+    await audit(req.user.tenant_id, req.params.id, req.user.email, 'assumption_deleted', { ip:req.ip });
+    res.json({ ok:true });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ── Phase 7: Model Dependency Map ─────────────────────────────────────────────
+app.get('/api/models/:id/dependencies', requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id, mid = req.params.id;
+    const [up, down] = await Promise.all([
+      pool.query(
+        `SELECT d.*, m.name AS downstream_name, m.risk_tier AS downstream_tier, m.insurance_category AS downstream_category
+         FROM model_dependencies d JOIN models m ON m.id=d.downstream_model_id
+         WHERE d.upstream_model_id=$1 AND d.tenant_id=$2 ORDER BY m.name`, [mid, tid]),
+      pool.query(
+        `SELECT d.*, m.name AS upstream_name, m.risk_tier AS upstream_tier, m.insurance_category AS upstream_category
+         FROM model_dependencies d JOIN models m ON m.id=d.upstream_model_id
+         WHERE d.downstream_model_id=$1 AND d.tenant_id=$2 ORDER BY m.name`, [mid, tid]),
+    ]);
+    res.json({ feeds_into: up.rows, fed_by: down.rows });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/dependencies', requireAuth, async function(req, res) {
+  try {
+    const { direction, other_model_id, dependency_type, notes } = req.body;
+    // direction: 'upstream' (this model feeds into other) or 'downstream' (other feeds into this)
+    const [upId, downId] = direction === 'upstream'
+      ? [req.params.id, other_model_id]
+      : [other_model_id, req.params.id];
+    const other = await pool.query('SELECT id,name FROM models WHERE id=$1 AND tenant_id=$2',
+      [other_model_id, req.user.tenant_id]);
+    if (!other.rows.length) return res.status(404).json({ error:'Target model not found' });
+    const r = await pool.query(
+      `INSERT INTO model_dependencies(upstream_model_id,downstream_model_id,tenant_id,dependency_type,notes,created_by)
+       VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(upstream_model_id,downstream_model_id) DO NOTHING RETURNING *`,
+      [upId, downId, req.user.tenant_id, dependency_type||'feeds_into', notes||null, req.user.email]);
+    await audit(req.user.tenant_id, req.params.id, req.user.email, 'dependency_added',
+      { metadata:{ direction, other: other.rows[0].name }, ip:req.ip });
+    res.status(201).json(r.rows[0] || { message:'Already exists' });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.delete('/api/models/:id/dependencies/:depId', requireAuth, async function(req, res) {
+  try {
+    await pool.query('DELETE FROM model_dependencies WHERE id=$1 AND tenant_id=$2',
+      [req.params.depId, req.user.tenant_id]);
+    await audit(req.user.tenant_id, req.params.id, req.user.email, 'dependency_removed', { ip:req.ip });
+    res.json({ ok:true });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ── Phase 7: Backtesting Log ──────────────────────────────────────────────────
+app.get('/api/validations/:id/backtesting', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT * FROM backtesting_logs WHERE validation_id=$1 AND tenant_id=$2 ORDER BY test_name ASC',
+      [req.params.id, req.user.tenant_id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/validations/:id/backtesting', requireAuth, async function(req, res) {
+  try {
+    const { test_name,period_start,period_end,predicted_value,actual_value,
+            tolerance_threshold,variance_pct,verdict,notes,conducted_by } = req.body;
+    if (!test_name) return res.status(400).json({ error:'test_name is required' });
+    const val = await pool.query('SELECT model_id FROM validations WHERE id=$1 AND tenant_id=$2',
+      [req.params.id, req.user.tenant_id]);
+    if (!val.rows.length) return res.status(404).json({ error:'Validation not found' });
+    const r = await pool.query(
+      `INSERT INTO backtesting_logs(validation_id,model_id,tenant_id,test_name,period_start,period_end,
+        predicted_value,actual_value,tolerance_threshold,variance_pct,verdict,notes,conducted_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      [req.params.id, val.rows[0].model_id, req.user.tenant_id,
+       test_name, period_start||null, period_end||null, predicted_value||null, actual_value||null,
+       tolerance_threshold||null, variance_pct||null, verdict||null, notes||null, conducted_by||req.user.email]);
+    await audit(req.user.tenant_id, val.rows[0].model_id, req.user.email, 'backtest_logged',
+      { metadata:{ test_name, verdict }, ip:req.ip });
+    res.status(201).json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.delete('/api/validations/:id/backtesting/:logId', requireAuth, async function(req, res) {
+  try {
+    await pool.query('DELETE FROM backtesting_logs WHERE id=$1 AND validation_id=$2 AND tenant_id=$3',
+      [req.params.logId, req.params.id, req.user.tenant_id]);
     res.json({ ok:true });
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
