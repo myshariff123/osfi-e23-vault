@@ -789,12 +789,15 @@ function LandingPage({ onLogin, onGetStarted }) {
   const [showLogin, setShowLogin] = useState(false);
 
   const features = [
-    { icon:'🎯', title:'AI Action Queue', desc:'Opens every morning with your 5 most urgent OSFI obligations, ranked by exam citation risk. Not a dashboard — a directive.', roi:'Replaces 2h/week of CRO triage' },
-    { icon:'📄', title:'Validation Report Generator', desc:'Logs findings → Claude drafts the complete formal validation report in 90 seconds. Executive summary, findings matrix, risk opinion, sign-off page.', roi:'Replaces $15K–$50K per report' },
-    { icon:'📜', title:'MRM Policy Generator', desc:'10 questions about your institution → Claude generates a complete 13-section OSFI E-23 MRM Policy with board attestation page. Ready for board approval.', roi:'Replaces $25K–$50K in legal fees' },
-    { icon:'🩺', title:'Portfolio Doctor', desc:'One-click full portfolio health scan. Health grade A–F, critical findings, concentration risks, systemic gaps — in seconds rather than days.', roi:'Replaces days of manual gap analysis' },
-    { icon:'🧾', title:'Document Intelligence', desc:'Paste any document — validation report, model development doc, vendor contract — AI extracts structured data and pre-fills your forms.', roi:'Eliminates hours of manual re-keying' },
-    { icon:'🚨', title:'Emergency Exam Sprint', desc:'OSFI examiner arriving in 30 days? AI generates a full gap analysis plus a 30/60/90-day remediation plan with examiner likely questions.', roi:'Exam prep in minutes, not months' },
+    { icon:'🎯', title:'AI Action Queue', desc:'Opens every session with your 5 most urgent OSFI obligations, ranked by exam citation risk. Not a dashboard — a directive. Risk Pulse score tells your CRO exactly where you stand today.', roi:'Replaces 2h/week of CRO triage' },
+    { icon:'📄', title:'Validation Report Generator', desc:'Log findings → Claude drafts the complete formal validation report in 90 seconds. Executive summary, findings matrix, risk opinion, sign-off page — indistinguishable from a $30K consultant deliverable.', roi:'Replaces $15K–$50K per report' },
+    { icon:'📜', title:'MRM Policy Generator', desc:'10 questions → Claude generates a complete 13-section OSFI E-23 MRM Policy with board attestation page. Version-locked on approval. Ready for your next board meeting.', roi:'Replaces $25K–$50K in legal fees' },
+    { icon:'🏛', title:'Insurance Model Taxonomy', desc:'14 insurance-specific model categories: actuarial reserving, pricing/rating, catastrophe (RMS/AIR), capital/ORSA, IFRS 17 (CSM, risk adjustment, discount curve), underwriting scoring, claims, fraud detection, ALM and more.', roi:'Built for insurers, not banks' },
+    { icon:'📊', title:'Actuarial Assumption Register', desc:'Every key model input — tail factors, discount rates, lapse rates, loss development factors — versioned, approved, and audit-ready. Current vs. prior value with change reason and sign-off. Examiner-ready on demand.', roi:'Replaces manual spreadsheet registers' },
+    { icon:'🔬', title:'Structured Backtesting Log', desc:'Capture predicted vs. actual outcomes per validation cycle — tolerance threshold, variance %, pass/fail verdict. The structured backtesting record OSFI expects to see, replacing narrative paragraphs with verifiable data.', roi:'Turns validation findings into audit evidence' },
+    { icon:'🕸', title:'Model Dependency Map', desc:'Map cascade risk chains: Cat Model → Reinsurance Optimization → Capital/MCT → ORSA. See what breaks downstream when an upstream model fails. Tier badges show the propagation severity at a glance.', roi:'Exposes hidden cascade risk' },
+    { icon:'🩺', title:'Portfolio Doctor', desc:'One-click full portfolio health scan. Health grade A–F, critical findings, concentration risks, systemic gaps. Knows the difference between a GLM pricing model and a CAT model — graded accordingly.', roi:'Replaces days of manual gap analysis' },
+    { icon:'🚨', title:'Emergency Exam Sprint', desc:'OSFI examiner arriving in 30 days? AI generates a full gap analysis plus a 30/60/90-day remediation plan with likely examiner questions — tailored to your actual model inventory.', roi:'Exam prep in minutes, not months' },
   ];
 
   return (
@@ -815,7 +818,7 @@ function LandingPage({ onLogin, onGetStarted }) {
       <div className="lp-hero">
         <div className="lp-hero-title">Canada's Only AI-Powered<br /><span>OSFI E-23</span> Compliance Platform</div>
         <div className="lp-hero-sub">
-          The first MRM platform that doesn't just store your compliance data — it generates your validation reports, writes your MRM policy, and tells your CRO exactly what to do today. Powered by Claude AI via AWS Bedrock ca-central-1.
+          Built for Canadian FRFIs and insurers. The first MRM platform that generates your validation reports, writes your MRM policy, tracks actuarial assumptions, maps cascade risk, and tells your CRO exactly what to do today — all within Canada via AWS Bedrock ca-central-1.
         </div>
         <div className="lp-hero-ctas">
           <button className="lp-btn-primary" style={{ fontSize:16, padding:'15px 36px' }} onClick={onGetStarted}>Start 30-Day Pilot — No Setup Fee</button>
@@ -823,6 +826,7 @@ function LandingPage({ onLogin, onGetStarted }) {
         </div>
         <div className="lp-trust-row">
           <span className="lp-trust-chip">OSFI E-23 (September 2025)</span>
+          <span className="lp-trust-chip">Built for Banks &amp; Insurers</span>
           <span className="lp-trust-chip">AWS ca-central-1 · Canadian Data Sovereignty</span>
           <span className="lp-trust-chip">PIPEDA + Quebec Law 25 Compliant</span>
           <span className="lp-trust-chip">Cryptographic Audit Integrity</span>
@@ -845,7 +849,7 @@ function LandingPage({ onLogin, onGetStarted }) {
           <div className="lp-metric-label">OSFI E-23 deadline — 170+ FRFIs must comply</div>
         </div>
         <div className="lp-metric">
-          <div className="lp-metric-num">14<span>+</span></div>
+          <div className="lp-metric-num">20<span>+</span></div>
           <div className="lp-metric-label">AI capabilities across every OSFI E-23 section</div>
         </div>
       </div>
@@ -853,7 +857,7 @@ function LandingPage({ onLogin, onGetStarted }) {
       {/* Features */}
       <div className="lp-section">
         <div className="lp-section-title">From Document Storage to Compliance Automation</div>
-        <div className="lp-section-sub">Every other tool helps you store compliance data. ClearMRM executes your compliance program — generating the deliverables that used to require expensive consultants.</div>
+        <div className="lp-section-sub">Every other tool helps you store compliance data. ClearMRM executes your compliance program — generating the deliverables that used to require expensive consultants, with insurance-native depth built in from the start.</div>
         <div className="lp-features">
           {features.map((f, i) => (
             <div key={i} className="lp-feature-card">
@@ -906,10 +910,10 @@ function LandingPage({ onLogin, onGetStarted }) {
         <div className="lp-section-sub">No implementation fees. No per-user charges. No professional services required. Running in 30 days.</div>
         <div className="lp-pricing">
           {[
-            { tier:'Community', name:'Under $1B AUM', price:'$30,000', period:'/year', aum:'Credit unions, trust companies, small insurers', features:['All 14 screens', 'All AI features', 'Up to 50 models', 'Email support'] },
-            { tier:'Regional', name:'$1B–$20B AUM', price:'$72,000', period:'/year', aum:'Mid-tier banks, regional insurers', features:['All features', 'Up to 500 models', 'Priority support', 'SSO / SAML 2.0'], featured:true },
-            { tier:'National', name:'$20B–$100B AUM', price:'$144,000', period:'/year', aum:'Large regional banks, national insurers', features:['All features', 'Unlimited models', 'Dedicated success manager', 'Custom integrations'] },
-            { tier:'Enterprise', name:'$100B+ AUM', price:'Custom', period:'', aum:'Schedule I banks, large crown corps', features:['White-glove onboarding', 'On-site validation', 'Regulatory counsel review', 'Board presentation support'] },
+            { tier:'Community', name:'Under $1B AUM', price:'$30,000', period:'/year', aum:'Credit unions, trust companies, small insurers', features:['All 15 modules', 'All 20+ AI features', 'Up to 50 models', 'Insurance taxonomy', 'Email support'] },
+            { tier:'Regional', name:'$1B–$20B AUM', price:'$72,000', period:'/year', aum:'Mid-tier banks, regional insurers, P&C carriers', features:['All 15 modules', 'All 20+ AI features', 'Up to 500 models', 'SSO / SAML 2.0', 'Priority support'], featured:true },
+            { tier:'National', name:'$20B–$100B AUM', price:'$144,000', period:'/year', aum:'Large regional banks, national P&C and life insurers', features:['All features', 'Unlimited models', 'Dedicated success manager', 'Custom integrations', 'SLA guarantee'] },
+            { tier:'Enterprise', name:'$100B+ AUM', price:'Custom', period:'', aum:'Schedule I banks, large crown corps, reinsurers', features:['White-glove onboarding', 'On-site validation support', 'Regulatory counsel review', 'Board presentation', 'Validator Marketplace access'] },
           ].map((p, i) => (
             <div key={i} className={`lp-price-card${p.featured ? ' featured' : ''}`}>
               <div className="lp-price-tier">{p.tier}</div>

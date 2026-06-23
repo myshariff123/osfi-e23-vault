@@ -131,10 +131,10 @@ The audit trail was already immutable (PostgreSQL trigger prevents UPDATE/DELETE
 
 | Tier | Target | ACV | Model Limit |
 |---|---|---|---|
-| Community | Credit unions, small trust cos | $12,000 | 15 models |
-| Regional | Regional banks, mid-size insurers | $72,000 | 100 models |
-| National | National banks, large insurers | $120,000 | Unlimited |
-| Enterprise | Top 6 banks, OSFI-watched institutions | Custom ($200K–$400K) | Unlimited + SLA |
+| Community | Credit unions, small trust cos, small insurers (under $1B AUM) | $30,000 | 50 models |
+| Regional | Regional banks, mid-size P&C and life insurers ($1B–$20B AUM) | $72,000 | 500 models |
+| National | National banks, large P&C/life insurers ($20B–$100B AUM) | $144,000 | Unlimited |
+| Enterprise | Top 6 banks, OSFI-watched institutions, reinsurers ($100B+ AUM) | Custom ($200K–$400K) | Unlimited + SLA |
 
 **Pilot program:** 30-day free pilot → pilot converts at $72K/year minimum. Target: 2 lighthouse pilots signed by November 2026.
 
