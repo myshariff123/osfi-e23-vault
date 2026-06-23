@@ -389,6 +389,98 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .threshold-bar { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
 .mon-form { display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; }
 .alert-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; font-size: 13px; color: var(--red); font-weight: 600; margin-bottom: 12px; }
+
+/* ACTION QUEUE */
+.aq-hero { background: linear-gradient(135deg,#0b2d5f,#1e40af); border-radius:var(--radius); padding:22px 28px; color:#fff; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.aq-hero-left h2 { font-size:19px; font-weight:800; margin-bottom:4px; }
+.aq-hero-left p  { font-size:12.5px; opacity:.8; max-width:500px; line-height:1.5; }
+.pulse-circle { width:80px; height:80px; border-radius:50%; border:4px solid rgba(255,255,255,.3); display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+.pulse-score { font-size:26px; font-weight:900; line-height:1; color:#fff; }
+.pulse-label { font-size:9px; font-weight:700; color:rgba(255,255,255,.8); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; text-align:center; }
+.pulse-high   { background:rgba(185,28,28,.55); }
+.pulse-mod    { background:rgba(180,83,9,.55); }
+.pulse-low    { background:rgba(21,128,61,.55); }
+.aq-action { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--white); margin-bottom:10px; transition:box-shadow .15s; }
+.aq-action:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.aq-action.urg-critical { border-left:4px solid var(--red); }
+.aq-action.urg-high     { border-left:4px solid var(--amber); }
+.aq-action.urg-medium   { border-left:4px solid #2563eb; }
+.aq-rank { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; flex-shrink:0; }
+.aq-rank-critical { background:#fee2e2; color:var(--red); }
+.aq-rank-high     { background:#fff7ed; color:#c2410c; }
+.aq-rank-medium   { background:#eff6ff; color:#1d4ed8; }
+.aq-body { flex:1; }
+.aq-title { font-size:13.5px; font-weight:700; color:var(--text); margin-bottom:3px; }
+.aq-detail { font-size:12.5px; color:var(--text-muted); line-height:1.5; margin-bottom:6px; }
+.aq-footer { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.aq-osfi-ref { font-size:11px; font-weight:700; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:10px; }
+.aq-hours { font-size:11px; color:var(--text-muted); }
+.aq-consequence { font-size:11px; color:var(--red); font-style:italic; }
+.aq-btn { margin-left:auto; flex-shrink:0; }
+.aq-quick-wins { display:flex; flex-wrap:wrap; gap:8px; }
+.aq-qw { padding:6px 14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:20px; font-size:12.5px; color:#15803d; font-weight:600; }
+
+/* PORTFOLIO DOCTOR */
+.pd-hero { background:linear-gradient(135deg,#14532d,#15803d); border-radius:var(--radius); padding:22px 28px; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:20px; }
+.pd-grade { width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:900; color:#fff; flex-shrink:0; }
+.pd-finding { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--white); margin-bottom:8px; }
+.pd-finding.sev-critical { border-left:4px solid var(--red); }
+.pd-finding.sev-high     { border-left:4px solid var(--amber); }
+.pd-conc { padding:10px 14px; background:#fef9ee; border:1px solid #fde68a; border-radius:8px; margin-bottom:8px; font-size:12.5px; }
+.pd-win { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; margin-bottom:8px; font-size:12.5px; color:#15803d; font-weight:600; }
+
+/* VALIDATION REPORT */
+.vr-header { background:var(--navy); color:#fff; border-radius:var(--radius) var(--radius) 0 0; padding:24px 28px; }
+.vr-title   { font-size:18px; font-weight:800; margin-bottom:4px; }
+.vr-meta    { font-size:12px; opacity:.8; }
+.vr-body    { border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius) var(--radius); background:#fff; }
+.vr-section { padding:20px 28px; border-bottom:1px solid var(--border); }
+.vr-section:last-child { border-bottom:none; }
+.vr-section-title { font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--navy); margin-bottom:10px; }
+.vr-text    { font-size:13.5px; line-height:1.75; color:var(--text); }
+.vr-opinion { padding:16px 20px; border-radius:8px; margin:12px 0; font-size:14px; font-weight:700; }
+.vr-opinion.pass     { background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; }
+.vr-opinion.conditional { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
+.vr-opinion.fail     { background:#fee2e2; color:var(--red); border:1px solid #fca5a5; }
+.vr-findings-table { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+.vr-findings-table th { background:#f8fafc; padding:8px 10px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid var(--border); }
+.vr-findings-table td { padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+.vr-sev-critical { color:var(--red); font-weight:700; }
+.vr-sev-high { color:#c2410c; font-weight:700; }
+.vr-sev-medium { color:#2563eb; font-weight:600; }
+.vr-sev-low { color:var(--green); }
+
+/* MRM POLICY */
+.policy-cover { background:var(--navy); color:#fff; border-radius:var(--radius); padding:36px 40px; margin-bottom:20px; text-align:center; }
+.policy-cover-title { font-size:24px; font-weight:900; margin-bottom:8px; }
+.policy-cover-inst  { font-size:16px; opacity:.85; margin-bottom:6px; }
+.policy-cover-meta  { font-size:12.5px; opacity:.65; }
+.policy-section { border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+.policy-section-hdr { background:#f8fafc; padding:12px 18px; font-weight:800; font-size:13px; color:var(--navy); border-bottom:1px solid var(--border); cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+.policy-section-body { padding:18px; font-size:13.5px; line-height:1.8; color:var(--text); white-space:pre-wrap; }
+.policy-form { display:flex; flex-direction:column; gap:14px; }
+.policy-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media (max-width:700px) { .policy-form-grid { grid-template-columns:1fr; } }
+
+/* NATURAL LANGUAGE SEARCH */
+.nls-bar { display:flex; gap:10px; align-items:center; margin-bottom:20px; }
+.nls-input { flex:1; padding:12px 16px; border:2px solid var(--navy); border-radius:var(--radius); font-size:15px; outline:none; }
+.nls-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(29,78,216,.12); }
+.nls-suggestion { font-size:12px; color:var(--text-muted); margin-bottom:16px; }
+.nls-suggestion span { display:inline-block; margin-right:8px; margin-bottom:4px; padding:4px 10px; background:#f1f5f9; border-radius:20px; cursor:pointer; transition:background .15s; }
+.nls-suggestion span:hover { background:#dbeafe; color:var(--blue); }
+.nls-interpretation { padding:10px 14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; font-size:13px; color:#1d4ed8; font-weight:600; margin-bottom:16px; }
+
+/* DOCUMENT INTELLIGENCE */
+.di-drop { border:2px dashed var(--border); border-radius:var(--radius); padding:32px; text-align:center; background:#f8fafc; cursor:text; transition:border-color .15s; }
+.di-drop:focus-within { border-color:var(--blue); background:#eff6ff; }
+.di-result-section { padding:16px; border:1px solid var(--border); border-radius:var(--radius); background:#fff; margin-bottom:12px; }
+.di-result-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--navy); margin-bottom:8px; }
+.di-field { display:flex; gap:8px; margin-bottom:6px; font-size:13px; }
+.di-field-label { font-weight:600; color:var(--text-muted); min-width:140px; }
+.di-field-value { color:var(--text); }
+.di-warning { padding:8px 12px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; font-size:12px; color:#92400e; margin-bottom:6px; }
+.di-action-btn { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -583,10 +675,13 @@ function LoginScreen({ onLogin, showOnboarding, setShowOnboarding }) {
    SIDEBAR
 ═══════════════════════════════════════════════════ */
 const NAV_ITEMS = [
-  { key: 'dashboard',        label: 'Dashboard',           icon: '📊' },
+  { key: 'dashboard',        label: 'Action Queue',        icon: '🎯' },
   { key: 'models',           label: 'Model Inventory',     icon: '🗂️' },
   { key: 'validations',      label: 'Validations',         icon: '✅' },
   { key: 'vendors',          label: 'Vendor Assessments',  icon: '🏢' },
+  { key: 'search',           label: 'Smart Search',        icon: '🔍' },
+  { key: 'mrm_policy',       label: 'MRM Policy',          icon: '📜' },
+  { key: 'doc_ingest',       label: 'Doc Intelligence',    icon: '🧾' },
   { key: 'audit',            label: 'Audit Trail',         icon: '📋' },
   { key: 'board',            label: 'Board Report',        icon: '📑' },
   { key: 'examiner_export',  label: 'Examiner Export',     icon: '🏛️' },
@@ -626,9 +721,8 @@ function Sidebar({ screen, setScreen, user }) {
 function Dashboard({ setScreen, setDetailModelId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [aiInsight, setAiInsight] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const aiFetched = useRef(false);
+  const [queue, setQueue] = useState(null);
+  const [queueLoading, setQueueLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -638,32 +732,49 @@ function Dashboard({ setScreen, setDetailModelId }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function getAiBriefing() {
-    if (aiInsight || aiFetched.current) return;
-    aiFetched.current = true;
-    setAiLoading(true);
+  async function loadQueue() {
+    setQueueLoading(true);
     try {
-      const r = await apiFetch('/api/ai/dashboard-insight');
-      setAiInsight(r.insight);
-    } catch (e) { toast(e.message, 'error'); aiFetched.current = false; }
-    finally { setAiLoading(false); }
+      const r = await apiFetch('/api/dashboard/action-queue');
+      setQueue(r);
+    } catch (e) { toast(e.message, 'error'); }
+    finally { setQueueLoading(false); }
+  }
+
+  useEffect(() => { loadQueue(); }, []);
+
+  function urgClass(u) { return u === 'critical' ? 'critical' : u === 'high' ? 'high' : 'medium'; }
+
+  function pulseClass(score) {
+    if (score >= 70) return 'pulse-high';
+    if (score >= 40) return 'pulse-mod';
+    return 'pulse-low';
   }
 
   if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
 
   return (
     <div>
-      {data?.overdue > 0 && (
-        <div className="alert alert-danger">
-          ⚠️ <strong>{data.overdue} model(s)</strong> have overdue validations and require immediate attention under OSFI E-23.
+      {/* AI Action Queue Hero */}
+      {queue && (
+        <div className="aq-hero">
+          <div className="aq-hero-left">
+            <h2>MRM Action Queue</h2>
+            <p>{queue.executive_summary || 'AI-powered prioritization of your most urgent OSFI E-23 obligations.'}</p>
+          </div>
+          <div className={`pulse-circle ${pulseClass(100 - (queue.risk_pulse_score || 0))}`}>
+            <div className="pulse-score">{queue.risk_pulse_score ?? '—'}</div>
+            <div className="pulse-label">Risk Pulse</div>
+          </div>
         </div>
       )}
-      {data?.unrated > 0 && (
-        <div className="alert alert-warning">
-          ⚠️ <strong>{data.unrated} model(s)</strong> have not been risk-rated. Risk-rate all models to maintain OSFI E-23 compliance.
+      {queueLoading && !queue && (
+        <div className="card" style={{ marginBottom:18, display:'flex', alignItems:'center', gap:12, padding:20 }}>
+          <Spinner dark size={20} /><span style={{ color:'var(--text-muted)', fontSize:13 }}>AI is analyzing your portfolio and generating your action queue…</span>
         </div>
       )}
 
+      {/* KPI Strip */}
       <div className="kpi-grid">
         <div className="kpi-card"><div className="kpi-label">Total Models</div><div className="kpi-value kpi-navy">{data?.total ?? '—'}</div></div>
         <div className="kpi-card"><div className="kpi-label">Tier 1 · High</div><div className="kpi-value kpi-red">{data?.tier1 ?? '—'}</div></div>
@@ -674,27 +785,52 @@ function Dashboard({ setScreen, setDetailModelId }) {
         <div className="kpi-card"><div className="kpi-label">Val. Pending</div><div className="kpi-value kpi-amber">{data?.val_pending ?? '—'}</div></div>
       </div>
 
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div className="section-hdr">
-          <div className="section-title">🤖 AI Intelligence Panel</div>
-          <button className="btn btn-ai btn-sm" onClick={getAiBriefing} disabled={aiLoading || !!aiInsight}>
-            {aiLoading ? <><Spinner /> Thinking…</> : aiInsight ? '✓ Briefing Loaded' : 'Get AI Briefing'}
-          </button>
+      {/* Prioritized Action Items */}
+      {queue && (queue.actions||[]).length > 0 && (
+        <div className="card" style={{ marginBottom:18 }}>
+          <div className="section-hdr" style={{ marginBottom:14 }}>
+            <div className="section-title">Prioritized Actions</div>
+            <button className="btn btn-ai btn-sm" onClick={loadQueue} disabled={queueLoading}>
+              {queueLoading ? <><Spinner /> Refreshing…</> : '↻ Refresh Queue'}
+            </button>
+          </div>
+          {queue.actions.map((a, i) => (
+            <div key={i} className={`aq-action urg-${urgClass(a.urgency)}`}>
+              <div className={`aq-rank aq-rank-${urgClass(a.urgency)}`}>{a.rank || i+1}</div>
+              <div className="aq-body">
+                <div className="aq-title">{a.title}</div>
+                <div className="aq-detail">{a.detail}</div>
+                <div className="aq-footer">
+                  {a.osfi_ref && <span className="aq-osfi-ref">{a.osfi_ref}</span>}
+                  {a.estimated_hours && <span className="aq-hours">~{a.estimated_hours}h to resolve</span>}
+                  {a.consequence && <span className="aq-consequence">{a.consequence}</span>}
+                </div>
+              </div>
+              {a.nav_target && (
+                <button className="btn btn-primary btn-sm aq-btn" onClick={() => setScreen(a.nav_target)}>
+                  {a.action_label || 'Open →'}
+                </button>
+              )}
+            </div>
+          ))}
+          {(queue.quick_wins||[]).length > 0 && (
+            <div style={{ marginTop:16 }}>
+              <div style={{ fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', marginBottom:8 }}>Quick Wins (Under 15 Min)</div>
+              <div className="aq-quick-wins">
+                {queue.quick_wins.map((w, i) => <div key={i} className="aq-qw">{w}</div>)}
+              </div>
+            </div>
+          )}
+          {queue.this_week && (
+            <div className="ai-panel" style={{ marginTop:14 }}>
+              <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>This Week's CRO Directive</div>
+              <div className="ai-insight">{queue.this_week}</div>
+            </div>
+          )}
         </div>
-        {!aiInsight && !aiLoading && (
-          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-            Click <strong>Get AI Briefing</strong> for an OSFI E-23 compliance overview and risk summary powered by AI.
-          </div>
-        )}
-        {aiLoading && <div className="spinner-center"><Spinner dark size={24} /></div>}
-        {aiInsight && (
-          <div className="ai-panel">
-            <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>AI Dashboard Briefing</div>
-            <div className="ai-insight">{aiInsight}</div>
-          </div>
-        )}
-      </div>
+      )}
 
+      {/* Recent Models */}
       <div className="card">
         <div className="section-hdr">
           <div className="section-title">Recent Models</div>
@@ -711,13 +847,11 @@ function Dashboard({ setScreen, setDetailModelId }) {
               <tbody>
                 {data.recent.map(m => (
                   <tr key={m.id}>
-                    <td><strong>{m.name}</strong> <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>v{m.version}</span></td>
+                    <td><strong>{m.name}</strong></td>
                     <td>{m.model_owner_name || '—'}</td>
                     <td><TierBadge tier={m.risk_tier} /></td>
                     <td style={{ fontSize: 13 }}>{m.next_validation_due || '—'}</td>
-                    <td>
-                      <button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(m.id); setScreen('model_detail'); }}>View</button>
-                    </td>
+                    <td><button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(m.id); setScreen('model_detail'); }}>View</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -737,6 +871,9 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('');
+  const [scanResult, setScanResult] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [showScan, setShowScan] = useState(false);
   const toast = useToast();
 
   function load() {
@@ -760,6 +897,15 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
     } catch (e) { toast(e.message, 'error'); }
   }
 
+  async function runPortfolioDoctor() {
+    setScanning(true); setShowScan(true);
+    try {
+      const r = await apiFetch('/api/models/portfolio-scan', { method:'POST' });
+      setScanResult(r);
+    } catch(e) { toast(e.message,'error'); setShowScan(false); }
+    finally { setScanning(false); }
+  }
+
   return (
     <div>
       <div className="search-row">
@@ -771,8 +917,72 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
           <option value="3">Tier 3 · Low</option>
           <option value="unrated">Unrated</option>
         </select>
+        <button className="btn btn-ai" onClick={runPortfolioDoctor} disabled={scanning}>
+          {scanning ? <><Spinner /> Scanning Portfolio…</> : '🩺 Portfolio Doctor'}
+        </button>
         <button className="btn btn-primary" onClick={() => { setEditModelId(null); setScreen('model_form'); }}>+ Add Model</button>
       </div>
+
+      {showScan && (
+        <div className="card" style={{ marginBottom:18 }}>
+          <div className="section-hdr" style={{ marginBottom:14 }}>
+            <div className="section-title">🩺 Portfolio Doctor — AI Health Assessment</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowScan(false)}>Dismiss</button>
+          </div>
+          {scanning && <div className="spinner-center"><Spinner dark size={24} /></div>}
+          {scanResult && (
+            <>
+              <div className="pd-hero">
+                <div>
+                  <div style={{ fontSize:19, fontWeight:800, marginBottom:4 }}>{scanResult.headline}</div>
+                  <div style={{ fontSize:12.5, opacity:.85, marginBottom:8 }}>
+                    OSFI Exam Risk: <strong>{(scanResult.estimated_osfi_exam_risk||'').toUpperCase()}</strong> ·
+                    {scanResult.hours_saved_if_fixed ? ` ${scanResult.hours_saved_if_fixed}h saved if resolved` : ''} ·
+                    {scanResult.model_count} models scanned
+                  </div>
+                </div>
+                <div className="pd-grade">{scanResult.health_grade || '?'}</div>
+              </div>
+              {(scanResult.critical_findings||[]).length > 0 && (
+                <>
+                  <div style={{ fontSize:12, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', marginBottom:8 }}>Critical Findings</div>
+                  {scanResult.critical_findings.map((f,i) => (
+                    <div key={i} className={`pd-finding sev-${f.severity}`}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontWeight:700, fontSize:13, marginBottom:3 }}>{f.finding}</div>
+                        <div style={{ fontSize:12, color:'var(--text-muted)' }}>
+                          Affects: {(f.affected_models||[]).join(', ')} · <span style={{ color:'var(--blue)', fontWeight:600 }}>{f.osfi_ref}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {(scanResult.concentration_risks||[]).length > 0 && (
+                <>
+                  <div style={{ fontSize:12, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', margin:'12px 0 8px' }}>Concentration Risks</div>
+                  {scanResult.concentration_risks.map((r,i) => (
+                    <div key={i} className="pd-conc">
+                      <strong>{r.type}:</strong> {r.description} ({r.affected_count} models)
+                    </div>
+                  ))}
+                </>
+              )}
+              {(scanResult.quick_wins||[]).length > 0 && (
+                <>
+                  <div style={{ fontSize:12, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', margin:'12px 0 8px' }}>Quick Wins</div>
+                  {scanResult.quick_wins.map((w,i) => (
+                    <div key={i} className="pd-win">
+                      ✓ {w.action} {w.hours_saved ? `(saves ${w.hours_saved}h)` : ''}
+                    </div>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       <div className="card">
         {loading ? (
           <div className="spinner-center"><Spinner dark size={26} /></div>
@@ -1525,6 +1735,7 @@ function Validations() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected]     = useState(null);
+  const [reportVal, setReportVal]   = useState(null);
   const toast = useToast();
 
   function load() {
@@ -1535,6 +1746,8 @@ function Validations() {
       .finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
+
+  const canReport = (v) => ['findings_submitted','approved','closed'].includes(v.status);
 
   return (
     <div>
@@ -1554,17 +1767,27 @@ function Validations() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Model</th><th>Type</th><th>Status</th><th>Assigned To</th><th>Due Date</th><th>Outcome</th></tr>
+                <tr><th>Model</th><th>Type</th><th>Status</th><th>Assigned To</th><th>Due Date</th><th>Outcome</th><th></th></tr>
               </thead>
               <tbody>
                 {vals.map(v => (
-                  <tr key={v.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(v)}>
-                    <td><strong>{v.model_name}</strong></td>
+                  <tr key={v.id}>
+                    <td style={{ cursor:'pointer' }} onClick={() => setSelected(v)}><strong>{v.model_name}</strong></td>
                     <td>{(v.validation_type || '').replace(/_/g, ' ')}</td>
                     <td><StatusBadge status={v.status} /></td>
                     <td>{v.assigned_to || '—'}</td>
                     <td style={{ fontSize: 13 }}>{v.due_date || '—'}</td>
                     <td>{v.outcome ? <StatusBadge status={v.outcome} /> : '—'}</td>
+                    <td>
+                      <div style={{ display:'flex', gap:6 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setSelected(v)}>View</button>
+                        {canReport(v) && (
+                          <button className="btn btn-ai btn-sm" onClick={() => setReportVal(v)} title="Generate formal validation report">
+                            📄 Report
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1574,7 +1797,128 @@ function Validations() {
       </div>
       {showCreate && <CreateValModal models={models} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
       {selected && <ValDetailModal val={selected} onClose={() => { setSelected(null); load(); }} />}
+      {reportVal && <ValidationReportModal val={reportVal} onClose={() => setReportVal(null)} />}
     </div>
+  );
+}
+
+function ValidationReportModal({ val, onClose }) {
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    apiFetch(`/api/validations/${val.id}/generate-report`, { method:'POST' })
+      .then(setReport)
+      .catch(e => { toast(e.message,'error'); onClose(); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  function sevClass(s) {
+    const m = { Critical:'vr-sev-critical', High:'vr-sev-high', Medium:'vr-sev-medium', Low:'vr-sev-low' };
+    return m[s] || 'vr-sev-low';
+  }
+
+  function opinionClass(o) {
+    if (!o) return '';
+    if (o.toLowerCase().includes('fail')) return 'fail';
+    if (o.toLowerCase().includes('conditional')) return 'conditional';
+    return 'pass';
+  }
+
+  return (
+    <Modal title="AI Validation Report" onClose={onClose} wide>
+      {loading && (
+        <div style={{ padding:40, textAlign:'center' }}>
+          <Spinner dark size={28} />
+          <div style={{ marginTop:14, color:'var(--text-muted)', fontSize:13 }}>
+            Generating formal validation report… This replaces weeks of manual drafting.
+          </div>
+        </div>
+      )}
+      {!loading && report && (
+        <div>
+          <div style={{ marginBottom:14, padding:'10px 14px', background:'#dcfce7', borderRadius:8, fontSize:13, color:'#15803d', fontWeight:600 }}>
+            Report generated in seconds. Estimated consultant cost to produce manually: $15,000–$50,000. Print this page or export to PDF via Ctrl+P.
+          </div>
+          <div className="vr-header">
+            <div className="vr-title">{report.model_name} — Model Validation Report</div>
+            <div className="vr-meta">{report.institution_name} · {report.report_date} · Version {report.report_version}</div>
+          </div>
+          <div className="vr-body">
+            <div className="vr-section">
+              <div className="vr-section-title">Executive Summary</div>
+              <div className="vr-text">{report.executive_summary}</div>
+              <div className={`vr-opinion ${opinionClass(report.overall_risk_opinion)}`}>
+                Overall Risk Opinion: {report.overall_risk_opinion}
+              </div>
+            </div>
+            <div className="vr-section">
+              <div className="vr-section-title">Validation Scope &amp; Objectives</div>
+              <div className="vr-text">{report.validation_scope}</div>
+            </div>
+            <div className="vr-section">
+              <div className="vr-section-title">Model Overview</div>
+              <div className="vr-text" style={{ marginBottom:8 }}>{report.model_overview?.description}</div>
+              <div className="vr-text" style={{ marginBottom:8 }}><strong>Methodology:</strong> {report.model_overview?.methodology_assessment}</div>
+              <div className="vr-text"><strong>Data Assessment:</strong> {report.model_overview?.data_assessment}</div>
+            </div>
+            <div className="vr-section">
+              <div className="vr-section-title">Findings</div>
+              <div className="vr-text" style={{ marginBottom:14 }}>{report.findings_narrative}</div>
+              {(report.findings_table||[]).length > 0 && (
+                <table className="vr-findings-table">
+                  <thead>
+                    <tr><th>ID</th><th>Category</th><th>Severity</th><th>Finding</th><th>OSFI Ref</th><th>Recommendation</th></tr>
+                  </thead>
+                  <tbody>
+                    {report.findings_table.map((f,i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight:700, whiteSpace:'nowrap' }}>{f.id}</td>
+                        <td>{f.category}</td>
+                        <td><span className={sevClass(f.severity)}>{f.severity}</span></td>
+                        <td>{f.finding}</td>
+                        <td style={{ whiteSpace:'nowrap', color:'var(--blue)', fontWeight:600 }}>{f.osfi_ref}</td>
+                        <td>{f.recommendation}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="vr-section">
+              <div className="vr-section-title">Risk Opinion &amp; Rationale</div>
+              <div className="vr-text">{report.risk_opinion_rationale}</div>
+              {(report.conditions_of_approval||[]).length > 0 && (
+                <div style={{ marginTop:12 }}>
+                  <div style={{ fontWeight:700, marginBottom:6 }}>Conditions of Approval:</div>
+                  <ul style={{ paddingLeft:18, lineHeight:1.8 }}>
+                    {report.conditions_of_approval.map((c,i) => <li key={i}>{c}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="vr-section">
+              <div className="vr-section-title">OSFI E-23 Compliance Assessment</div>
+              <div className="vr-text">{report.osfi_compliance_assessment}</div>
+            </div>
+            <div className="vr-section">
+              <div className="vr-section-title">Validator Conclusion</div>
+              <div className="vr-text">{report.validator_conclusion}</div>
+              <div style={{ marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)', display:'flex', gap:40 }}>
+                <div><div style={{ fontSize:11, color:'var(--text-muted)', marginBottom:4 }}>Validator</div><div style={{ fontWeight:700 }}>{report.validator || '—'}</div></div>
+                <div><div style={{ fontSize:11, color:'var(--text-muted)', marginBottom:4 }}>Date</div><div style={{ fontWeight:700 }}>{report.report_date}</div></div>
+                <div><div style={{ fontSize:11, color:'var(--text-muted)', marginBottom:4 }}>Next Validation</div><div style={{ fontWeight:700 }}>{report.next_validation_recommendation || '—'}</div></div>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop:14, display:'flex', gap:10 }}>
+            <button className="btn btn-primary" onClick={() => window.print()}>Print / Save PDF</button>
+            <button className="btn btn-outline" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -2726,13 +3070,16 @@ function AdminPanel({ user }) {
    APP SHELL
 ═══════════════════════════════════════════════════ */
 const SCREEN_TITLES = {
-  dashboard:       'Dashboard',
+  dashboard:       'AI Action Queue',
   models:          'Model Inventory',
   model_form:      'Model Form',
   model_detail:    'Model Detail',
   rate_wizard:     'Risk Rating Wizard',
   validations:     'Validations',
   vendors:         'Vendor Assessments',
+  search:          'Smart Search',
+  mrm_policy:      'MRM Policy Generator',
+  doc_ingest:      'Document Intelligence',
   audit:           'Audit Trail',
   board:           'Board Report',
   examiner_export: 'OSFI Examiner Export',
@@ -3408,6 +3755,489 @@ function ExamSprintMode() {
   );
 }
 
+/* ═══════════════════════════════════════════════════
+   PHASE 5 — MRM POLICY GENERATOR
+═══════════════════════════════════════════════════ */
+function MRMPolicyGenerator() {
+  const [step, setStep] = useState('form'); // form | generating | result
+  const [policy, setPolicy] = useState(null);
+  const [existing, setExisting] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState({});
+  const toast = useToast();
+
+  const [form, setForm] = useState({
+    institution_type: 'bank',
+    asset_size: '1B_20B',
+    model_count: '10_50',
+    board_frequency: 'quarterly',
+    validation_team_size: '2_5',
+    high_risk_categories: 'Credit Scoring, Stress Testing, Fraud Detection',
+    risk_appetite_level: 'moderate',
+    existing_framework: '',
+    regulatory_submissions: 'DFAST, IFRS 9, AIRB',
+    additional_context: '',
+  });
+  const set = (k,v) => setForm(p => ({...p,[k]:v}));
+
+  useEffect(() => {
+    apiFetch('/api/mrm-policy/latest').then(p => { if (p) setExisting(p); }).catch(()=>{});
+  }, []);
+
+  async function generate() {
+    setStep('generating'); setSaving(true);
+    try {
+      const r = await apiFetch('/api/mrm-policy/generate', { method:'POST', body:JSON.stringify(form) });
+      setPolicy(r); setStep('result');
+    } catch(e) { toast(e.message,'error'); setStep('form'); }
+    finally { setSaving(false); }
+  }
+
+  async function approve() {
+    if (!policy?.id) return;
+    try {
+      await apiFetch(`/api/mrm-policy/${policy.id}/approve`, { method:'POST' });
+      setPolicy(p => ({...p, status:'approved'}));
+      toast('Policy approved and version-locked','success');
+    } catch(e) { toast(e.message,'error'); }
+  }
+
+  if (step === 'form') return (
+    <div>
+      {existing && (
+        <div className="card" style={{ marginBottom:18 }}>
+          <div className="section-hdr">
+            <div>
+              <div className="section-title">Current Policy</div>
+              <div style={{ fontSize:12, color:'var(--text-muted)' }}>{existing.version} · {existing.status === 'approved' ? '✓ Board Approved' : 'Draft'}</div>
+            </div>
+            <button className="btn btn-outline btn-sm" onClick={() => { setPolicy(existing.policy_text ? { ...JSON.parse(existing.policy_text), id:existing.id, status:existing.status } : null); setStep('result'); }}>
+              View Current Policy
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="card">
+        <div className="section-title" style={{ marginBottom:18 }}>Generate OSFI E-23 MRM Policy — 10 Questions</div>
+        <div style={{ marginBottom:14, padding:'10px 14px', background:'#eff6ff', borderRadius:8, fontSize:13, color:'#1d4ed8' }}>
+          This generates a complete, board-ready MRM Policy document compliant with OSFI E-23. Equivalent to $25,000–$50,000 in regulatory counsel fees.
+        </div>
+        <div className="policy-form">
+          <div className="policy-form-grid">
+            <div className="form-group">
+              <label className="form-label">Institution Type</label>
+              <select className="form-select" value={form.institution_type} onChange={e => set('institution_type',e.target.value)}>
+                <option value="bank">Bank / Trust Company</option>
+                <option value="insurer">Federal Insurer</option>
+                <option value="credit_union">Credit Union / Caisse</option>
+                <option value="pension">Pension Fund</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Total Assets (AUM)</label>
+              <select className="form-select" value={form.asset_size} onChange={e => set('asset_size',e.target.value)}>
+                <option value="under_1B">Under $1B</option>
+                <option value="1B_20B">$1B – $20B</option>
+                <option value="20B_100B">$20B – $100B</option>
+                <option value="over_100B">Over $100B</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Approximate Model Count</label>
+              <select className="form-select" value={form.model_count} onChange={e => set('model_count',e.target.value)}>
+                <option value="under_10">Under 10</option>
+                <option value="10_50">10 – 50</option>
+                <option value="50_200">50 – 200</option>
+                <option value="over_200">Over 200</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Board Meeting Frequency</label>
+              <select className="form-select" value={form.board_frequency} onChange={e => set('board_frequency',e.target.value)}>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="semi_annual">Semi-Annual</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Validation Team Size</label>
+              <select className="form-select" value={form.validation_team_size} onChange={e => set('validation_team_size',e.target.value)}>
+                <option value="1">1 (solo)</option>
+                <option value="2_5">2 – 5</option>
+                <option value="6_15">6 – 15</option>
+                <option value="over_15">15+</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Risk Appetite Level</label>
+              <select className="form-select" value={form.risk_appetite_level} onChange={e => set('risk_appetite_level',e.target.value)}>
+                <option value="conservative">Conservative</option>
+                <option value="moderate">Moderate</option>
+                <option value="aggressive">Aggressive</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">High-Risk Model Categories (comma-separated)</label>
+            <input className="form-input" value={form.high_risk_categories} onChange={e => set('high_risk_categories',e.target.value)} placeholder="e.g. Credit Scoring, Fraud Detection, Stress Testing" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Regulatory Submission Models (DFAST, IFRS 9, AIRB, etc.)</label>
+            <input className="form-input" value={form.regulatory_submissions} onChange={e => set('regulatory_submissions',e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Existing Framework (if any — describe briefly)</label>
+            <textarea className="form-textarea" rows={2} value={form.existing_framework} onChange={e => set('existing_framework',e.target.value)} placeholder="e.g. Currently using SR 11-7 framework, 3 lines of defense model…" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Additional Context for Claude</label>
+            <textarea className="form-textarea" rows={2} value={form.additional_context} onChange={e => set('additional_context',e.target.value)} placeholder="Any specific OSFI concerns, recent examination findings, upcoming deadlines…" />
+          </div>
+          <div>
+            <button className="btn btn-primary" onClick={generate} disabled={saving} style={{ minWidth:200 }}>
+              Generate MRM Policy Document
+            </button>
+            <span style={{ marginLeft:12, fontSize:12, color:'var(--text-muted)' }}>~30 seconds · powered by Claude Sonnet via AWS Bedrock ca-central-1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (step === 'generating') return (
+    <div style={{ padding:60, textAlign:'center' }}>
+      <Spinner dark size={32} />
+      <div style={{ marginTop:18, fontSize:15, fontWeight:600, color:'var(--navy)' }}>Drafting your OSFI E-23 MRM Policy…</div>
+      <div style={{ marginTop:8, fontSize:13, color:'var(--text-muted)' }}>Claude is writing 13 policy sections. This replaces $25K–$50K in regulatory counsel fees.</div>
+    </div>
+  );
+
+  return (
+    <div>
+      {policy && (
+        <>
+          <div className="policy-cover">
+            <div className="policy-cover-title">{policy.policy_title || 'Model Risk Management Policy'}</div>
+            <div className="policy-cover-inst">{policy.institution_name}</div>
+            <div className="policy-cover-meta">Version {policy.version} · Effective {policy.effective_date} · Review Cycle: {policy.review_cycle}</div>
+            <div style={{ marginTop:16, display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+              {policy.status === 'approved'
+                ? <span className="mra-approved-badge">Board Approved</span>
+                : <button className="btn btn-primary" onClick={approve}>Approve &amp; Lock Version</button>
+              }
+              <button className="btn btn-outline" style={{ color:'#fff', borderColor:'rgba(255,255,255,.4)' }} onClick={() => window.print()}>Print / Export PDF</button>
+              <button className="btn btn-ghost" style={{ color:'rgba(255,255,255,.7)' }} onClick={() => setStep('form')}>Regenerate</button>
+            </div>
+          </div>
+
+          <div style={{ marginBottom:14, padding:'10px 14px', background:'#dcfce7', borderRadius:8, fontSize:13, color:'#15803d', fontWeight:600 }}>
+            13 policy sections generated. Have your regulatory counsel review and sign off before board submission.
+          </div>
+
+          {(policy.sections||[]).map((s, i) => (
+            <div key={i} className="policy-section">
+              <div className="policy-section-hdr" onClick={() => setExpanded(p => ({...p,[i]:!p[i]}))}>
+                <span>{s.number}. {s.title}</span>
+                <span>{expanded[i] ? '▲' : '▼'}</span>
+              </div>
+              {expanded[i] && <div className="policy-section-body">{s.content}</div>}
+            </div>
+          ))}
+
+          {policy.board_attestation && (
+            <div className="card" style={{ marginTop:16 }}>
+              <div className="section-title" style={{ marginBottom:10 }}>Board Attestation Page</div>
+              <div className="mra-statement-body">{policy.board_attestation}</div>
+              <div style={{ marginTop:20, display:'flex', gap:60 }}>
+                {(policy.approvers||[]).map((a,i) => (
+                  <div key={i}>
+                    <div style={{ borderBottom:'1px solid #94a3b8', width:180, marginBottom:4 }}></div>
+                    <div style={{ fontSize:12, color:'var(--text-muted)' }}>{a}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 5 — NATURAL LANGUAGE SEARCH
+═══════════════════════════════════════════════════ */
+function NaturalLanguageSearch({ setScreen, setDetailModelId }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+
+  const suggestions = [
+    'Tier 1 models overdue for validation',
+    'Credit models that use vendor data',
+    'Models with no validation in the last 2 years',
+    'Models flagged for re-validation',
+    'All regulatory models',
+    'ML models with high decision volume',
+  ];
+
+  async function search(q) {
+    const term = q || query;
+    if (!term.trim()) return;
+    setQuery(term); setLoading(true); setResults(null);
+    try {
+      const r = await apiFetch(`/api/search?q=${encodeURIComponent(term)}`);
+      setResults(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div>
+      <div className="card" style={{ marginBottom:18 }}>
+        <div style={{ marginBottom:12 }}>
+          <div className="section-title" style={{ marginBottom:4 }}>Natural Language Model Search</div>
+          <div style={{ fontSize:13, color:'var(--text-muted)' }}>Ask in plain English. Claude searches your inventory and explains what it found.</div>
+        </div>
+        <div className="nls-bar">
+          <input
+            className="nls-input"
+            placeholder='e.g. "show me all Tier 1 credit models overdue for validation"'
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && search()}
+          />
+          <button className="btn btn-primary" onClick={() => search()} disabled={loading || !query.trim()}>
+            {loading ? <Spinner /> : 'Search'}
+          </button>
+        </div>
+        <div className="nls-suggestion">
+          Try: {suggestions.map((s,i) => (
+            <span key={i} onClick={() => search(s)}>{s}</span>
+          ))}
+        </div>
+      </div>
+
+      {loading && <div className="card"><div className="spinner-center"><Spinner dark size={24} /></div></div>}
+
+      {results && (
+        <div className="card">
+          {results.interpretation && (
+            <div className="nls-interpretation">
+              🧠 {results.interpretation}
+            </div>
+          )}
+          {results.search_explanation && (
+            <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:12 }}>{results.search_explanation}</div>
+          )}
+          {results.total_matched === 0 ? (
+            <div className="empty-state"><div>No models matched "{results.query}"</div></div>
+          ) : (
+            <div className="table-wrap">
+              <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:8 }}>{results.total_matched} model{results.total_matched!==1?'s':''} matched</div>
+              <table>
+                <thead><tr><th>Name</th><th>Type</th><th>Tier</th><th>Owner</th><th>Next Validation</th><th></th></tr></thead>
+                <tbody>
+                  {results.results.map(m => (
+                    <tr key={m.id}>
+                      <td><strong>{m.name}</strong></td>
+                      <td>{(m.model_type||'').replace(/_/g,' ')}</td>
+                      <td><TierBadge tier={m.risk_tier} /></td>
+                      <td>{m.model_owner || '—'}</td>
+                      <td style={{ fontSize:13 }}>{m.next_validation_due || '—'}</td>
+                      <td>
+                        <button className="btn btn-ghost btn-sm" onClick={() => { setDetailModelId(m.id); setScreen('model_detail'); }}>View</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 5 — DOCUMENT INTELLIGENCE
+═══════════════════════════════════════════════════ */
+function DocumentIntelligence({ setScreen, setEditModelId }) {
+  const [docText, setDocText] = useState('');
+  const [docType, setDocType] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+
+  async function ingest() {
+    if (docText.trim().length < 50) { toast('Please paste at least a paragraph of text','error'); return; }
+    setLoading(true); setResult(null);
+    try {
+      const r = await apiFetch('/api/ai/ingest-document', { method:'POST', body: JSON.stringify({ document_text:docText, document_type:docType }) });
+      setResult(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  function confClass(c) {
+    if (c === 'high') return { color:'var(--green)', fontWeight:700 };
+    if (c === 'medium') return { color:'var(--amber)', fontWeight:700 };
+    return { color:'var(--red)', fontWeight:700 };
+  }
+
+  function useModelData() {
+    if (!result?.extracted_model_data) return;
+    const d = result.extracted_model_data;
+    sessionStorage.setItem('prefill_model', JSON.stringify({
+      name: d.name||'',
+      model_type: d.model_type||'',
+      purpose: d.model_purpose||'',
+      methodology: d.methodology||'',
+      input_data_sources: d.data_sources||'',
+      primary_output: d.primary_output||'',
+      model_owner_name: d.model_owner||'',
+      is_vendor_model: !!d.vendor_name,
+      vendor_name: d.vendor_name||'',
+    }));
+    setEditModelId(null);
+    setScreen('model_form');
+    toast('Form pre-filled from document','success');
+  }
+
+  return (
+    <div>
+      <div className="card" style={{ marginBottom:18 }}>
+        <div className="section-title" style={{ marginBottom:6 }}>Document Intelligence</div>
+        <div style={{ fontSize:13, color:'var(--text-muted)', marginBottom:16 }}>
+          Paste text from any MRM document — validation report, model development document, vendor assessment, policy — and Claude will extract structured data and pre-fill your forms.
+          <br /><strong style={{ color:'var(--navy)' }}>Eliminates hours of manual re-keying.</strong>
+        </div>
+        <div className="form-group" style={{ marginBottom:12 }}>
+          <label className="form-label">Document Type (optional hint)</label>
+          <select className="form-select" value={docType} onChange={e => setDocType(e.target.value)} style={{ maxWidth:260 }}>
+            <option value="">Auto-detect</option>
+            <option value="validation_report">Validation Report</option>
+            <option value="model_development_doc">Model Development Document</option>
+            <option value="vendor_assessment">Vendor Assessment</option>
+            <option value="mra_policy">MRM / MRA Policy</option>
+            <option value="osfi_letter">OSFI Letter / Correspondence</option>
+          </select>
+        </div>
+        <div className="di-drop">
+          <textarea
+            style={{ width:'100%', minHeight:200, border:'none', background:'transparent', outline:'none', resize:'vertical', fontSize:13, lineHeight:1.6 }}
+            placeholder="Paste document text here… (copy from Word, PDF, or any document)"
+            value={docText}
+            onChange={e => setDocText(e.target.value)}
+          />
+        </div>
+        <div style={{ marginTop:12, display:'flex', gap:10, alignItems:'center' }}>
+          <button className="btn btn-primary" onClick={ingest} disabled={loading || docText.trim().length < 50}>
+            {loading ? <><Spinner /> Extracting…</> : 'Extract with AI'}
+          </button>
+          {docText && <button className="btn btn-ghost btn-sm" onClick={() => { setDocText(''); setResult(null); }}>Clear</button>}
+          <span style={{ fontSize:12, color:'var(--text-muted)' }}>{docText.length} characters · powered by Claude Sonnet</span>
+        </div>
+      </div>
+
+      {loading && (
+        <div className="card" style={{ textAlign:'center', padding:40 }}>
+          <Spinner dark size={26} />
+          <div style={{ marginTop:14, color:'var(--text-muted)', fontSize:13 }}>Claude is reading your document and extracting structured MRM data…</div>
+        </div>
+      )}
+
+      {result && (
+        <div>
+          <div className="card" style={{ marginBottom:14 }}>
+            <div className="section-hdr" style={{ marginBottom:12 }}>
+              <div>
+                <div className="section-title">Extraction Results</div>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>
+                  Document type: <strong>{(result.document_type_detected||'').replace(/_/g,' ')}</strong> ·
+                  Confidence: <span style={confClass(result.confidence)}>{result.confidence}</span>
+                </div>
+              </div>
+            </div>
+            {result.summary && (
+              <div className="ai-panel" style={{ marginBottom:14 }}>
+                <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>Summary</div>
+                <div className="ai-insight">{result.summary}</div>
+              </div>
+            )}
+            {result.suggested_next_action && (
+              <div style={{ padding:'10px 14px', background:'#eff6ff', borderRadius:8, fontSize:13, color:'#1d4ed8', marginBottom:14 }}>
+                <strong>Suggested Action:</strong> {result.suggested_next_action}
+              </div>
+            )}
+          </div>
+
+          {result.extracted_model_data && Object.values(result.extracted_model_data).some(v=>v) && (
+            <div className="di-result-section" style={{ marginBottom:12 }}>
+              <div className="di-result-title">Extracted Model Data</div>
+              {Object.entries(result.extracted_model_data).filter(([,v])=>v).map(([k,v]) => (
+                <div key={k} className="di-field">
+                  <span className="di-field-label">{k.replace(/_/g,' ')}</span>
+                  <span className="di-field-value">{String(v)}</span>
+                </div>
+              ))}
+              <div className="di-action-btn">
+                <button className="btn btn-primary btn-sm" onClick={useModelData}>Use to Pre-fill Add Model Form</button>
+              </div>
+            </div>
+          )}
+
+          {result.extracted_validation_data && Object.values(result.extracted_validation_data).some(v=>v) && (
+            <div className="di-result-section" style={{ marginBottom:12 }}>
+              <div className="di-result-title">Extracted Validation Data</div>
+              {Object.entries(result.extracted_validation_data).filter(([,v])=>v).map(([k,v]) => (
+                <div key={k} className="di-field">
+                  <span className="di-field-label">{k.replace(/_/g,' ')}</span>
+                  <span className="di-field-value">{String(v)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(result.osfi_sections_referenced||[]).length > 0 && (
+            <div className="di-result-section" style={{ marginBottom:12 }}>
+              <div className="di-result-title">OSFI Sections Referenced</div>
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:4 }}>
+                {result.osfi_sections_referenced.map((s,i) => (
+                  <span key={i} style={{ padding:'3px 10px', background:'#eff6ff', borderRadius:20, fontSize:12, fontWeight:700, color:'#1d4ed8' }}>{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(result.key_dates||[]).length > 0 && (
+            <div className="di-result-section" style={{ marginBottom:12 }}>
+              <div className="di-result-title">Key Dates Found</div>
+              {result.key_dates.map((d,i) => (
+                <div key={i} className="di-field">
+                  <span className="di-field-label">{d.label}</span>
+                  <span className="di-field-value" style={{ fontWeight:700 }}>{d.date}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(result.data_quality_warnings||[]).length > 0 && (
+            <div className="di-result-section">
+              <div className="di-result-title">Data Quality Warnings</div>
+              {result.data_quality_warnings.map((w,i) => (
+                <div key={i} className="di-warning">{w}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AppShell({ user: userProp }) {
   const [user, setUser]                   = useState(userProp);
   const [screen, setScreen]               = useState('dashboard');
@@ -3431,6 +4261,9 @@ function AppShell({ user: userProp }) {
       case 'rate_wizard':  return <RatingWizard modelId={rateModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
       case 'validations':     return <Validations />;
       case 'vendors':         return <VendorAssessments />;
+      case 'search':          return <NaturalLanguageSearch setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+      case 'mrm_policy':      return <MRMPolicyGenerator />;
+      case 'doc_ingest':      return <DocumentIntelligence setScreen={setScreen} setEditModelId={setEditModelId} />;
       case 'audit':           return <AuditTrail />;
       case 'board':           return <BoardReport />;
       case 'examiner_export': return <ExaminerExport />;

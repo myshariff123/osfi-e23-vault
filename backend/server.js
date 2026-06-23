@@ -1808,6 +1808,312 @@ app.get('/api/monitoring/alerts', requireAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
+// ════════════════════════════════════════════════════════════════════════════════
+// GOD-LEVEL AI ROUTES — Phase 5 (Automation Engine)
+// ════════════════════════════════════════════════════════════════════════════════
+
+// ── AI Action Queue: replaces passive dashboard with prioritized work queue ────
+app.get('/api/dashboard/action-queue', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const today = new Date().toISOString().split('T')[0];
+
+    const [models, validations, vendors, monAlerts, lastSprint] = await Promise.all([
+      pool.query(
+        `SELECT id,name,risk_tier,status,next_validation_due,revalidation_required,
+                current_version,model_owner,model_type
+         FROM models WHERE tenant_id=$1 AND status='active'`, [tid]),
+      pool.query(
+        `SELECT v.id,v.status,v.created_at,v.assigned_to_email,m.name model_name,m.risk_tier,
+                v.findings,v.outcome
+         FROM validations v JOIN models m ON m.id=v.model_id
+         WHERE v.tenant_id=$1 AND v.status NOT IN ('approved','closed')`, [tid]),
+      pool.query(
+        `SELECT id,vendor_name,next_review_due,risk_rating FROM vendor_assessments
+         WHERE tenant_id=$1 AND status='active'`, [tid]),
+      pool.query(
+        `SELECT DISTINCT ON (model_id,metric_name) model_id,metric_name,metric_value,threshold_red,
+                threshold_amber, m.name model_name
+         FROM model_monitoring mm JOIN models m ON m.id=mm.model_id
+         WHERE mm.tenant_id=$1 AND threshold_red IS NOT NULL AND metric_value>=threshold_red
+         ORDER BY model_id,metric_name,logged_at DESC`, [tid]),
+      pool.query(
+        `SELECT overall_score,exam_risk_level FROM exam_sprints
+         WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`, [tid]),
+    ]);
+
+    const overdueModels    = models.rows.filter(m => m.next_validation_due && m.next_validation_due < today);
+    const unreviewedVendors= vendors.rows.filter(v => v.next_review_due && v.next_review_due < today);
+    const revalModels      = models.rows.filter(m => m.revalidation_required);
+    const stalledVals      = validations.rows.filter(v => {
+      const daysSince = (Date.now() - new Date(v.created_at)) / 86400000;
+      return daysSince > 30;
+    });
+
+    const portfolioContext = {
+      total_models: models.rows.length,
+      tier1: models.rows.filter(m=>m.risk_tier===1).length,
+      tier2: models.rows.filter(m=>m.risk_tier===2).length,
+      tier3: models.rows.filter(m=>m.risk_tier===3).length,
+      unrated: models.rows.filter(m=>!m.risk_tier).length,
+      overdue_validations: overdueModels.map(m=>({name:m.name,tier:m.risk_tier,due:m.next_validation_due})),
+      revalidation_required: revalModels.map(m=>({name:m.name,tier:m.risk_tier})),
+      stalled_validations: stalledVals.map(v=>({model:v.model_name,status:v.status,days:Math.floor((Date.now()-new Date(v.created_at))/86400000)})),
+      vendor_reviews_overdue: unreviewedVendors.map(v=>({name:v.vendor_name,due:v.next_review_due})),
+      monitoring_red_alerts: monAlerts.rows.map(a=>({model:a.model_name,metric:a.metric_name})),
+      last_exam_score: lastSprint.rows[0] || null,
+    };
+
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens: 1800,
+      system: 'You are the CRO AI of a Canadian FRFI. Produce a JSON action queue that prioritizes the most urgent MRM tasks based on OSFI E-23 obligations. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Portfolio state: ${JSON.stringify(portfolioContext)}\n\n` +
+        `Today: ${today}\n\n` +
+        `Return JSON:\n` +
+        `{"risk_pulse_score":0,"risk_pulse_label":"High/Moderate/Low Risk","executive_summary":"2 sentences on overall MRM posture","actions":[{"rank":1,"urgency":"critical|high|medium","category":"validation|monitoring|vendor|governance|exam","title":"...","detail":"2 sentences with specifics","action_label":"Open ...","nav_target":"validations|models|vendors|exam_sprint|mra_wizard|calendar","osfi_ref":"§X.X","estimated_hours":0,"consequence":"1 sentence on OSFI risk if ignored"}],"quick_wins":["<15 min task..."],"this_week":"1 paragraph directive to the MRM team"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'action_queue_generated', { metadata:{ risk_pulse:result.risk_pulse_score } });
+    res.json({ ...result, generated_at: new Date().toISOString(), portfolio: portfolioContext });
+  } catch(e) { console.error('[action-queue]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ── AI Portfolio Doctor: scans entire model portfolio for systemic gaps ────────
+app.post('/api/models/portfolio-scan', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [models, validations] = await Promise.all([
+      pool.query(
+        `SELECT id,name,risk_tier,model_type,model_owner,next_validation_due,revalidation_required,
+                current_version,methodology,data_sources,primary_output,model_purpose,status
+         FROM models WHERE tenant_id=$1 AND status='active'`, [tid]),
+      pool.query(
+        `SELECT v.model_id, v.status, v.outcome, v.created_at
+         FROM validations v WHERE v.tenant_id=$1`, [tid]),
+    ]);
+    const valsByModel = {};
+    validations.rows.forEach(v => {
+      if (!valsByModel[v.model_id]) valsByModel[v.model_id] = [];
+      valsByModel[v.model_id].push(v);
+    });
+    const enriched = models.rows.map(m => ({
+      ...m,
+      validation_count: (valsByModel[m.id]||[]).length,
+      last_outcome: (valsByModel[m.id]||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))[0]?.outcome || 'never_validated',
+    }));
+
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens: 2000,
+      system: 'You are a senior Canadian model risk examiner (equivalent to OSFI). Produce a candid, specific portfolio health assessment. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model portfolio: ${JSON.stringify(enriched)}\n\n` +
+        `Return JSON:\n` +
+        `{"health_score":0,"health_grade":"A|B|C|D|F","headline":"1 sentence CRO-level summary","critical_findings":[{"finding":"...","affected_models":["name"],"osfi_ref":"§X.X","severity":"critical|high"}],"systemic_risks":[{"risk":"...","description":"...","osfi_ref":"§X.X"}],"quick_wins":[{"action":"...","models_affected":0,"hours_saved":0}],"tier_adequacy":{"assessment":"...","recommendation":"..."},"concentration_risks":[{"type":"methodology|vendor|owner|data_source","description":"...","affected_count":0}],"hours_saved_if_fixed":0,"estimated_osfi_exam_risk":"low|moderate|high|critical"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'portfolio_scan_run', { metadata:{ health_score:result.health_score, model_count:models.rows.length } });
+    res.json({ ...result, model_count: models.rows.length, scanned_at: new Date().toISOString() });
+  } catch(e) { console.error('[portfolio-scan]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ── AI Validation Report Generator: produces complete formal report PDF ────────
+app.post('/api/validations/:id/generate-report', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const vr = await pool.query(
+      `SELECT v.*,m.name model_name,m.risk_tier,m.model_type,m.model_purpose,m.methodology,
+              m.data_sources,m.primary_output,m.model_owner,m.regulatory_use,m.is_vendor_model,
+              m.vendor_name,m.current_version
+       FROM validations v JOIN models m ON m.id=v.model_id
+       WHERE v.id=$1 AND v.tenant_id=$2`, [req.params.id, tid]);
+    if (!vr.rows.length) return res.status(404).json({ error:'Validation not found' });
+    const v = vr.rows[0];
+    const history = await pool.query(
+      `SELECT created_at,outcome,findings FROM validations
+       WHERE model_id=$1 AND tenant_id=$2 AND id!=$3 ORDER BY created_at DESC LIMIT 3`,
+      [v.model_id, tid, v.id]);
+    const institution = await pool.query('SELECT name FROM tenants WHERE id=$1',[tid]);
+    const instName = institution.rows[0]?.name || 'Financial Institution';
+
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens: 3000,
+      system: `You are a senior model validator writing a formal OSFI E-23 compliant validation report for ${instName}.
+Write in formal financial institution language. Be specific and professional. Return ONLY valid JSON.`,
+      messages: [{ role:'user', content:
+        `Generate a complete formal validation report.\n\nValidation data: ${JSON.stringify({
+          model_name: v.model_name, risk_tier: v.risk_tier, model_type: v.model_type,
+          model_purpose: v.model_purpose, methodology: v.methodology, data_sources: v.data_sources,
+          primary_output: v.primary_output, model_owner: v.model_owner, model_version: v.current_version,
+          regulatory_use: v.regulatory_use, is_vendor: v.is_vendor_model, vendor: v.vendor_name,
+          validator_email: v.assigned_to_email, validation_status: v.status,
+          outcome: v.outcome, findings: v.findings, conditions: v.conditions_of_approval,
+          validation_started: v.created_at, validation_closed: v.closed_at,
+          validation_history: history.rows, institution: instName,
+        })}\n\n` +
+        `Return JSON with these exact keys:\n` +
+        `{"report_date":"${new Date().toISOString().split('T')[0]}","report_version":"v1.0",` +
+        `"executive_summary":"3–4 sentence formal summary","validation_scope":"2–3 sentences on scope and objectives",` +
+        `"model_overview":{"description":"2–3 sentences","methodology_assessment":"2 sentences","data_assessment":"2 sentences"},` +
+        `"findings_narrative":"3–5 paragraphs describing findings in formal language",` +
+        `"findings_table":[{"id":"F-01","category":"Data Quality|Model Risk|Documentation|Governance","severity":"Critical|High|Medium|Low","finding":"...","osfi_ref":"§X.X","recommendation":"...","target_date":"YYYY-MM-DD"}],` +
+        `"overall_risk_opinion":"Pass|Conditional Pass|Fail","risk_opinion_rationale":"2–3 sentences",` +
+        `"conditions_of_approval":["condition..."],"recommendations":["recommendation..."],` +
+        `"osfi_compliance_assessment":"2 sentences on OSFI E-23 compliance posture",` +
+        `"validator_conclusion":"2–3 formal sentences","next_validation_recommendation":"..."}`
+      }]
+    });
+    const report = extractJSON(aiResp.content[0].text);
+
+    // Store generated report on validation record
+    await pool.query(
+      `UPDATE validations SET generated_report=$1, report_generated_at=NOW(), report_generated_by=$2 WHERE id=$3 AND tenant_id=$4`,
+      [JSON.stringify(report), req.user.email, req.params.id, tid]);
+    await audit(tid, v.model_id, req.user.email, 'validation_report_generated', {
+      metadata:{ validation_id:req.params.id, outcome:report.overall_risk_opinion }
+    });
+    res.json({ ...report, model_name: v.model_name, institution_name: instName, validator: v.assigned_to_email });
+  } catch(e) { console.error('[val-report]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ── AI MRM Policy Generator ───────────────────────────────────────────────────
+app.get('/api/mrm-policy/latest', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      `SELECT * FROM mrm_policies WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      [req.user.tenant_id]);
+    res.json(r.rows[0] || null);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/mrm-policy/generate', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const { institution_type, asset_size, model_count, board_frequency,
+            validation_team_size, high_risk_categories, risk_appetite_level,
+            existing_framework, regulatory_submissions, additional_context } = req.body;
+    const inst = await pool.query('SELECT name FROM tenants WHERE id=$1',[tid]);
+    const instName = inst.rows[0]?.name || 'Financial Institution';
+
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens: 4000,
+      system: `You are a senior regulatory counsel specializing in OSFI E-23 compliance for Canadian FRFIs.
+Draft a complete, board-ready Model Risk Management Policy document. Use formal policy language. Return ONLY valid JSON.`,
+      messages: [{ role:'user', content:
+        `Draft a complete OSFI E-23 compliant MRM Policy for: ${instName}\n\n` +
+        `Institution details: ${JSON.stringify({ institution_type, asset_size, model_count, board_frequency,
+          validation_team_size, high_risk_categories, risk_appetite_level,
+          existing_framework, regulatory_submissions, additional_context })}\n\n` +
+        `Return JSON:\n` +
+        `{"policy_title":"Model Risk Management Policy","effective_date":"${new Date().toISOString().split('T')[0]}","version":"v1.0","review_cycle":"Annual",` +
+        `"sections":[` +
+        `{"number":"1","title":"Purpose and Scope","content":"3–4 paragraphs"},` +
+        `{"number":"2","title":"Definitions","content":"definitions of: Model, Model Risk, Tier 1/2/3, MRM, Validation, Champion-Challenger"},` +
+        `{"number":"3","title":"Governance Framework","content":"3–4 paragraphs covering Board, Audit Committee, CRO, Model Risk Committee, Second Line"},` +
+        `{"number":"4","title":"Model Identification and Inventory (OSFI E-23 §3)","content":"3–4 paragraphs"},` +
+        `{"number":"5","title":"Model Risk Rating and Tiering (OSFI E-23 §3.2)","content":"3–4 paragraphs with tier criteria table"},` +
+        `{"number":"6","title":"Model Validation Standards (OSFI E-23 §4)","content":"4–5 paragraphs covering independence, scope, frequency, findings"},` +
+        `{"number":"7","title":"Third-Party and Vendor Models (OSFI E-23 §5)","content":"3–4 paragraphs"},` +
+        `{"number":"8","title":"Ongoing Model Monitoring (OSFI E-23 §4.5)","content":"3–4 paragraphs covering metrics, thresholds, escalation"},` +
+        `{"number":"9","title":"Model Change Management (OSFI E-23 §4.2)","content":"3 paragraphs covering materiality, re-validation triggers"},` +
+        `{"number":"10","title":"Model Risk Appetite","content":"2–3 paragraphs with quantitative limits"},` +
+        `{"number":"11","title":"Audit and Reporting","content":"2–3 paragraphs"},` +
+        `{"number":"12","title":"Policy Exceptions","content":"2 paragraphs"},` +
+        `{"number":"13","title":"Regulatory Compliance","content":"2 paragraphs referencing OSFI E-23"}],` +
+        `"board_attestation":"Board-level statement for approval page","policy_owner":"Chief Risk Officer","approvers":["Board of Directors","Audit Committee","Chief Risk Officer"]}`
+      }]
+    });
+    const policy = extractJSON(aiResp.content[0].text);
+
+    const r = await pool.query(
+      `INSERT INTO mrm_policies(tenant_id,version,status,inputs,policy_text,created_by)
+       VALUES($1,'v1.0','draft',$2,$3,$4) RETURNING id`,
+      [tid, JSON.stringify(req.body), JSON.stringify(policy), req.user.email]);
+    await audit(tid, null, req.user.email, 'mrm_policy_generated', { metadata:{ policy_id:r.rows[0].id } });
+    res.json({ id: r.rows[0].id, ...policy, institution_name: instName });
+  } catch(e) { console.error('[mrm-policy]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/mrm-policy/:id/approve', requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const r = await pool.query(
+      `UPDATE mrm_policies SET status='approved',approved_by=$1,approved_at=NOW()
+       WHERE id=$2 AND tenant_id=$3 RETURNING *`,
+      [req.user.email, req.params.id, tid]);
+    if (!r.rows.length) return res.status(404).json({ error:'Policy not found' });
+    await audit(tid, null, req.user.email, 'mrm_policy_approved', { metadata:{ policy_id:req.params.id } });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ── Natural Language Search ───────────────────────────────────────────────────
+app.get('/api/search', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const q = (req.query.q || '').trim();
+    if (!q) return res.json({ results:[], interpretation:'', query:q });
+    const tid = req.user.tenant_id;
+    const models = await pool.query(
+      `SELECT id,name,risk_tier,model_type,model_purpose,methodology,model_owner,
+              status,next_validation_due,revalidation_required,is_vendor_model,vendor_name
+       FROM models WHERE tenant_id=$1 AND status='active'`, [tid]);
+
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-haiku-20240307-v1:0',
+      max_tokens: 800,
+      system: 'You are a model inventory search engine. Given a natural language query and a model list, return the matching model IDs and a human-readable interpretation. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Query: "${q}"\n\nModel inventory: ${JSON.stringify(models.rows)}\n\n` +
+        `Return JSON: {"matched_ids":["uuid",...],"interpretation":"1 sentence explaining what you found","total_matched":0,"search_explanation":"how you interpreted the query"}`
+      }]
+    });
+    const parsed = extractJSON(aiResp.content[0].text);
+    const results = models.rows.filter(m => (parsed.matched_ids||[]).includes(m.id));
+    res.json({ results, interpretation: parsed.interpretation, search_explanation: parsed.search_explanation, total_matched: results.length, query: q });
+  } catch(e) { console.error('[search]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ── AI Document Intelligence ──────────────────────────────────────────────────
+app.post('/api/ai/ingest-document', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const { document_text, document_type } = req.body;
+    if (!document_text || document_text.length < 50)
+      return res.status(400).json({ error:'Document text too short. Paste at least a paragraph.' });
+
+    const typeHint = document_type || 'unknown';
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens: 1500,
+      system: 'You are a model risk document analyst. Extract structured MRM data from pasted document text. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Document type hint: ${typeHint}\nDocument text:\n\n${document_text.substring(0,4000)}\n\n` +
+        `Extract all available information and return JSON:\n` +
+        `{"document_type_detected":"validation_report|model_development_doc|vendor_assessment|mra_policy|other",` +
+        `"confidence":"high|medium|low",` +
+        `"extracted_model_data":{"name":null,"model_type":null,"model_purpose":null,"methodology":null,"data_sources":null,"primary_output":null,"model_owner":null,"vendor_name":null,"regulatory_use":null},` +
+        `"extracted_validation_data":{"validator_name":null,"validation_date":null,"outcome":null,"findings":null,"conditions":null,"scope":null},` +
+        `"extracted_vendor_data":{"vendor_name":null,"product_name":null,"contract_end_date":null,"risk_rating":null},` +
+        `"key_dates":[{"label":"...","date":"YYYY-MM-DD"}],` +
+        `"osfi_sections_referenced":["§X.X"],` +
+        `"summary":"2–3 sentence plain English summary of what this document is about",` +
+        `"suggested_next_action":"what to do with this document in ClearMRM",` +
+        `"data_quality_warnings":["any fields that seemed unclear or ambiguous"]}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(req.user.tenant_id, null, req.user.email, 'document_ingested', {
+      metadata:{ doc_type:result.document_type_detected, confidence:result.confidence }
+    });
+    res.json(result);
+  } catch(e) { console.error('[ingest]',e.message); res.status(500).json({ error:e.message }); }
+});
+
 // ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get('/{*path}', function(req, res) {
   res.sendFile(path.join(__dirname,'public','index.html'));
@@ -1815,5 +2121,5 @@ app.get('/{*path}', function(req, res) {
 
 const PORT=process.env.PORT||3001;
 app.listen(PORT, function() {
-  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1+2+3');
+  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1–5');
 });
