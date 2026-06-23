@@ -3,8 +3,8 @@
 > This document is the living record of all strategic decisions, product definitions, feature choices, and rationale established during the formulation of ClearMRM. It serves as the guiding star for all future development decisions. Every significant decision recorded here should be treated as a binding product principle unless explicitly revisited and updated with the date of change and reason.
 
 **Project Start:** June 22, 2026
-**Last Updated:** June 22, 2026 (Session 4)
-**Status:** Phase 1 + Phase 2 + Phase 3 + Phase 4 DEPLOYED — `https://clearmrm.nimblestride.ca`
+**Last Updated:** June 23, 2026 (Session 5 — Customer Pivot)
+**Status:** Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 DEPLOYED — `https://clearmrm.nimblestride.ca`
 
 ---
 
@@ -490,10 +490,11 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | Phase 3 deployed: Multi-Tenant Onboarding, OSFI Examiner Export, SSO SAML 2.0, Admin Panel | June 22, 2026 | **COMPLETE** |
 | Phase 4 deployed: Model Change Management, Exam Sprint Mode, Regulatory Calendar, MRA Wizard, Ongoing Monitoring (all with AI) | June 22, 2026 | **COMPLETE** |
 | USER_GUIDE.md published: 18-chapter onboarding + operational guide | June 22, 2026 | **COMPLETE** |
+| Phase 5 deployed: AI Action Queue, AI Portfolio Doctor, AI Validation Report Generator, AI MRM Policy Generator, Natural Language Search, Document Intelligence | June 23, 2026 | **COMPLETE** |
 | Demo-ready with 5 seed models and all AI features active | June 22, 2026 | **COMPLETE** |
 | First lighthouse client signed (pilot) | November 2026 | Pending |
 | Second lighthouse client signed (pilot) | January 2027 | Pending |
-| Phase 5 launch: Validator Marketplace + NLS + RLS + SharePoint + E-Signature | January 2027 | Pending |
+| Phase 6: Validator Marketplace + RLS + SharePoint + E-Signature + B-15 Climate | January 2027 | Pending |
 | Risk Canada Conference presence | February/March 2027 | Pending |
 | 5 paying clients | March 2027 | Pending |
 | 10 paying clients / $800K ARR | June 2027 | Pending |
