@@ -586,6 +586,173 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 
 ---
 
+## SESSION 6 — June 23, 2026 (Strategic Assessment + Tesla Landing Page)
+
+### Context
+
+An independent third-party market intelligence document was analyzed: "Commercially Available Risk Management Models (MRM) — Canada (20+ Catalog)." This document catalogs 20+ procurable risk platforms, provides business model guidance for Canadian RaaS providers, documents regulatory compliance requirements, and specifies a 12-month GTM timeline.
+
+The document was analyzed by a 50-discipline expert panel spanning financial regulation law, competitive strategy, fintech product, risk management science, actuarial/quantitative finance, regulatory policy, enterprise SaaS economics, data sovereignty, insurance regulation, and enterprise GTM.
+
+**Verdict: No fundamental pivot required. Three strategic refinements confirmed.**
+
+---
+
+### DECISION 15: ClearMRM's thesis is confirmed by independent market analysis
+
+The market document arrived at the same regulatory framework (OSFI E-23, B-10, PIPEDA), the same target market (Tier 2/3 credit unions and regional insurers), the same competitive gap (IBM/SAS inaccessible at $400K–$800K+), and the same product approach (AI-assisted, human-in-the-loop compliance automation) that ClearMRM was built on.
+
+This confirms that the original product formulation, built on primary regulatory sources (OSFI E-23 published guideline, OSFI B-10, PIPEDA) and consulting research (Deloitte, McKinsey, PwC, BDO), was correct.
+
+**What does NOT change:**
+- OSFI E-23 as the regulatory target
+- AWS Bedrock ca-central-1 as the only AI provider (OpenAI PIPEDA non-compliance confirmed by OPC investigation)
+- Target market: Tier 2/3 FRFIs and insurers
+- AI-generated deliverables as the core differentiator
+- Canadian data sovereignty architecture
+
+---
+
+### DECISION 16: ClearMRM is not "god-mode" — but must say so explicitly
+
+The market document warns that fully automated, no-human-oversight compliance products are not acceptable under OSFI E-23. ClearMRM is not this — AI generates drafts, humans approve and sign at every critical gate. However, the messaging "AI generates your validation report in 90 seconds" can be misread as automation replacing the validator.
+
+**Decision:** Every public marketing surface must include the explicit statement: "ClearMRM AI generates drafts. Your team approves and signs." This is a messaging addition, not a product change.
+
+**Why this matters:** A prospect who raises the "god-mode" concern in a sales call has read documents like the one analyzed in this session. The sentence eliminates the objection before it is raised.
+
+---
+
+### DECISION 17: Two-tier commercial model — software subscription + Validation Sprint service
+
+The market document prices managed model validation services at $75,000 per model (one-time). ClearMRM's Validator Marketplace makes this accessible at $20,000–$35,000 per model by combining AI-generated draft reports with certified human validator sign-off.
+
+**New commercial model:**
+1. **Software subscription** (existing): $30K–$144K/year. FRFI uses platform to manage its own MRM program. AI drafts, humans approve. No service delivery from ClearMRM.
+2. **Validation Sprint** (new service SKU): $20,000–$35,000 per model. ClearMRM platform + Validator Marketplace matches the FRFI with a vetted Canadian validator. AI generates the MVR draft. Validator reviews, adds independent judgment, signs. Delivered in 10 business days. OSFI-grade output.
+
+**Combined per-client value for a 100-model Tier 2 FRFI (20 high-risk models requiring annual validation):**
+- 20 × $20K Sprint = $400K in validation services
+- $72K subscription
+- Total: $472K per client per year
+- ClearMRM captures: $72K + 15% Sprint fee = $132K per client per year
+
+This is a 5–7× larger revenue opportunity than the subscription-only model.
+
+---
+
+### DECISION 18: Validator Marketplace is accelerated from Phase 8 to Phase 9 (Priority 0)
+
+Previously scheduled for Phase 8 (Q1 2027). The market analysis reveals this is not a Phase 8 nice-to-have — it is the engine of the business that generates $3.3M–$12M ARR.
+
+**Validator Marketplace MVP scope (60-day build target: October 31, 2026):**
+- Validator profiles with credentials and specialization
+- Request-for-validation workflow from FRFI to marketplace
+- Secure validator portal (read-only, specific model data within tenant)
+- Attestation and sign-off workflow (signed finding appended to validation record)
+- 15% platform fee invoice generation
+
+**Initial supply-side target:** 3 vetted Canadian validators from MNP LLP, RSM Canada, or EY/KPMG risk advisory practices.
+
+---
+
+### DECISION 19: PSI monitoring added to Ongoing Monitoring module (Phase 9C)
+
+OSFI E-23 §4.3 requires "continuous monitoring with trigger thresholds." ClearMRM's current monitoring captures qualitative flags. The market document specifies "PSI, performance, drift" as the expected quantitative metrics.
+
+**Addition to be built (August–September 2026):**
+- Population Stability Index (PSI) input fields per monitoring cycle
+- Computed PSI with traffic-light display: green (< 0.1), yellow (0.1–0.25), red (> 0.25)
+- Gini / AUC tracking for credit and underwriting models
+- Residual drift (predicted vs. actual reserve adequacy) linked to backtesting log
+
+This closes the most frequently cited gap between ClearMRM's current qualitative monitoring and OSFI's quantitative expectations.
+
+---
+
+### DECISION 20: ClearMRM B-10 Vendor Package is P0 sales blocker — must be built before first enterprise deal closes
+
+Under OSFI B-10, every FRFI must conduct third-party risk management due diligence on ClearMRM itself as a vendor. Without a standard vendor package ready, every enterprise procurement process stalls.
+
+**B-10 Vendor Package must include:**
+- Data residency attestation (AWS ca-central-1, Canada only)
+- AI provider disclosure (AWS Bedrock, model ID, region; not OpenAI)
+- Sub-processor list (AWS RDS, AWS Bedrock, AWS Cognito — all ca-central-1)
+- SLA terms (uptime, RTO, RPO)
+- Incident response summary (notification timelines, escalation)
+- SOC 2 status (in progress — Type I target Q4 2026)
+- PIPEDA + Quebec Law 25 compliance statement
+
+**Target completion:** July 15, 2026.
+
+---
+
+### DECISION 21: Tesla-style landing page replaces feature-dump marketing (DEPLOYED June 23, 2026)
+
+The marketing landing page was redesigned from a feature-cataloguing page (9 cards, ROI calculator, pricing grid) to a Tesla-minimal, outcome-focused design.
+
+**What was removed:**
+- All prices (pricing creates confusion before context is established; also creates FinTrack issues for online payments at $30K+ transactions)
+- Technical stack details (AWS Bedrock, Merkle chains, JWT — relevant to engineers, not CROs)
+- 9-feature card grid (feature cataloguing creates "document parking" perception)
+- ROI calculator (specific numbers before relationship is established can anchor wrong conversations)
+
+**What was added:**
+- Live OSFI E-23 deadline countdown (creates urgency without being explicit)
+- Three outcome pillars: Generate / Monitor / Prove (outcome-focused, not feature-focused)
+- Competitor comparison table: IBM OpenPages, SAS, Spreadsheets vs ClearMRM — no ClearMRM price shown, "Contact us for pricing" and "30 days" for time-to-value
+- 30-day pilot CTA and "Contact us for pricing →" mailto link
+- Trust chips: OSFI E-23 Compliant, Canadian Data Sovereignty, PIPEDA, SOC 2 In Progress
+
+**Rationale:** First prospect rejected the platform as "document parking." Second-generation marketing must lead with outcomes and credibility, not feature depth or price.
+
+---
+
+### DECISION 22: Sales outreach begins immediately — window closes October 2026
+
+OSFI E-23 is enforceable May 1, 2027. Enterprise compliance SaaS sales cycles to regulated institutions are 3–6 months (legal review, IT security, B-10 vendor due diligence, budget approval). To close clients who can implement and demonstrate compliance before the deadline, outreach must begin by July 2026 at the latest. The effective outreach window closes approximately October–November 2026.
+
+**Sales motion (CASL-compliant):**
+1. LinkedIn connection request to CRO / Head of Model Risk / CCO at target institutions (no commercial message in first contact)
+2. Follow-up message with gated whitepaper link: "How Canadian Credit Unions Can Demonstrate OSFI E-23 Compliance Before May 2027"
+3. Discovery call offer: "30 minutes to walk you through how [Institution] can build an OSFI-ready model inventory in 30 days"
+4. Demo with lighthouse-client reference (once first pilot is live)
+
+**Target institutions for initial outreach (July 2026):**
+- Concentra Bank (credit union central, Saskatchewan)
+- Wawanesa Insurance (Manitoba, federal insurer)
+- Peace Hills Insurance (Alberta, regional insurer)
+- DUCA Credit Union (Ontario, growing credit union)
+- Meridian Credit Union (Ontario, largest provincial credit union)
+
+---
+
+### Features Added in Session 6
+
+| Feature | Status | Notes |
+|---|---|---|
+| Tesla-style Landing Page | **LIVE** (June 23, 2026) | Commit 3f6a2fc — no prices, three-pillar outcomes, competitor comparison, 30-day pilot CTA |
+| Validation Sprint service SKU | Planned (Q3 2026) | Commercial service tier, not a product feature — requires validator partnerships first |
+| PSI Monitoring Metrics | Planned (August 2026) | Quantitative drift metrics addition to F-OM |
+| Validator Marketplace MVP | Planned (October 2026) | Accelerated from Phase 8 to Phase 9 |
+| ClearMRM B-10 Vendor Package | Planned (July 2026) | Non-product, operational — required before enterprise sales |
+
+---
+
+### Change Log Additions (Session 6)
+
+| Date | Change | Reason | Decided By |
+|---|---|---|---|
+| 2026-06-23 | **Phase 7 deployed**: Insurance Model Taxonomy, Actuarial Assumption Register, Structured Backtesting Log, Model Dependency Map, Insurance Profile Card | Insurance MRM gap analysis against published actuarial and regulatory literature; no competitor has this depth | Founder |
+| 2026-06-23 | **Marketing landing page redesigned (Tesla-style)**: removed prices, technical details, feature grid; added outcome pillars, competitor comparison, 30-day pilot CTA | First prospect rejected "document parking" perception; second-generation marketing leads with outcomes | Founder |
+| 2026-06-23 | **Two-tier commercial model established**: software subscription + Validation Sprint service ($20K–$35K per model vs. $75K market rate) | Market intelligence document confirms $75K per-model validation market; Validator Marketplace captures this at disruptive price point | Expert Panel |
+| 2026-06-23 | **Validator Marketplace accelerated from Phase 8 to Phase 9 (P0 priority)** | Per-client value with Marketplace is $472K–$544K vs. $72K subscription only; this is the $12M ARR engine | Expert Panel |
+| 2026-06-23 | **PSI monitoring metrics added to roadmap** | Market document identifies quantitative drift metrics as OSFI monitoring expectation gap in current ClearMRM | Expert Panel |
+| 2026-06-23 | **ClearMRM B-10 Vendor Package identified as P0 sales blocker** | Every enterprise deal stalls without standard B-10 vendor due diligence package | Expert Panel |
+| 2026-06-23 | **Sales window identified as October 2026** | 3–6 month FRFI sales cycles + May 2027 deadline = outreach must begin immediately | Expert Panel |
+
+---
+
 *This document must be updated after every strategic session, product decision, customer conversation, or architecture change. The goal is that any new team member can read this document and understand exactly what we are building, why, who we are building it for, and what decisions have already been made.*
 
-*Next scheduled update: After first customer discovery call, or after any Phase 2 feature work begins.*
+*Next scheduled update: After first customer discovery call, or after Validator Marketplace partnership outreach begins.*
