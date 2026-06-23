@@ -350,6 +350,45 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .strengths-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .strength-chip { padding: 5px 12px; background: #dcfce7; border-radius: 20px; font-size: 12px; font-weight: 600; color: #15803d; }
 .sprint-feature-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+
+/* REGULATORY CALENDAR */
+.cal-event { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); margin-bottom: 8px; }
+.cal-event.overdue  { border-left: 4px solid var(--red); background: #fff5f5; }
+.cal-event.critical { border-left: 4px solid var(--amber); }
+.cal-event.warning  { border-left: 4px solid #2563eb; }
+.cal-event.info     { border-left: 4px solid var(--grey); }
+.cal-date-box { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 46px; min-width: 46px; padding: 6px 4px; border-radius: 6px; text-align: center; }
+.cal-date-box.overdue  { background: #fee2e2; color: var(--red); }
+.cal-date-box.critical { background: #fef3c7; color: #92400e; }
+.cal-date-box.warning  { background: #eff6ff; color: #1d4ed8; }
+.cal-date-box.info     { background: #f1f5f9; color: var(--grey); }
+.cal-date-day  { font-size: 20px; font-weight: 900; line-height: 1; }
+.cal-date-mon  { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.cal-event-title  { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
+.cal-event-sub    { font-size: 12px; color: var(--text-muted); }
+.cal-days-chip { margin-left: auto; flex-shrink: 0; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.cal-section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); padding: 10px 0 6px; margin-top: 4px; }
+
+/* MRA WIZARD */
+.mra-wizard { display: flex; flex-direction: column; gap: 14px; padding: 18px; background: #f8fafc; border-radius: var(--radius); border: 1px solid var(--border); }
+.mra-statement-body { font-size: 13.5px; line-height: 1.75; color: var(--text); white-space: pre-wrap; font-family: Georgia, serif; }
+.mra-meta-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; font-size: 12.5px; }
+.mra-approved-badge { padding: 3px 12px; border-radius: 20px; background: #dcfce7; color: var(--green); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.mra-draft-badge    { padding: 3px 12px; border-radius: 20px; background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+
+/* MONITORING */
+.monitoring-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.monitoring-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 6px 8px; border-bottom: 2px solid var(--border); }
+.monitoring-table td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.monitoring-table tr:last-child td { border-bottom: none; }
+.metric-value-cell { font-size: 15px; font-weight: 800; }
+.metric-ok     { color: var(--green); }
+.metric-amber  { color: var(--amber); }
+.metric-red    { color: var(--red); }
+.metric-neutral{ color: var(--navy); }
+.threshold-bar { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); }
+.mon-form { display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; }
+.alert-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; font-size: 13px; color: var(--red); font-weight: 600; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -552,6 +591,8 @@ const NAV_ITEMS = [
   { key: 'board',            label: 'Board Report',        icon: '📑' },
   { key: 'examiner_export',  label: 'Examiner Export',     icon: '🏛️' },
   { key: 'exam_sprint',      label: 'Exam Sprint',         icon: '🚨' },
+  { key: 'calendar',         label: 'Reg. Calendar',       icon: '📅' },
+  { key: 'mra_wizard',       label: 'Risk Appetite',       icon: '🎯' },
   { key: 'import',           label: 'Import CSV',          icon: '📥' },
   { key: 'admin',            label: 'Admin Panel',         icon: '⚙️' },
 ];
@@ -1131,6 +1172,7 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
         )}
       </div>
       <ModelChangeSection modelId={modelId} onRevalidationNeeded={reload} />
+      <ModelMonitoringSection modelId={modelId} />
     </div>
   );
 }
@@ -2695,9 +2737,430 @@ const SCREEN_TITLES = {
   board:           'Board Report',
   examiner_export: 'OSFI Examiner Export',
   exam_sprint:     'Emergency Exam Sprint',
+  calendar:        'Regulatory Calendar',
+  mra_wizard:      'Model Risk Appetite Statement',
   import:          'Import CSV',
   admin:           'Admin Panel',
 };
+
+/* ═══════════════════════════════════════════════════
+   MODEL MONITORING SECTION (in ModelDetail)
+═══════════════════════════════════════════════════ */
+function ModelMonitoringSection({ modelId }) {
+  const [entries, setEntries]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState({ metric_name:'', metric_value:'', threshold_amber:'', threshold_red:'', notes:'', logged_at:'' });
+  const [saving, setSaving]     = useState(false);
+  const toast = useToast();
+
+  const COMMON_METRICS = ['PSI','Gini','KS Statistic','Accuracy','F1 Score','AUC-ROC','Default Rate','Override Rate','Custom'];
+
+  function load() {
+    setLoading(true);
+    apiFetch(`/api/models/${modelId}/monitoring`)
+      .then(setEntries).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, [modelId]);
+
+  async function submit() {
+    if (!form.metric_name.trim() || form.metric_value === '')
+      return toast('Metric name and value are required','error');
+    setSaving(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/monitoring`,{ method:'POST', body:JSON.stringify(form) });
+      toast(r.threshold_breached ? '⚠️ Red threshold breached — audit event logged' : 'Metric logged','success');
+      setShowForm(false);
+      setForm({ metric_name:'', metric_value:'', threshold_amber:'', threshold_red:'', notes:'', logged_at:'' });
+      load();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
+  }
+
+  function metricClass(e) {
+    if (e.threshold_red   && parseFloat(e.metric_value) >= parseFloat(e.threshold_red))   return 'metric-red';
+    if (e.threshold_amber && parseFloat(e.metric_value) >= parseFloat(e.threshold_amber)) return 'metric-amber';
+    return e.threshold_amber || e.threshold_red ? 'metric-ok' : 'metric-neutral';
+  }
+
+  // Group by metric name to show latest per metric
+  const byMetric = {};
+  entries.forEach(e => { if (!byMetric[e.metric_name]) byMetric[e.metric_name] = []; byMetric[e.metric_name].push(e); });
+
+  return (
+    <div className="card" style={{ marginTop:16 }}>
+      <div className="section-hdr">
+        <div className="section-title">📈 Ongoing Monitoring (OSFI E-23 §4.5)</div>
+        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(p => !p)}>
+          {showForm ? 'Cancel' : '+ Log Metric'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="mon-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Metric *</label>
+              <select className="form-select" value={form.metric_name} onChange={e => setForm(p => ({...p,metric_name:e.target.value}))}>
+                <option value="">Select or type…</option>
+                {COMMON_METRICS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            {form.metric_name === 'Custom' || !COMMON_METRICS.slice(0,-1).includes(form.metric_name) ? (
+              <div className="form-group">
+                <label className="form-label">Metric Name *</label>
+                <input className="form-input" placeholder="e.g. Population Stability Index" value={form.metric_name === 'Custom' ? '' : form.metric_name} onChange={e => setForm(p => ({...p,metric_name:e.target.value}))} />
+              </div>
+            ) : null}
+            <div className="form-group">
+              <label className="form-label">Value *</label>
+              <input className="form-input" type="number" step="any" placeholder="0.00" value={form.metric_value} onChange={e => setForm(p => ({...p,metric_value:e.target.value}))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Amber Threshold</label>
+              <input className="form-input" type="number" step="any" placeholder="warn above" value={form.threshold_amber} onChange={e => setForm(p => ({...p,threshold_amber:e.target.value}))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Red Threshold</label>
+              <input className="form-input" type="number" step="any" placeholder="alert above" value={form.threshold_red} onChange={e => setForm(p => ({...p,threshold_red:e.target.value}))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Date</label>
+              <input className="form-input" type="date" value={form.logged_at} onChange={e => setForm(p => ({...p,logged_at:e.target.value}))} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Notes</label>
+            <textarea className="form-textarea" rows="2" placeholder="Observation or context…" value={form.notes} onChange={e => setForm(p => ({...p,notes:e.target.value}))} />
+          </div>
+          <div><button className="btn btn-primary btn-sm" onClick={submit} disabled={saving}>{saving ? <><Spinner /> Saving…</> : 'Log Metric'}</button></div>
+        </div>
+      )}
+
+      {loading && <div className="spinner-center"><Spinner dark size={22} /></div>}
+      {!loading && entries.length === 0 && (
+        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No monitoring data yet. Log performance metrics (PSI, Gini, Accuracy, etc.) to track model drift over time per OSFI E-23 §4.5.</div>
+      )}
+      {!loading && entries.length > 0 && (
+        <>
+          {Object.entries(byMetric).map(([metricName, rows]) => {
+            const latest = rows[0];
+            const cls = metricClass(latest);
+            const breached = cls === 'metric-red';
+            return (
+              <div key={metricName} style={{ marginBottom:12 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                  <span style={{ fontWeight:700, fontSize:13 }}>{metricName}</span>
+                  {breached && <span style={{ fontSize:11, background:'#fee2e2', color:'var(--red)', padding:'1px 8px', borderRadius:10, fontWeight:700 }}>ALERT</span>}
+                </div>
+                <table className="monitoring-table">
+                  <thead><tr><th>Date</th><th>Value</th><th>Thresholds</th><th>Logged by</th><th>Notes</th></tr></thead>
+                  <tbody>
+                    {rows.slice(0,10).map(e => (
+                      <tr key={e.id}>
+                        <td>{e.logged_at}</td>
+                        <td><span className={`metric-value-cell ${metricClass(e)}`}>{parseFloat(e.metric_value).toFixed(4)}</span></td>
+                        <td>
+                          <div className="threshold-bar">
+                            {e.threshold_amber && <span>⚠️ {e.threshold_amber}</span>}
+                            {e.threshold_red   && <span>🔴 {e.threshold_red}</span>}
+                            {!e.threshold_amber && !e.threshold_red && <span>—</span>}
+                          </div>
+                        </td>
+                        <td style={{ fontSize:11.5, color:'var(--text-muted)' }}>{e.logged_by_email}</td>
+                        <td style={{ fontSize:11.5, color:'var(--text-muted)' }}>{e.notes||'—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   REGULATORY CALENDAR
+═══════════════════════════════════════════════════ */
+function RegulatoryCalendar() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
+
+  useEffect(() => {
+    apiFetch('/api/calendar/events')
+      .then(setEvents).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
+  }, []);
+
+  const overdue  = events.filter(e => e.urgency === 'overdue');
+  const critical = events.filter(e => e.urgency === 'critical');
+  const warning  = events.filter(e => e.urgency === 'warning');
+  const info     = events.filter(e => e.urgency === 'info');
+
+  function parseDate(ds) {
+    if (!ds) return null;
+    const d = new Date(ds + (ds.includes('T') ? '' : 'T00:00:00'));
+    return { day: d.getDate(), mon: d.toLocaleString('en-CA',{month:'short'}) };
+  }
+
+  function CalEvent({ ev }) {
+    const dt = parseDate(ev.due_date);
+    const daysLabel = ev.days_until === null ? null
+      : ev.days_until < 0 ? Math.abs(ev.days_until)+' days overdue'
+      : ev.days_until === 0 ? 'Due today'
+      : ev.days_until + ' days';
+    const chipColor = ev.urgency === 'overdue' ? { background:'#fee2e2', color:'var(--red)' }
+      : ev.urgency === 'critical' ? { background:'#fef3c7', color:'#92400e' }
+      : { background:'#eff6ff', color:'#1d4ed8' };
+
+    return (
+      <div className={`cal-event ${ev.urgency}`}>
+        {dt ? (
+          <div className={`cal-date-box ${ev.urgency}`}>
+            <div className="cal-date-day">{dt.day}</div>
+            <div className="cal-date-mon">{dt.mon}</div>
+          </div>
+        ) : (
+          <div className={`cal-date-box info`} style={{ justifyContent:'center' }}>
+            <div style={{ fontSize:18 }}>⏳</div>
+          </div>
+        )}
+        <div style={{ flex:1, minWidth:0 }}>
+          <div className="cal-event-title">{ev.title}</div>
+          <div className="cal-event-sub">{ev.subtitle}{ev.business_unit ? ' · '+ev.business_unit : ''}</div>
+        </div>
+        {daysLabel && (
+          <span className="cal-days-chip" style={chipColor}>{daysLabel}</span>
+        )}
+      </div>
+    );
+  }
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+
+  const totalActionable = overdue.length + critical.length;
+
+  return (
+    <div>
+      <div className="kpi-grid" style={{ marginBottom:20 }}>
+        {[
+          ['Overdue',         overdue.length,   'kpi-red'],
+          ['Due ≤ 30 days',   critical.length,  'kpi-amber'],
+          ['Due ≤ 90 days',   warning.length,   'kpi-navy'],
+          ['Open Workflows',  info.length,       'kpi-grey'],
+        ].map(([l,v,c]) => (
+          <div key={l} className="kpi-card">
+            <div className="kpi-label">{l}</div>
+            <div className={`kpi-value ${c}`}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {events.length === 0 && (
+        <div className="card">
+          <div style={{ fontSize:13, color:'var(--text-muted)' }}>No upcoming deadlines within 90 days. Your compliance calendar is clear.</div>
+        </div>
+      )}
+
+      {overdue.length > 0 && (
+        <>
+          <div className="cal-section-title" style={{ color:'var(--red)' }}>OVERDUE — Immediate Action Required</div>
+          {overdue.map(e => <CalEvent key={e.id} ev={e} />)}
+        </>
+      )}
+      {critical.length > 0 && (
+        <>
+          <div className="cal-section-title" style={{ color:'var(--amber)' }}>DUE WITHIN 30 DAYS</div>
+          {critical.map(e => <CalEvent key={e.id} ev={e} />)}
+        </>
+      )}
+      {warning.length > 0 && (
+        <>
+          <div className="cal-section-title">DUE WITHIN 90 DAYS</div>
+          {warning.map(e => <CalEvent key={e.id} ev={e} />)}
+        </>
+      )}
+      {info.length > 0 && (
+        <>
+          <div className="cal-section-title">OPEN VALIDATION WORKFLOWS</div>
+          {info.map(e => <CalEvent key={e.id} ev={e} />)}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   MODEL RISK APPETITE WIZARD
+═══════════════════════════════════════════════════ */
+function MRAWizard() {
+  const [statement, setStatement] = useState(undefined);
+  const [loading, setLoading]     = useState(true);
+  const [showForm, setShowForm]   = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [approving, setApproving]   = useState(false);
+  const [form, setForm] = useState({
+    institution_type: 'federally regulated credit union',
+    risk_tolerance: 'low',
+    max_unvalidated_pct: '0%',
+    tier1_frequency: 'annual',
+    third_party_posture: 'conservative',
+    escalation_threshold: '$5,000,000',
+  });
+  const toast = useToast();
+
+  function load() {
+    setLoading(true);
+    apiFetch('/api/risk-appetite/latest')
+      .then(setStatement).catch(() => setStatement(null)).finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  async function generate() {
+    setGenerating(true);
+    try {
+      const r = await apiFetch('/api/risk-appetite/generate',{ method:'POST', body:JSON.stringify(form) });
+      setStatement(r);
+      setShowForm(false);
+      toast('MRA Statement generated','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setGenerating(false); }
+  }
+
+  async function approve() {
+    if (!statement) return;
+    if (!confirm('Approve this Model Risk Appetite Statement? This action will be recorded in the audit trail.')) return;
+    setApproving(true);
+    try {
+      const r = await apiFetch(`/api/risk-appetite/${statement.id}/approve`,{ method:'POST' });
+      setStatement(r);
+      toast('Statement approved and recorded in audit trail','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setApproving(false); }
+  }
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+
+  return (
+    <div>
+      <div className="card" style={{ marginBottom:16 }}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">🎯 Model Risk Appetite Statement</div>
+            <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:4 }}>
+              Required by OSFI E-23 §3 — defines your institution's tolerance for model risk and the governance boundaries around it.
+            </div>
+          </div>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowForm(p => !p)}>
+            {statement ? '↻ New Version' : '+ Create Statement'}
+          </button>
+        </div>
+
+        {showForm && (
+          <div className="mra-wizard" style={{ marginTop:14 }}>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Institution Type</label>
+                <select className="form-select" value={form.institution_type} onChange={e => setForm(p => ({...p,institution_type:e.target.value}))}>
+                  <option value="federally regulated credit union">Federally regulated credit union</option>
+                  <option value="domestic bank (Schedule I)">Domestic bank (Schedule I)</option>
+                  <option value="foreign bank branch (Schedule II/III)">Foreign bank branch (Schedule II/III)</option>
+                  <option value="federally regulated insurance company">Federally regulated insurance company</option>
+                  <option value="trust and loan company">Trust and loan company</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Overall Risk Tolerance</label>
+                <select className="form-select" value={form.risk_tolerance} onChange={e => setForm(p => ({...p,risk_tolerance:e.target.value}))}>
+                  <option value="zero-tolerance">Zero-tolerance (no material risk accepted)</option>
+                  <option value="low">Low (minimal risk, strong controls)</option>
+                  <option value="moderate">Moderate (risk accepted within defined limits)</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Max % Tier 1 Models Without Active Validation</label>
+                <select className="form-select" value={form.max_unvalidated_pct} onChange={e => setForm(p => ({...p,max_unvalidated_pct:e.target.value}))}>
+                  <option value="0%">0% (all Tier 1 must be validated)</option>
+                  <option value="5%">≤5%</option>
+                  <option value="10%">≤10%</option>
+                  <option value="15%">≤15%</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tier 1 Validation Frequency</label>
+                <select className="form-select" value={form.tier1_frequency} onChange={e => setForm(p => ({...p,tier1_frequency:e.target.value}))}>
+                  <option value="annual">Annual (every 12 months)</option>
+                  <option value="biennial">Biennial (every 24 months)</option>
+                  <option value="event-driven">Event-driven (material change triggers)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Third-Party Model Posture</label>
+                <select className="form-select" value={form.third_party_posture} onChange={e => setForm(p => ({...p,third_party_posture:e.target.value}))}>
+                  <option value="conservative">Conservative (full §5 due diligence required)</option>
+                  <option value="moderate">Moderate (risk-based due diligence)</option>
+                  <option value="permissive">Permissive (vendor attestation accepted)</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Model Risk Escalation Threshold (financial impact above which CRO escalation is required)</label>
+              <select className="form-select" value={form.escalation_threshold} onChange={e => setForm(p => ({...p,escalation_threshold:e.target.value}))}>
+                <option value="$1,000,000">$1,000,000</option>
+                <option value="$5,000,000">$5,000,000</option>
+                <option value="$10,000,000">$10,000,000</option>
+                <option value="$25,000,000">$25,000,000</option>
+                <option value="$50,000,000">$50,000,000</option>
+              </select>
+            </div>
+            <div>
+              <button className="btn btn-ai" onClick={generate} disabled={generating}>
+                {generating ? <><Spinner /> Generating AI Draft…</> : '🧠 Generate MRA Statement with AI'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {statement && (
+        <div className="card">
+          <div className="section-hdr" style={{ marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <span className="section-title">Statement {statement.version}</span>
+              <span className={statement.status === 'approved' ? 'mra-approved-badge' : 'mra-draft-badge'}>
+                {statement.status}
+              </span>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              {statement.status === 'draft' && (
+                <button className="btn btn-success btn-sm" onClick={approve} disabled={approving}>
+                  {approving ? <><Spinner /> Approving…</> : '✓ Approve Statement'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {statement.status === 'approved' && (
+            <div className="mra-meta-row" style={{ marginBottom:16 }}>
+              <span>✓ Approved by <strong>{statement.approved_by}</strong> on {new Date(statement.approved_at).toLocaleDateString('en-CA')}</span>
+            </div>
+          )}
+
+          <div className="mra-statement-body">{statement.statement_text}</div>
+
+          <div style={{ marginTop:16, fontSize:12, color:'var(--text-muted)' }}>
+            Generated {new Date(statement.created_at).toLocaleDateString('en-CA')} by {statement.created_by} · {statement.version}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ═══════════════════════════════════════════════════
    EXAM SPRINT MODE
@@ -2902,6 +3365,8 @@ function AppShell({ user: userProp }) {
       case 'board':           return <BoardReport />;
       case 'examiner_export': return <ExaminerExport />;
       case 'exam_sprint':     return <ExamSprintMode />;
+      case 'calendar':        return <RegulatoryCalendar />;
+      case 'mra_wizard':      return <MRAWizard />;
       case 'import':          return <CsvImport />;
       case 'admin':           return <AdminPanel user={user} />;
       default:                return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;

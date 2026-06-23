@@ -1505,6 +1505,240 @@ app.get('/api/exam-sprint/latest', requireAuth, async function(req, res) {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 4b — REGULATORY CALENDAR
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/calendar/events', requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const now = new Date();
+    const in90 = new Date(now); in90.setDate(in90.getDate() + 90);
+
+    const [models, vendors, openVals] = await Promise.all([
+      pool.query(
+        `SELECT id,name,risk_tier,business_unit,next_validation_due,last_validated_at
+         FROM models WHERE tenant_id=$1 AND status='active' AND next_validation_due IS NOT NULL
+         ORDER BY next_validation_due ASC LIMIT 60`,
+        [tid]
+      ),
+      pool.query(
+        `SELECT id,model_name,vendor_name,next_review_due
+         FROM vendor_assessments WHERE tenant_id=$1 AND next_review_due IS NOT NULL
+         ORDER BY next_review_due ASC LIMIT 30`,
+        [tid]
+      ),
+      pool.query(
+        `SELECT v.id,v.status,v.created_at,m.name model_name,m.risk_tier
+         FROM validations v JOIN models m ON m.id=v.model_id
+         WHERE v.tenant_id=$1 AND v.status NOT IN ('approved','closed')
+         ORDER BY v.created_at ASC LIMIT 20`,
+        [tid]
+      ),
+    ]);
+
+    const events = [];
+
+    models.rows.forEach(function(m) {
+      const due = new Date(m.next_validation_due);
+      const daysUntil = Math.ceil((due - now) / 86400000);
+      let urgency = 'upcoming';
+      if (daysUntil < 0)   urgency = 'overdue';
+      else if (daysUntil <= 30) urgency = 'critical';
+      else if (daysUntil <= 90) urgency = 'warning';
+      else return;
+      events.push({
+        id: 'val-'+m.id, type: 'validation_due', urgency,
+        title: m.name, subtitle: 'Validation due · Tier '+(m.risk_tier||'?'),
+        due_date: m.next_validation_due, days_until: daysUntil,
+        model_id: m.id, business_unit: m.business_unit,
+      });
+    });
+
+    vendors.rows.forEach(function(a) {
+      const due = new Date(a.next_review_due);
+      const daysUntil = Math.ceil((due - now) / 86400000);
+      let urgency = 'upcoming';
+      if (daysUntil < 0)   urgency = 'overdue';
+      else if (daysUntil <= 30) urgency = 'critical';
+      else if (daysUntil <= 90) urgency = 'warning';
+      else return;
+      events.push({
+        id: 'vnd-'+a.id, type: 'vendor_review', urgency,
+        title: a.model_name, subtitle: 'Vendor review · '+(a.vendor_name||''),
+        due_date: a.next_review_due, days_until: daysUntil,
+      });
+    });
+
+    openVals.rows.forEach(function(v) {
+      events.push({
+        id: 'wfl-'+v.id, type: 'validation_open', urgency: 'info',
+        title: v.model_name, subtitle: 'Open workflow · '+(v.status||'').replace(/_/g,' '),
+        due_date: null, days_until: null,
+        validation_id: v.id,
+      });
+    });
+
+    events.sort(function(a,b) {
+      if (a.days_until === null) return 1;
+      if (b.days_until === null) return -1;
+      return a.days_until - b.days_until;
+    });
+
+    res.json(events);
+  } catch(e) { console.error('[calendar]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 4b — MODEL RISK APPETITE STATEMENT WIZARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/risk-appetite/latest', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      `SELECT * FROM risk_appetite_statements WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      [req.user.tenant_id]
+    );
+    res.json(r.rows[0] || null);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/risk-appetite/generate', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const { risk_tolerance, max_unvalidated_pct, tier1_frequency, third_party_posture, escalation_threshold, institution_type } = req.body;
+    if (!risk_tolerance) return res.status(400).json({ error:'risk_tolerance required' });
+
+    const tRes = await pool.query('SELECT name FROM tenants WHERE id=$1',[req.user.tenant_id]);
+    const instName = (tRes.rows[0]&&tRes.rows[0].name)||'the Institution';
+
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens: 1200, temperature: 0.3,
+      messages: [{ role:'user', content:
+        'You are a senior model risk officer drafting a formal Model Risk Appetite Statement for a Canadian FRFI regulated under OSFI Guideline E-23 (September 2025).\n\n'+
+        'Institution: '+instName+'\n'+
+        'Institution type: '+(institution_type||'federally regulated financial institution')+'\n'+
+        'Risk tolerance: '+risk_tolerance+'\n'+
+        'Maximum % of Tier 1 models without active validation: '+(max_unvalidated_pct||'0%')+'\n'+
+        'Tier 1 validation frequency: '+(tier1_frequency||'annual')+'\n'+
+        'Third-party model posture: '+(third_party_posture||'conservative')+'\n'+
+        'Model risk escalation threshold: '+(escalation_threshold||'$5M')+'\n\n'+
+        'Draft a formal, board-ready Model Risk Appetite Statement. Structure it as:\n'+
+        '1. STATEMENT OF MODEL RISK APPETITE — 2-3 sentences declaring overall risk tolerance\n'+
+        '2. QUANTITATIVE THRESHOLDS — bullet list of specific measurable limits\n'+
+        '3. QUALITATIVE BOUNDARIES — 4-5 principles (validation independence, documentation standards, third-party governance, escalation)\n'+
+        '4. GOVERNANCE AND OVERSIGHT — roles and responsibilities paragraph\n'+
+        '5. OSFI E-23 ALIGNMENT DECLARATION — 2 sentences citing specific E-23 sections\n\n'+
+        'Write in formal regulatory language. Reference OSFI E-23 section numbers throughout. Do NOT use placeholders.'
+      }]
+    });
+
+    const statementText = aiResp.content[0].text.trim();
+
+    // Determine version
+    const prev = await pool.query(
+      `SELECT version FROM risk_appetite_statements WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,
+      [req.user.tenant_id]
+    );
+    let version = 'v1.0';
+    if (prev.rows.length) {
+      const parts = (prev.rows[0].version||'v1.0').replace('v','').split('.');
+      version = 'v'+(parseInt(parts[0]||1))+'.'+( parseInt(parts[1]||0)+1 );
+    }
+
+    const r = await pool.query(
+      `INSERT INTO risk_appetite_statements(tenant_id,version,inputs,statement_text,created_by)
+       VALUES($1,$2,$3,$4,$5) RETURNING *`,
+      [req.user.tenant_id, version,
+       JSON.stringify({ risk_tolerance, max_unvalidated_pct, tier1_frequency, third_party_posture, escalation_threshold, institution_type }),
+       statementText, req.user.email]
+    );
+    await audit(req.user.tenant_id,null,req.user.email,'mra_statement_generated',{
+      metadata:{ statement_id:r.rows[0].id, version }
+    });
+    res.json(r.rows[0]);
+  } catch(e) { console.error('[mra-generate]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/risk-appetite/:id/approve', requireAuth, async function(req, res) {
+  try {
+    if (!['admin','super_admin'].includes(req.user.role))
+      return res.status(403).json({ error:'Only admins can approve the MRA statement' });
+    const r = await pool.query(
+      `UPDATE risk_appetite_statements SET status='approved',approved_by=$1,approved_at=NOW()
+       WHERE id=$2 AND tenant_id=$3 RETURNING *`,
+      [req.user.email, req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Statement not found' });
+    await audit(req.user.tenant_id,null,req.user.email,'mra_statement_approved',{
+      metadata:{ statement_id:req.params.id }
+    });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 4b — ONGOING MODEL MONITORING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/models/:id/monitoring', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      `SELECT * FROM model_monitoring WHERE model_id=$1 AND tenant_id=$2 ORDER BY logged_at DESC, created_at DESC LIMIT 100`,
+      [req.params.id, req.user.tenant_id]
+    );
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/monitoring', requireAuth, async function(req, res) {
+  try {
+    const { metric_name, metric_value, threshold_amber, threshold_red, notes, logged_at } = req.body;
+    if (!metric_name || metric_value === undefined)
+      return res.status(400).json({ error:'metric_name and metric_value required' });
+    const mRes = await pool.query('SELECT id,name FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,req.user.tenant_id]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+
+    const r = await pool.query(
+      `INSERT INTO model_monitoring(tenant_id,model_id,metric_name,metric_value,threshold_amber,threshold_red,notes,logged_by_email,logged_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [req.user.tenant_id,req.params.id,metric_name,metric_value,
+       threshold_amber||null,threshold_red||null,notes||null,req.user.email,
+       logged_at||new Date().toISOString().split('T')[0]]
+    );
+    const entry = r.rows[0];
+    const breached = threshold_red && parseFloat(metric_value) >= parseFloat(threshold_red);
+    if (breached) {
+      await audit(req.user.tenant_id,req.params.id,req.user.email,'monitoring_threshold_breached',{
+        metadata:{ metric:metric_name, value:metric_value, threshold_red }
+      });
+    } else {
+      await audit(req.user.tenant_id,req.params.id,req.user.email,'monitoring_metric_logged',{
+        metadata:{ metric:metric_name, value:metric_value }
+      });
+    }
+    res.json({ ...entry, threshold_breached: !!breached });
+  } catch(e) { console.error('[monitoring]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// Tenant-wide monitoring alerts (metrics breaching red threshold)
+app.get('/api/monitoring/alerts', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      `SELECT DISTINCT ON (mm.model_id, mm.metric_name)
+         mm.*, m.name model_name, m.risk_tier
+       FROM model_monitoring mm
+       JOIN models m ON m.id = mm.model_id
+       WHERE mm.tenant_id=$1
+         AND mm.threshold_red IS NOT NULL
+         AND mm.metric_value >= mm.threshold_red
+       ORDER BY mm.model_id, mm.metric_name, mm.logged_at DESC`,
+      [req.user.tenant_id]
+    );
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
 // ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get('/{*path}', function(req, res) {
   res.sendFile(path.join(__dirname,'public','index.html'));
