@@ -3,8 +3,8 @@
 > This document is the living record of all strategic decisions, product definitions, feature choices, and rationale established during the formulation of ClearMRM. It serves as the guiding star for all future development decisions. Every significant decision recorded here should be treated as a binding product principle unless explicitly revisited and updated with the date of change and reason.
 
 **Project Start:** June 22, 2026
-**Last Updated:** June 22, 2026 (Session 3)
-**Status:** Phase 1 + Phase 2 + Phase 3 DEPLOYED — `https://clearmrm.nimblestride.ca`
+**Last Updated:** June 22, 2026 (Session 4)
+**Status:** Phase 1 + Phase 2 + Phase 3 + Phase 4 DEPLOYED — `https://clearmrm.nimblestride.ca`
 
 ---
 
@@ -435,11 +435,17 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | Admin Panel | F-admin | **LIVE** | Phase 3 | User management, SSO config, tenant overview tabs |
 | AI Model Description Generator | F-AI2 | Planned | Phase 2+ | Auto-generate from uploaded docs (requires document upload) |
 | Model Type Library | F-lib | Planned | Phase 2+ | 200+ pre-built model types, Canadian FRFI specific |
-| Natural Language Model Search | F-NLS | Planned | Phase 4 | Search model inventory in plain English |
+| Model Change Management | F-CM | **LIVE** | Phase 4 | Version history, change type (major/minor/patch), AI materiality assessment (Sonnet) per OSFI §4.2 |
+| Exam Sprint Mode | F-ES | **LIVE** | Phase 4 | AI-powered full compliance gap analysis + 30/60/90-day action plan + examiner question prep (Sonnet) |
+| Regulatory Calendar | F-RC | **LIVE** | Phase 4 | Derived validation/review schedule with AI CRO weekly briefing (Haiku) |
+| Model Risk Appetite Statement | F-MRA | **LIVE** | Phase 4 | 6-question wizard, AI-generated statement (Sonnet), versioned, board-approval workflow |
+| Ongoing Monitoring | F-OM | **LIVE** | Phase 4 | Metric logging, amber/red thresholds, AI trend analysis + drift detection (Sonnet) per OSFI §4.3 |
+| Natural Language Model Search | F-NLS | Planned | Phase 5 | Search model inventory in plain English |
 | Industry Benchmarking Dashboard | F-bench | Planned | Year 2 | Anonymized peer comparison |
-| Microsoft Graph Integration | F-graph | Planned | Phase 4 | Pull model docs from SharePoint/OneDrive |
-| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 4 | DocuSign or AWS Simple Sign |
-| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 4 | Row-level security per tenant |
+| Microsoft Graph Integration | F-graph | Planned | Phase 5 | Pull model docs from SharePoint/OneDrive |
+| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 5 | DocuSign or AWS Simple Sign |
+| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 5 | Row-level security per tenant |
+| Validator Marketplace | F-mkt | Planned | Phase 5 | Connect FRFIs with accredited validation firms; 15% referral |
 | OSFI B-15 Climate Module | F-B15 | Planned | Year 2 | Climate risk model governance |
 | AMF (Quebec) Alignment Module | F-amf | Planned | Year 2 | Quebec-specific overlay |
 
@@ -480,13 +486,16 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | Phase 1 deployed: Model Registry, Risk Rating, Audit Trail, Board Pack, Dashboard, CSV Import | June 22, 2026 | **COMPLETE** |
 | Phase 1 AI+ deployed: AI Dashboard Briefing, AI Smart Fill, AI Remediation Advisor, AI Board Summary | June 22, 2026 | **COMPLETE** |
 | Phase 2 deployed: Validation Workflow Manager + Vendor Assessment Module | June 22, 2026 | **COMPLETE** |
+| Phase 2 AI+ deployed: AI Findings Analyzer, AI Approval Readiness, AI Closure Narrative, AI Vendor §5 Deep Dive | June 22, 2026 | **COMPLETE** |
+| Phase 3 deployed: Multi-Tenant Onboarding, OSFI Examiner Export, SSO SAML 2.0, Admin Panel | June 22, 2026 | **COMPLETE** |
+| Phase 4 deployed: Model Change Management, Exam Sprint Mode, Regulatory Calendar, MRA Wizard, Ongoing Monitoring (all with AI) | June 22, 2026 | **COMPLETE** |
+| USER_GUIDE.md published: 18-chapter onboarding + operational guide | June 22, 2026 | **COMPLETE** |
 | Demo-ready with 5 seed models and all AI features active | June 22, 2026 | **COMPLETE** |
 | First lighthouse client signed (pilot) | November 2026 | Pending |
 | Second lighthouse client signed (pilot) | January 2027 | Pending |
-| Phase 3 General Availability launch | January 2027 | Pending |
+| Phase 5 launch: Validator Marketplace + NLS + RLS + SharePoint + E-Signature | January 2027 | Pending |
 | Risk Canada Conference presence | February/March 2027 | Pending |
 | 5 paying clients | March 2027 | Pending |
-| OSFI Examiner Export module released | April 2027 | Pending |
 | 10 paying clients / $800K ARR | June 2027 | Pending |
 | 20 paying clients / $1.8M ARR | December 2027 | Pending |
 | SOC 2 Type II completed | December 2027 | Pending |
@@ -529,7 +538,11 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | 2026-06-22 | **MVP DEPLOYED to production** — `https://clearmrm.nimblestride.ca` | Full build in single session; all MVP features live | Founder + AI |
 | 2026-06-22 | **Phase 1 AI+ deployed**: AI Dashboard Briefing, AI Smart Fill, AI Remediation Advisor, AI Board Report executive summary | Founder confirmed: add AI to all Phase 1 features before Phase 2 | Founder |
 | 2026-06-22 | **Phase 2 deployed**: Validation Workflow Manager (6-state machine) + Vendor Assessment Module (OSFI E-23 §5) | Phase 2 scope confirmed in same session | Founder |
-| 2026-06-22 | Code pushed to GitHub at `myshariff123/osfi-e23-vault` under `/backend`, `/frontend`, `/db` directories | Founder requested all code in GitHub | Founder |
+| 2026-06-22 | **Phase 2 AI+ deployed**: AI Findings Analyzer, AI Approval Readiness Check, AI Closure Narrative, AI Vendor §5 Deep Dive | All Phase 2 features got AI enhancements in same session | Founder |
+| 2026-06-22 | **Phase 3 deployed**: Multi-Tenant Onboarding UI, OSFI Examiner Export PDF, SSO SAML 2.0, Admin Panel | Enterprise-readiness phase | Founder |
+| 2026-06-22 | **Phase 4 deployed**: Model Change Management (AI materiality), Exam Sprint Mode (AI gap analysis + 30/60/90 plan), Regulatory Calendar (AI CRO briefing), MRA Wizard (AI-generated, board-approved), Ongoing Monitoring (AI trend + drift) | Full Phase 4 scope with AI on every feature | Founder |
+| 2026-06-22 | **USER_GUIDE.md created**: 18-chapter onboarding and operational guide covering all modules, OSFI §-to-feature mapping, AI features reference, best practices, 50-item compliance checklist | Founder requested comprehensive customer onboarding guide | Founder |
+| 2026-06-22 | Code pushed to GitHub at `myshariff123/osfi-e23-vault` under `/backend`, `/frontend`, `/db`, `USER_GUIDE.md`, `PRODUCT_FORMULATION.md` | All code and docs maintained in GitHub | Founder |
 
 ---
 

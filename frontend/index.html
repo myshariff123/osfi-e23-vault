@@ -2752,6 +2752,8 @@ function ModelMonitoringSection({ modelId }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState({ metric_name:'', metric_value:'', threshold_amber:'', threshold_red:'', notes:'', logged_at:'' });
   const [saving, setSaving]     = useState(false);
+  const [aiAnalysis, setAiAnalysis]   = useState({});
+  const [aiLoading, setAiLoading]     = useState({});
   const toast = useToast();
 
   const COMMON_METRICS = ['PSI','Gini','KS Statistic','Accuracy','F1 Score','AUC-ROC','Default Rate','Override Rate','Custom'];
@@ -2781,6 +2783,17 @@ function ModelMonitoringSection({ modelId }) {
     if (e.threshold_red   && parseFloat(e.metric_value) >= parseFloat(e.threshold_red))   return 'metric-red';
     if (e.threshold_amber && parseFloat(e.metric_value) >= parseFloat(e.threshold_amber)) return 'metric-amber';
     return e.threshold_amber || e.threshold_red ? 'metric-ok' : 'metric-neutral';
+  }
+
+  async function runAIAnalysis(metricName) {
+    setAiLoading(p => ({...p,[metricName]:true}));
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/monitoring/ai-analysis`,{ method:'POST', body:JSON.stringify({ metric_name:metricName }) });
+      setAiAnalysis(p => ({...p,[metricName]:r}));
+      if (r.escalation_required) toast('AI flagged escalation requirement — audit event logged','error');
+      else toast('AI trend analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setAiLoading(p => ({...p,[metricName]:false})); }
   }
 
   // Group by metric name to show latest per metric
@@ -2848,10 +2861,13 @@ function ModelMonitoringSection({ modelId }) {
             const cls = metricClass(latest);
             const breached = cls === 'metric-red';
             return (
-              <div key={metricName} style={{ marginBottom:12 }}>
+              <div key={metricName} style={{ marginBottom:16 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
                   <span style={{ fontWeight:700, fontSize:13 }}>{metricName}</span>
                   {breached && <span style={{ fontSize:11, background:'#fee2e2', color:'var(--red)', padding:'1px 8px', borderRadius:10, fontWeight:700 }}>ALERT</span>}
+                  <button className="btn btn-ai btn-sm" style={{ marginLeft:'auto' }} onClick={() => runAIAnalysis(metricName)} disabled={aiLoading[metricName]}>
+                    {aiLoading[metricName] ? <><Spinner /> Analysing…</> : '🧠 AI Trend Analysis'}
+                  </button>
                 </div>
                 <table className="monitoring-table">
                   <thead><tr><th>Date</th><th>Value</th><th>Thresholds</th><th>Logged by</th><th>Notes</th></tr></thead>
@@ -2873,6 +2889,28 @@ function ModelMonitoringSection({ modelId }) {
                     ))}
                   </tbody>
                 </table>
+                {aiAnalysis[metricName] && (
+                  <div className="ai-panel" style={{ marginTop:8, padding:'10px 14px' }}>
+                    <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:6, flexWrap:'wrap' }}>
+                      <span style={{ fontWeight:700, fontSize:12, color:'var(--navy)' }}>AI Trend: {(aiAnalysis[metricName].trend||'').toUpperCase()}</span>
+                      <span style={{ fontSize:11, padding:'1px 8px', borderRadius:10, fontWeight:700,
+                        background: aiAnalysis[metricName].trend==='deteriorating'?'#fee2e2':aiAnalysis[metricName].trend==='improving'?'#dcfce7':'#f1f5f9',
+                        color: aiAnalysis[metricName].trend==='deteriorating'?'var(--red)':aiAnalysis[metricName].trend==='improving'?'var(--green)':'var(--grey)'
+                      }}>{aiAnalysis[metricName].trend_magnitude} magnitude</span>
+                      {aiAnalysis[metricName].is_material_drift && <span style={{ fontSize:11, background:'#fff7ed', color:'#c2410c', padding:'1px 8px', borderRadius:10, fontWeight:700 }}>Material Drift</span>}
+                      {aiAnalysis[metricName].escalation_required && <span style={{ fontSize:11, background:'#fee2e2', color:'var(--red)', padding:'1px 8px', borderRadius:10, fontWeight:700 }}>Escalation Required</span>}
+                    </div>
+                    <div style={{ fontSize:12.5, marginBottom:6 }}>{aiAnalysis[metricName].drift_assessment}</div>
+                    <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:6 }}>{aiAnalysis[metricName].osfi_e23_implication}</div>
+                    {(aiAnalysis[metricName].recommended_actions||[]).length > 0 && (
+                      <ul style={{ paddingLeft:16, margin:0 }}>
+                        {aiAnalysis[metricName].recommended_actions.map((a,i) => (
+                          <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{a}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2886,14 +2924,25 @@ function ModelMonitoringSection({ modelId }) {
    REGULATORY CALENDAR
 ═══════════════════════════════════════════════════ */
 function RegulatoryCalendar() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents]           = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [briefing, setBriefing]       = useState(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     apiFetch('/api/calendar/events')
       .then(setEvents).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
   }, []);
+
+  async function getAIBriefing() {
+    setBriefingLoading(true);
+    try {
+      const r = await apiFetch('/api/calendar/ai-briefing');
+      setBriefing(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setBriefingLoading(false); }
+  }
 
   const overdue  = events.filter(e => e.urgency === 'overdue');
   const critical = events.filter(e => e.urgency === 'critical');
@@ -2957,6 +3006,27 @@ function RegulatoryCalendar() {
             <div className={`kpi-value ${c}`}>{v}</div>
           </div>
         ))}
+      </div>
+
+      <div className="card" style={{ marginBottom:16 }}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">🧠 AI Compliance Briefing</div>
+            <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>AI-generated weekly priorities for your Chief Risk Officer</div>
+          </div>
+          <button className="btn btn-ai btn-sm" onClick={getAIBriefing} disabled={briefingLoading}>
+            {briefingLoading ? <><Spinner /> Generating…</> : briefing ? '↻ Refresh Briefing' : 'Get AI Briefing'}
+          </button>
+        </div>
+        {briefing && (
+          <div className="ai-panel" style={{ marginTop:10 }}>
+            <div className="ai-insight">{briefing.briefing}</div>
+            <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:6 }}>Generated {new Date(briefing.generated_at).toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        )}
+        {!briefing && !briefingLoading && (
+          <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:8 }}>Click "Get AI Briefing" for a 2-sentence CRO-ready priority summary of your compliance calendar.</div>
+        )}
       </div>
 
       {events.length === 0 && (

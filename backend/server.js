@@ -1721,6 +1721,75 @@ app.post('/api/models/:id/monitoring', requireAuth, async function(req, res) {
   } catch(e) { console.error('[monitoring]',e.message); res.status(500).json({ error:e.message }); }
 });
 
+// AI: Calendar compliance briefing
+app.get('/api/calendar/ai-briefing', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [overdue, critical30, neverVal, openVals, vendors] = await Promise.all([
+      pool.query("SELECT COUNT(*) c, array_agg(name ORDER BY next_validation_due ASC) names FROM models WHERE tenant_id=$1 AND status='active' AND next_validation_due<NOW()",[tid]),
+      pool.query("SELECT COUNT(*) c FROM models WHERE tenant_id=$1 AND status='active' AND next_validation_due BETWEEN NOW() AND NOW()+INTERVAL '30 days'",[tid]),
+      pool.query("SELECT COUNT(*) c FROM models WHERE tenant_id=$1 AND status='active' AND last_validated_at IS NULL",[tid]),
+      pool.query("SELECT COUNT(*) c FROM validations WHERE tenant_id=$1 AND status NOT IN ('approved','closed')",[tid]),
+      pool.query("SELECT COUNT(*) c FROM vendor_assessments WHERE tenant_id=$1 AND next_review_due<NOW()",[tid]),
+    ]);
+    const overdueNames=(overdue.rows[0].names||[]).slice(0,3).join(', ');
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-haiku-20240307-v1:0',
+      max_tokens:220, temperature:0.3,
+      messages:[{role:'user',content:
+        'You are an OSFI E-23 compliance officer giving a weekly calendar briefing to a Chief Risk Officer.\n\n'+
+        'Compliance calendar today:\n'+
+        '- Models overdue for validation: '+overdue.rows[0].c+(overdueNames?' ('+overdueNames+')':'')+'\n'+
+        '- Models with validation due within 30 days: '+critical30.rows[0].c+'\n'+
+        '- Models never validated: '+neverVal.rows[0].c+'\n'+
+        '- Open validation workflows: '+openVals.rows[0].c+'\n'+
+        '- Vendor assessments overdue: '+vendors.rows[0].c+'\n\n'+
+        'Write exactly 2 sentences. Sentence 1: most urgent compliance priority this week with specific numbers and OSFI E-23 §reference. Sentence 2: the one delegation action for the team to close open items. Be directive and specific.'
+      }]
+    });
+    res.json({ briefing:aiResp.content[0].text.trim(), generated_at:new Date() });
+  } catch(e) { console.error('[cal-briefing]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// AI: Monitoring trend analysis for a specific metric
+app.post('/api/models/:id/monitoring/ai-analysis', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const { metric_name } = req.body;
+    if (!metric_name) return res.status(400).json({ error:'metric_name required' });
+    const [mRes, readings] = await Promise.all([
+      pool.query('SELECT name,risk_tier,methodology_type FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,req.user.tenant_id]),
+      pool.query(
+        'SELECT metric_value,threshold_amber,threshold_red,logged_at,notes FROM model_monitoring WHERE model_id=$1 AND tenant_id=$2 AND metric_name=$3 ORDER BY logged_at ASC LIMIT 20',
+        [req.params.id,req.user.tenant_id,metric_name]
+      ),
+    ]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    if (!readings.rows.length) return res.status(400).json({ error:'No readings for this metric' });
+    const m=mRes.rows[0];
+    const latest=readings.rows[readings.rows.length-1];
+    const readingSummary=readings.rows.map(r=>r.logged_at+': '+r.metric_value).join('; ');
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens:600, temperature:0.2,
+      messages:[{role:'user',content:
+        'You are an OSFI E-23 model risk expert analyzing ongoing model performance monitoring data under §4.5.\n\n'+
+        'Model: '+m.name+'\nRisk Tier: '+(m.risk_tier||'Unrated')+'\nMethodology: '+(m.methodology_type||'unknown')+'\n'+
+        'Metric: '+metric_name+'\nReadings (date: value): '+readingSummary+'\n'+
+        'Amber threshold: '+(latest.threshold_amber||'not set')+'\nRed threshold: '+(latest.threshold_red||'not set')+'\n\n'+
+        'Return ONLY valid JSON:\n'+
+        '{"trend":"improving|stable|deteriorating","trend_magnitude":"low|moderate|significant","drift_assessment":"1 sentence","is_material_drift":false,"osfi_e23_implication":"1 sentence citing §4.5","recommended_actions":["..."],"escalation_required":false,"escalation_rationale":"..."}'
+      }]
+    });
+    const result=extractJSON(aiResp.content[0].text);
+    if (result.escalation_required) {
+      await audit(req.user.tenant_id,req.params.id,req.user.email,'monitoring_ai_escalation_flagged',{
+        metadata:{metric:metric_name,trend:result.trend,material:result.is_material_drift}
+      });
+    }
+    res.json(result);
+  } catch(e) { console.error('[monitoring-ai]',e.message); res.status(500).json({ error:e.message }); }
+});
+
 // Tenant-wide monitoring alerts (metrics breaching red threshold)
 app.get('/api/monitoring/alerts', requireAuth, async function(req, res) {
   try {
