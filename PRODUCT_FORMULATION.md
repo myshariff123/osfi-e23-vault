@@ -473,11 +473,16 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | JWT Expiry Enforcement | F-JWT | **LIVE** | Phase 6 | Server-side `claims.exp` check in requireAuth middleware; returns 401 SESSION_EXPIRED on stale tokens |
 | Merkle Hash Chain (Audit Integrity) | F-MHC | **LIVE** | Phase 6 | SHA-256 hash chain: each audit event hashes prevHash + eventData; Merkle root = cryptographic fingerprint of entire audit history |
 | Audit Integrity Verification | F-AIV | **LIVE** | Phase 6 | GET /api/audit/verify-integrity: replays entire hash chain, detects tampering, returns merkle_root + valid/invalid verdict + first breach location |
+| Insurance Model Taxonomy | F-INS | **LIVE** | Phase 7 | 14 insurance-specific categories; IFRS 17 sub-components; capital framework linkage; spreadsheet flag |
+| Actuarial Assumption Register | F-AAR | **LIVE** | Phase 7 | Per-model key input versioning: current/prior value, unit, approval, effective date, change reason |
+| Structured Backtesting Log | F-BTL | **LIVE** | Phase 7 | Per-validation predicted vs. actual: tolerance, variance %, pass/fail verdict. Inside validation detail |
+| Model Dependency Map | F-MDM | **LIVE** | Phase 7 | Upstream/downstream cascade risk chains; feeds-into/fed-by two-column view; tier badges |
+| Insurance Profile Card | F-IPC | **LIVE** | Phase 7 | Spreadsheet warning, IFRS 17 sub-component badge, capital framework flag on model detail page |
 | Industry Benchmarking Dashboard | F-bench | Planned | Year 2 | Anonymized peer comparison |
-| Microsoft Graph Integration | F-graph | Planned | Phase 7 | Pull model docs from SharePoint/OneDrive |
-| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 7 | DocuSign or AWS Simple Sign |
-| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 7 | Row-level security per tenant |
-| Validator Marketplace | F-mkt | Planned | Phase 7 | Connect FRFIs with accredited validation firms; 15% referral |
+| Microsoft Graph Integration | F-graph | Planned | Phase 8 | Pull model docs from SharePoint/OneDrive |
+| E-Signature for Validation Sign-Off | F-esig | Planned | Phase 8 | DocuSign or AWS Simple Sign |
+| PostgreSQL RLS (full tenant isolation) | F-rls | Planned | Phase 8 | Row-level security per tenant |
+| Validator Marketplace | F-mkt | Planned | Phase 8 | Connect FRFIs with accredited validation firms; 15% referral |
 | OSFI B-15 Climate Module | F-B15 | Planned | Year 2 | Climate risk model governance |
 | AMF (Quebec) Alignment Module | F-amf | Planned | Year 2 | Quebec-specific overlay |
 
@@ -527,6 +532,7 @@ All model archiving uses `status = 'archived'`. No row is ever deleted from the 
 | First lighthouse client signed (pilot) | November 2026 | Pending |
 | Second lighthouse client signed (pilot) | January 2027 | Pending |
 | Phase 6 deployed: Marketing Landing Page, Session Inactivity Timeout, JWT Expiry Enforcement, Merkle Hash Chain Audit Integrity, Cryptographic Audit Verification | June 23, 2026 | **COMPLETE** |
+| Phase 7 deployed: Insurance Model Taxonomy, Actuarial Assumption Register, Structured Backtesting Log, Model Dependency Map, Insurance Profile Card, Spreadsheet Enhanced Controls | June 23, 2026 | **COMPLETE** |
 | Phase 6 (Next): Validator Marketplace + RLS + SharePoint + E-Signature + B-15 Climate | January 2027 | Pending |
 | Risk Canada Conference presence | February/March 2027 | Pending |
 | 5 paying clients | March 2027 | Pending |
