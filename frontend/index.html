@@ -288,6 +288,68 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .toggle.on { background: var(--navy); }
 .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 .toggle.on::after { left: 23px; }
+
+/* CHANGE MANAGEMENT */
+.change-timeline { display: flex; flex-direction: column; gap: 10px; }
+.change-item { padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); }
+.change-item.is-material { border-left: 4px solid var(--amber); }
+.change-item.needs-reval { border-left: 4px solid var(--red); }
+.change-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.change-ver { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; background: var(--navy); color: #fff; }
+.change-type-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.ct-major { background: #fee2e2; color: var(--red); }
+.ct-minor { background: #fef3c7; color: #92400e; }
+.ct-patch { background: #f0fdf4; color: var(--green); }
+.mat-chip { padding: 2px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700; }
+.mat-yes { background: #fff7ed; color: #c2410c; }
+.mat-no  { background: #f0fdf4; color: var(--green); }
+.reval-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; font-size: 13px; color: #92400e; font-weight: 600; margin-bottom: 14px; }
+.change-log-form { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px; }
+
+/* EXAM SPRINT */
+.sprint-hero { background: linear-gradient(135deg,#7f1d1d,#991b1b,#b91c1c); border-radius: var(--radius); padding: 28px 32px; color: #fff; margin-bottom: 20px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.sprint-hero-title { font-size: 21px; font-weight: 800; margin-bottom: 6px; }
+.sprint-hero-sub { font-size: 13px; opacity: 0.85; max-width: 520px; line-height: 1.5; }
+.readiness-circle { width: 88px; height: 88px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.35); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+.readiness-num { font-size: 28px; font-weight: 900; line-height: 1; color: #fff; }
+.readiness-lbl { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+.rc-high { background: rgba(185,28,28,0.55); }
+.rc-med  { background: rgba(180,83,9,0.55); }
+.rc-low  { background: rgba(21,128,61,0.55); }
+.risk-chip { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.rchip-high   { background: #fee2e2; color: var(--red); }
+.rchip-medium { background: #fef3c7; color: #92400e; }
+.rchip-low    { background: #dcfce7; color: var(--green); }
+.gap-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 12px; margin-bottom: 20px; }
+.gap-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; background: var(--white); }
+.gap-card.sev-critical { border-left: 4px solid var(--red); }
+.gap-card.sev-high     { border-left: 4px solid var(--amber); }
+.gap-card.sev-medium   { border-left: 4px solid #2563eb; }
+.gap-sev { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px; text-transform: uppercase; }
+.gsev-critical { background: #fee2e2; color: var(--red); }
+.gsev-high     { background: #fff7ed; color: #c2410c; }
+.gsev-medium   { background: #eff6ff; color: #1d4ed8; }
+.sprint-cols { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+@media (max-width:860px) { .sprint-cols { grid-template-columns: 1fr; } }
+.sprint-col { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.sprint-col-hdr { padding: 10px 14px; font-size: 13px; font-weight: 800; color: #fff; }
+.shdr-30 { background: var(--red); }
+.shdr-60 { background: var(--amber); }
+.shdr-90 { background: #16a34a; }
+.sprint-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
+.sprint-action { padding: 9px 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); font-size: 12.5px; }
+.ap-badge { font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 10px; display: inline-block; }
+.ap-p1 { background: #fee2e2; color: var(--red); }
+.ap-p2 { background: #fef3c7; color: #92400e; }
+.qw-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.qw-list li { font-size: 13px; display: flex; gap: 8px; align-items: flex-start; }
+.qw-list li::before { content: '✓'; font-weight: 800; color: var(--green); flex-shrink: 0; }
+.eq-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.eq-list li { font-size: 13px; padding: 10px 12px; background: #f8fafc; border-radius: 6px; border: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
+.eq-list li::before { content: 'Q'; font-weight: 900; color: var(--navy); font-size: 10px; background: #dbeafe; padding: 2px 5px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+.strengths-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.strength-chip { padding: 5px 12px; background: #dcfce7; border-radius: 20px; font-size: 12px; font-weight: 600; color: #15803d; }
+.sprint-feature-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -489,6 +551,7 @@ const NAV_ITEMS = [
   { key: 'audit',            label: 'Audit Trail',         icon: '📋' },
   { key: 'board',            label: 'Board Report',        icon: '📑' },
   { key: 'examiner_export',  label: 'Examiner Export',     icon: '🏛️' },
+  { key: 'exam_sprint',      label: 'Exam Sprint',         icon: '🚨' },
   { key: 'import',           label: 'Import CSV',          icon: '📥' },
   { key: 'admin',            label: 'Admin Panel',         icon: '⚙️' },
 ];
@@ -944,6 +1007,12 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
         </div>
       </div>
 
+      {model.revalidation_required && (
+        <div className="reval-banner">
+          ⚠️ <strong>Re-validation Required</strong> — A material change has been logged. Independent re-validation required under OSFI E-23 §4.3.
+        </div>
+      )}
+
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="section-title" style={{ marginBottom: 14 }}>Model Fields</div>
         <div className="detail-grid">
@@ -1061,6 +1130,152 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
           </div>
         )}
       </div>
+      <ModelChangeSection modelId={modelId} onRevalidationNeeded={reload} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   MODEL CHANGE SECTION
+═══════════════════════════════════════════════════ */
+function ModelChangeSection({ modelId, onRevalidationNeeded }) {
+  const [changes, setChanges]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState({ version_label:'', change_type:'minor', change_category:'other', change_reason:'', is_material:false });
+  const [saving, setSaving]     = useState(false);
+  const [aiLoading, setAiLoading] = useState({});
+  const toast = useToast();
+
+  function load() {
+    setLoading(true);
+    apiFetch(`/api/models/${modelId}/changes`)
+      .then(setChanges).catch(e => toast(e.message,'error')).finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, [modelId]);
+
+  async function submit() {
+    if (!form.version_label.trim()||!form.change_reason.trim())
+      return toast('Version label and reason are required','error');
+    setSaving(true);
+    try {
+      await apiFetch(`/api/models/${modelId}/changes`,{ method:'POST', body:JSON.stringify(form) });
+      toast('Change logged','success');
+      setShowForm(false);
+      setForm({ version_label:'', change_type:'minor', change_category:'other', change_reason:'', is_material:false });
+      load();
+      if (form.is_material && onRevalidationNeeded) onRevalidationNeeded();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function runAIMateriality(c) {
+    setAiLoading(p => ({...p,[c.id]:true}));
+    try {
+      await apiFetch(`/api/models/${modelId}/changes/${c.id}/ai-materiality`,{ method:'POST' });
+      toast('AI materiality assessment complete','success');
+      load();
+      if (onRevalidationNeeded) onRevalidationNeeded();
+    } catch(e) { toast(e.message,'error'); }
+    finally { setAiLoading(p => ({...p,[c.id]:false})); }
+  }
+
+  const CAT = { methodology:'Methodology', data_source:'Data Source', threshold:'Threshold', vendor:'Vendor', regulatory:'Regulatory', other:'Other' };
+
+  return (
+    <div className="card" style={{ marginTop:16 }}>
+      <div className="section-hdr">
+        <div className="section-title">📋 Change History</div>
+        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(p => !p)}>
+          {showForm ? 'Cancel' : '+ Log Change'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="change-log-form">
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">New Version Label *</label>
+              <input className="form-input" placeholder="e.g. v1.1, v2.0" value={form.version_label} onChange={e => setForm(p => ({...p,version_label:e.target.value}))} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Change Type *</label>
+              <select className="form-select" value={form.change_type} onChange={e => setForm(p => ({...p,change_type:e.target.value}))}>
+                <option value="patch">Patch (minor fix)</option>
+                <option value="minor">Minor (non-material update)</option>
+                <option value="major">Major (material change)</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select className="form-select" value={form.change_category} onChange={e => setForm(p => ({...p,change_category:e.target.value}))}>
+                {Object.entries(CAT).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Change Reason / Description *</label>
+            <textarea className="form-textarea" rows="3" placeholder="Describe what changed and why..." value={form.change_reason} onChange={e => setForm(p => ({...p,change_reason:e.target.value}))} />
+          </div>
+          <label style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, cursor:'pointer', fontWeight:600 }}>
+            <input type="checkbox" checked={form.is_material} onChange={e => setForm(p => ({...p,is_material:e.target.checked}))} />
+            Mark as material — flags model for re-validation under OSFI E-23 §4.3
+          </label>
+          <div>
+            <button className="btn btn-primary btn-sm" onClick={submit} disabled={saving}>
+              {saving ? <><Spinner /> Saving…</> : 'Save Change'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading && <div className="spinner-center"><Spinner dark size={22} /></div>}
+      {!loading && changes.length === 0 && (
+        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No changes logged yet. Use "Log Change" to track model version history per OSFI E-23 §4.2.</div>
+      )}
+      {!loading && changes.length > 0 && (
+        <div className="change-timeline">
+          {changes.map(c => (
+            <div key={c.id} className={`change-item${c.requires_revalidation?' needs-reval':c.is_material?' is-material':''}`}>
+              <div className="change-row">
+                <span className="change-ver">{c.version_label}</span>
+                <span className={`change-type-badge ct-${c.change_type}`}>{c.change_type}</span>
+                {c.change_category && c.change_category !== 'other' && (
+                  <span style={{ fontSize:11.5, color:'var(--text-muted)' }}>{CAT[c.change_category]||c.change_category}</span>
+                )}
+                <span className={`mat-chip ${c.is_material?'mat-yes':'mat-no'}`}>
+                  {c.is_material ? 'Material' : 'Non-material'}
+                </span>
+                {c.requires_revalidation && <span className="mat-chip mat-yes">Re-validation Required</span>}
+                <span style={{ marginLeft:'auto', fontSize:11.5, color:'var(--text-muted)' }}>
+                  {c.changed_by_email} · {new Date(c.created_at).toLocaleDateString('en-CA')}
+                </span>
+              </div>
+              <div style={{ fontSize:13 }}>{c.change_reason}</div>
+              {c.ai_materiality && (
+                <div className="ai-panel" style={{ marginTop:8, padding:'8px 12px' }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:'var(--navy)', marginBottom:4 }}>
+                    AI Materiality Score: {c.ai_materiality.materiality_score}/100 · Urgency: {(c.ai_materiality.revalidation_urgency||'').replace(/_/g,' ')}
+                  </div>
+                  <div style={{ fontSize:12, color:'var(--text-muted)' }}>{c.ai_materiality.osfi_rationale}</div>
+                  {c.ai_materiality.risk_implications?.length > 0 && (
+                    <ul style={{ marginTop:6, paddingLeft:16 }}>
+                      {c.ai_materiality.risk_implications.map((r,i) => (
+                        <li key={i} style={{ fontSize:11.5, color:'var(--text-muted)' }}>{r}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              {!c.ai_materiality && (
+                <button className="btn btn-ai btn-sm" style={{ marginTop:8 }} onClick={() => runAIMateriality(c)} disabled={aiLoading[c.id]}>
+                  {aiLoading[c.id] ? <><Spinner /> Assessing…</> : '🧠 AI Materiality Check (OSFI §4.3)'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -2479,9 +2694,186 @@ const SCREEN_TITLES = {
   audit:           'Audit Trail',
   board:           'Board Report',
   examiner_export: 'OSFI Examiner Export',
+  exam_sprint:     'Emergency Exam Sprint',
   import:          'Import CSV',
   admin:           'Admin Panel',
 };
+
+/* ═══════════════════════════════════════════════════
+   EXAM SPRINT MODE
+═══════════════════════════════════════════════════ */
+function ExamSprintMode() {
+  const [sprint, setSprint]   = useState(undefined);
+  const [loading, setLoading] = useState(true);
+  const [launching, setLaunching] = useState(false);
+  const [tab, setTab]         = useState('gaps');
+  const toast = useToast();
+
+  useEffect(() => {
+    apiFetch('/api/exam-sprint/latest')
+      .then(setSprint).catch(() => setSprint(null)).finally(() => setLoading(false));
+  }, []);
+
+  async function launch() {
+    setLaunching(true);
+    try {
+      const r = await apiFetch('/api/exam-sprint/launch',{ method:'POST' });
+      setSprint(r);
+      setTab('gaps');
+      toast('Exam sprint launched — AI gap analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLaunching(false); }
+  }
+
+  function reLaunch() {
+    if (!confirm('Launch a fresh AI gap analysis? This will replace the current sprint plan.')) return;
+    setSprint(null);
+    launch();
+  }
+
+  const scoreClass = s => s >= 75 ? 'rc-low' : s >= 50 ? 'rc-med' : 'rc-high';
+  const chipClass  = l => l === 'high' ? 'rchip-high' : l === 'medium' ? 'rchip-medium' : 'rchip-low';
+  const sevCard    = s => s === 'critical' ? 'sev-critical' : s === 'high' ? 'sev-high' : 'sev-medium';
+  const sevBadge   = s => s === 'critical' ? 'gsev-critical' : s === 'high' ? 'gsev-high' : 'gsev-medium';
+
+  if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
+
+  return (
+    <div>
+      <div className="sprint-hero">
+        <div style={{ flex:1 }}>
+          <div className="sprint-hero-title">🚨 OSFI Exam Sprint Mode</div>
+          <div className="sprint-hero-sub">
+            AI-powered Emergency Examination Readiness. Full compliance gap analysis against OSFI E-23 with a prioritized 30/60/90-day action plan.
+          </div>
+          {sprint && (
+            <div style={{ marginTop:14, display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+              <span style={{ fontSize:12, opacity:0.8 }}>Last analysis: {new Date(sprint.created_at).toLocaleDateString('en-CA')}</span>
+              <span className={`risk-chip ${chipClass(sprint.exam_risk_level)}`}>{(sprint.exam_risk_level||'').toUpperCase()} EXAM RISK</span>
+              <button className="btn btn-sm" style={{ background:'rgba(255,255,255,0.18)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)' }} onClick={reLaunch} disabled={launching}>
+                {launching ? <><Spinner /> Analysing…</> : '↻ Refresh Analysis'}
+              </button>
+            </div>
+          )}
+          {!sprint && (
+            <button className="btn btn-lg" style={{ marginTop:16, background:'#fff', color:'var(--red)', fontWeight:800 }} onClick={launch} disabled={launching}>
+              {launching ? <><Spinner dark size={16} /> Running AI Gap Analysis…</> : '⚡ Launch Exam Sprint'}
+            </button>
+          )}
+        </div>
+        {sprint && (
+          <div className={`readiness-circle ${scoreClass(sprint.overall_readiness_score)}`}>
+            <div className="readiness-num">{sprint.overall_readiness_score}</div>
+            <div className="readiness-lbl">Readiness</div>
+          </div>
+        )}
+      </div>
+
+      {!sprint && !launching && (
+        <div className="card">
+          <div className="section-title" style={{ marginBottom:14 }}>What Exam Sprint Covers</div>
+          {[
+            ['🔍','Compliance Gap Analysis','Scans your model inventory, validation records, and vendor assessments against every OSFI E-23 requirement with specific §section references.'],
+            ['📅','30/60/90-Day Sprint Plan','Prioritized action plan by urgency — P1 actions for immediate resolution, P2 for medium-term — with assigned owners and OSFI references.'],
+            ['❓','Examiner Question Prep','Predicts the questions an OSFI examiner is most likely to ask based on your current posture, so your team can prepare responses in advance.'],
+            ['⚡','Quick Wins','Actions you can complete today or this week to immediately improve your readiness before the full remediation plan is underway.'],
+          ].map(([icon,t,d]) => (
+            <div key={t} className="sprint-feature-row">
+              <span style={{ fontSize:22, flex:'0 0 30px' }}>{icon}</span>
+              <div><div style={{ fontWeight:700, marginBottom:4 }}>{t}</div><div style={{ fontSize:13, color:'var(--text-muted)' }}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {sprint && (
+        <>
+          <div className="card" style={{ marginBottom:16 }}>
+            <div style={{ fontWeight:700, marginBottom:8, fontSize:14 }}>Executive Summary</div>
+            <div style={{ fontSize:13.5, lineHeight:1.65 }}>{sprint.executive_summary}</div>
+          </div>
+
+          <div className="admin-tabs" style={{ marginBottom:16 }}>
+            {[['gaps','Critical Gaps'],['plan','Sprint Plan'],['prep','Exam Prep']].map(([k,l]) => (
+              <button key={k} className={`admin-tab${tab===k?' active':''}`} onClick={() => setTab(k)}>{l}</button>
+            ))}
+          </div>
+
+          {tab === 'gaps' && (
+            <>
+              {(sprint.critical_gaps||[]).length > 0 ? (
+                <div className="gap-grid">
+                  {sprint.critical_gaps.map((g,i) => (
+                    <div key={i} className={`gap-card ${sevCard(g.severity)}`}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                        <span className={`gap-sev ${sevBadge(g.severity)}`}>{g.severity}</span>
+                        <span style={{ fontSize:11.5, color:'var(--text-muted)', fontWeight:700 }}>{g.osfi_section}</span>
+                        {g.affected_count > 0 && <span style={{ marginLeft:'auto', fontSize:11.5, color:'var(--text-muted)' }}>{g.affected_count} model{g.affected_count!==1?'s':''}</span>}
+                      </div>
+                      <div style={{ fontSize:13 }}>{g.gap}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="card"><div style={{ fontSize:13, color:'var(--text-muted)' }}>No critical gaps identified. Your compliance posture is strong.</div></div>
+              )}
+              {(sprint.strengths||[]).length > 0 && (
+                <div className="card">
+                  <div className="section-title" style={{ marginBottom:12 }}>Compliance Strengths</div>
+                  <div className="strengths-list">
+                    {sprint.strengths.map((s,i) => <span key={i} className="strength-chip">{s}</span>)}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {tab === 'plan' && (
+            <div className="sprint-cols">
+              {[['day_30','Day 30','shdr-30'],['day_60','Day 60','shdr-60'],['day_90','Day 90','shdr-90']].map(([key,label,cls]) => (
+                <div key={key} className="sprint-col">
+                  <div className={`sprint-col-hdr ${cls}`}>{label} Actions</div>
+                  <div className="sprint-col-body">
+                    {((sprint.sprint_plan||{})[key]||[]).length === 0 && (
+                      <div style={{ fontSize:12, color:'var(--text-muted)', padding:'4px 0' }}>No actions for this period.</div>
+                    )}
+                    {((sprint.sprint_plan||{})[key]||[]).map((a,i) => (
+                      <div key={i} className="sprint-action">
+                        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+                          <span className={`ap-badge ${a.priority==='P1'?'ap-p1':'ap-p2'}`}>{a.priority}</span>
+                          <span style={{ fontSize:10.5, color:'var(--text-muted)', fontWeight:700 }}>{a.osfi_ref}</span>
+                        </div>
+                        <div style={{ fontSize:12.5, fontWeight:500, marginBottom:3 }}>{a.action}</div>
+                        {a.owner && <div style={{ fontSize:11.5, color:'var(--text-muted)' }}>Owner: {a.owner}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === 'prep' && (
+            <>
+              {(sprint.quick_wins||[]).length > 0 && (
+                <div className="card" style={{ marginBottom:16 }}>
+                  <div className="section-title" style={{ marginBottom:12 }}>Quick Wins (Do Today)</div>
+                  <ul className="qw-list">{sprint.quick_wins.map((w,i) => <li key={i}>{w}</li>)}</ul>
+                </div>
+              )}
+              {(sprint.examiner_likely_questions||[]).length > 0 && (
+                <div className="card">
+                  <div className="section-title" style={{ marginBottom:12 }}>Likely Examiner Questions</div>
+                  <ul className="eq-list">{sprint.examiner_likely_questions.map((q,i) => <li key={i}>{q}</li>)}</ul>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 function AppShell({ user: userProp }) {
   const [user, setUser]                   = useState(userProp);
@@ -2509,6 +2901,7 @@ function AppShell({ user: userProp }) {
       case 'audit':           return <AuditTrail />;
       case 'board':           return <BoardReport />;
       case 'examiner_export': return <ExaminerExport />;
+      case 'exam_sprint':     return <ExamSprintMode />;
       case 'import':          return <CsvImport />;
       case 'admin':           return <AdminPanel user={user} />;
       default:                return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;

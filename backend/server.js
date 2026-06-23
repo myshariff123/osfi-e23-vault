@@ -1353,6 +1353,158 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
   } catch(e) { console.error('[examiner-export]',e.message); res.status(500).json({ error:e.message }); }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 4 — MODEL CHANGE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/models/:id/changes', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT * FROM model_versions WHERE model_id=$1 AND tenant_id=$2 ORDER BY created_at DESC',
+      [req.params.id, req.user.tenant_id]
+    );
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/changes', requireAuth, async function(req, res) {
+  try {
+    const { version_label, change_type, change_category, change_reason, is_material } = req.body;
+    if (!version_label||!change_type||!change_reason)
+      return res.status(400).json({ error:'version_label, change_type, and change_reason required' });
+    const mRes = await pool.query('SELECT * FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,req.user.tenant_id]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    const snapshot = { name:m.name, business_unit:m.business_unit, methodology_type:m.methodology_type, purpose:m.purpose, risk_tier:m.risk_tier, version:m.current_version||m.version };
+    const r = await pool.query(
+      `INSERT INTO model_versions(tenant_id,model_id,version_label,change_type,change_category,change_reason,is_material,requires_revalidation,changed_by_email,snapshot)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [req.user.tenant_id,req.params.id,version_label,change_type,change_category||'other',
+       change_reason,!!is_material,!!is_material,req.user.email,JSON.stringify(snapshot)]
+    );
+    await pool.query(
+      'UPDATE models SET current_version=$1,revalidation_required=$2,updated_at=NOW() WHERE id=$3 AND tenant_id=$4',
+      [version_label,!!is_material,req.params.id,req.user.tenant_id]
+    );
+    await audit(req.user.tenant_id,req.params.id,req.user.email,'model_change_logged',{
+      field:'version',old:m.current_version||m.version,new:version_label,
+      metadata:{change_type,change_category,is_material:!!is_material,change_reason}
+    });
+    res.json(r.rows[0]);
+  } catch(e) { console.error('[model-change]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/changes/:changeId/ai-materiality', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const [mRes,cvRes] = await Promise.all([
+      pool.query('SELECT * FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,req.user.tenant_id]),
+      pool.query('SELECT * FROM model_versions WHERE id=$1 AND tenant_id=$2',[req.params.changeId,req.user.tenant_id]),
+    ]);
+    if (!mRes.rows.length||!cvRes.rows.length) return res.status(404).json({ error:'Not found' });
+    const m=mRes.rows[0], cv=cvRes.rows[0];
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens:700, temperature:0.2,
+      messages:[{role:'user',content:
+        'You are an OSFI E-23 model risk expert. Assess whether this model change is material and requires independent re-validation under OSFI Guideline E-23 (September 2025).\n\n'+
+        'Model: '+m.name+'\nRisk Tier: '+(m.risk_tier||'Unrated')+'\nMethodology: '+(m.methodology_type||'unknown')+'\nBusiness Unit: '+(m.business_unit||'unknown')+'\n'+
+        'Version change: '+((cv.snapshot&&cv.snapshot.version)||'prior')+' → '+cv.version_label+'\n'+
+        'Change type: '+cv.change_type+'\nChange category: '+cv.change_category+'\nChange reason: '+cv.change_reason+'\n\n'+
+        'Return ONLY valid JSON:\n'+
+        '{"is_material":true,"materiality_score":0,"osfi_rationale":"...","revalidation_required":true,"revalidation_urgency":"immediate|within_90_days|next_cycle","risk_implications":["..."],"recommended_actions":["..."],"osfi_sections_implicated":["§X.X"]}'
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await pool.query(
+      'UPDATE model_versions SET ai_materiality=$1,is_material=$2,requires_revalidation=$3 WHERE id=$4',
+      [JSON.stringify(result),result.is_material,result.revalidation_required,req.params.changeId]
+    );
+    if (result.revalidation_required) {
+      await pool.query(
+        'UPDATE models SET revalidation_required=true,updated_at=NOW() WHERE id=$1 AND tenant_id=$2',
+        [req.params.id,req.user.tenant_id]
+      );
+    }
+    await audit(req.user.tenant_id,req.params.id,req.user.email,'ai_materiality_assessed',{
+      metadata:{change_id:req.params.changeId,is_material:result.is_material,score:result.materiality_score}
+    });
+    res.json(result);
+  } catch(e) { console.error('[ai-materiality]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 4 — EXAM SPRINT MODE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/exam-sprint/launch', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [tenantRes,models,overdueModels,neverValidated,openVals,vendors,materialChanges] = await Promise.all([
+      pool.query('SELECT name FROM tenants WHERE id=$1',[tid]),
+      pool.query("SELECT risk_tier,COUNT(*) c FROM models WHERE tenant_id=$1 AND status='active' GROUP BY risk_tier",[tid]),
+      pool.query("SELECT COUNT(*) c FROM models WHERE tenant_id=$1 AND status='active' AND next_validation_due<NOW()",[tid]),
+      pool.query("SELECT COUNT(*) c FROM models WHERE tenant_id=$1 AND status='active' AND last_validated_at IS NULL",[tid]),
+      pool.query("SELECT COUNT(*) c FROM validations WHERE tenant_id=$1 AND status NOT IN ('approved','closed')",[tid]),
+      pool.query("SELECT risk_level,COUNT(*) c FROM vendor_assessments WHERE tenant_id=$1 GROUP BY risk_level",[tid]),
+      pool.query("SELECT COUNT(*) c FROM models WHERE tenant_id=$1 AND revalidation_required=true",[tid]),
+    ]);
+    const byTier={1:0,2:0,3:0};
+    models.rows.forEach(function(r){ byTier[r.risk_tier]=parseInt(r.c); });
+    const total=(byTier[1]||0)+(byTier[2]||0)+(byTier[3]||0);
+    const vendorByRisk={};
+    vendors.rows.forEach(function(r){ vendorByRisk[r.risk_level]=parseInt(r.c); });
+    const instName=(tenantRes.rows[0]&&tenantRes.rows[0].name)||'Institution';
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0',
+      max_tokens:1400, temperature:0.2,
+      messages:[{role:'user',content:
+        'You are a senior OSFI E-23 compliance expert preparing a Canadian FRFI for an OSFI model risk examination.\n\n'+
+        'Institution: '+instName+'\nDate: '+new Date().toLocaleDateString('en-CA')+'\nOSFI E-23 effective: May 1, 2027\n\n'+
+        'COMPLIANCE SNAPSHOT:\n'+
+        '- Total active models: '+total+' (Tier 1: '+(byTier[1]||0)+', Tier 2: '+(byTier[2]||0)+', Tier 3: '+(byTier[3]||0)+')\n'+
+        '- Models overdue for validation: '+overdueModels.rows[0].c+'\n'+
+        '- Models never validated: '+neverValidated.rows[0].c+'\n'+
+        '- Open validation workflows: '+openVals.rows[0].c+'\n'+
+        '- High-risk vendor assessments: '+(vendorByRisk['high']||0)+'\n'+
+        '- Models with material changes requiring revalidation: '+materialChanges.rows[0].c+'\n\n'+
+        'Generate a comprehensive Emergency OSFI Exam Sprint Plan based on OSFI Guideline E-23 (September 2025).\n\n'+
+        'Return ONLY valid JSON (no extra text):\n'+
+        '{"overall_readiness_score":0,"exam_risk_level":"high","executive_summary":"3 sentences","critical_gaps":[{"gap":"...","osfi_section":"§X.X","severity":"critical","affected_count":0}],"sprint_plan":{"day_30":[{"action":"...","owner":"...","osfi_ref":"§X.X","priority":"P1"}],"day_60":[{"action":"...","owner":"...","osfi_ref":"§X.X","priority":"P2"}],"day_90":[{"action":"...","owner":"...","osfi_ref":"§X.X","priority":"P2"}]},"quick_wins":["..."],"examiner_likely_questions":["..."],"strengths":["..."]}'
+      }]
+    });
+    const plan = extractJSON(aiResp.content[0].text);
+    const r = await pool.query(
+      `INSERT INTO exam_sprints(tenant_id,created_by_email,overall_score,exam_risk_level,gap_analysis,sprint_plan)
+       VALUES($1,$2,$3,$4,$5,$6) RETURNING id,created_at`,
+      [tid,req.user.email,plan.overall_readiness_score,plan.exam_risk_level,
+       JSON.stringify({critical_gaps:plan.critical_gaps,executive_summary:plan.executive_summary,quick_wins:plan.quick_wins,examiner_likely_questions:plan.examiner_likely_questions,strengths:plan.strengths}),
+       JSON.stringify(plan.sprint_plan)]
+    );
+    await audit(tid,null,req.user.email,'exam_sprint_launched',{
+      metadata:{sprint_id:r.rows[0].id,score:plan.overall_readiness_score,risk_level:plan.exam_risk_level}
+    });
+    res.json({sprint_id:r.rows[0].id,created_at:r.rows[0].created_at,...plan});
+  } catch(e) { console.error('[exam-sprint-launch]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.get('/api/exam-sprint/latest', requireAuth, async function(req, res) {
+  try {
+    const r = await pool.query(
+      'SELECT * FROM exam_sprints WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1',
+      [req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.json(null);
+    const s=r.rows[0], ga=s.gap_analysis||{}, sp=s.sprint_plan||{};
+    res.json({
+      sprint_id:s.id, overall_readiness_score:s.overall_score, exam_risk_level:s.exam_risk_level,
+      created_at:s.created_at, executive_summary:ga.executive_summary,
+      critical_gaps:ga.critical_gaps||[], quick_wins:ga.quick_wins||[],
+      examiner_likely_questions:ga.examiner_likely_questions||[], strengths:ga.strengths||[],
+      sprint_plan:sp,
+    });
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
 // ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get('/{*path}', function(req, res) {
   res.sendFile(path.join(__dirname,'public','index.html'));
