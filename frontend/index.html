@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -483,71 +483,86 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .di-action-btn { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
 
 /* ── MARKETING LANDING PAGE ── */
-.landing { min-height:100vh; background:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
-.lp-nav { display:flex; align-items:center; justify-content:space-between; padding:16px 48px; background:#fff; border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:100; }
+.landing { min-height:100vh; background:#fff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#0b2d5f; }
+
+/* Nav */
+.lp-nav { display:flex; align-items:center; justify-content:space-between; padding:18px 56px; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:100; }
 .lp-nav-logo { display:flex; align-items:center; gap:10px; }
-.lp-nav-brand { font-size:20px; font-weight:900; color:#0b2d5f; letter-spacing:-0.5px; }
+.lp-nav-brand { font-size:21px; font-weight:900; color:#0b2d5f; letter-spacing:-0.5px; }
 .lp-nav-brand span { color:#f97316; }
-.lp-nav-badge { font-size:10px; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:20px; }
-.lp-nav-actions { display:flex; gap:10px; align-items:center; }
-.lp-hero { background:linear-gradient(135deg,#0b2d5f 0%,#1e40af 60%,#1d4ed8 100%); color:#fff; padding:80px 48px 72px; text-align:center; }
-.lp-hero-title { font-size:clamp(28px,4vw,52px); font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:20px; }
+.lp-nav-badge { font-size:10px; font-weight:700; background:#dcfce7; color:#15803d; padding:2px 9px; border-radius:20px; letter-spacing:.3px; }
+.lp-nav-actions { display:flex; gap:12px; align-items:center; }
+.lp-btn-nav-ghost { padding:8px 20px; background:transparent; color:#0b2d5f; border:1px solid #cbd5e1; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; transition:border-color .15s,background .15s; }
+.lp-btn-nav-ghost:hover { background:#f8fafc; border-color:#0b2d5f; }
+.lp-btn-nav-primary { padding:9px 22px; background:#0b2d5f; color:#fff; border:none; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s; }
+.lp-btn-nav-primary:hover { background:#1e40af; }
+
+/* Hero */
+.lp-hero { background:linear-gradient(150deg,#050f2c 0%,#0b2d5f 45%,#1e3a8a 100%); color:#fff; padding:100px 56px 88px; text-align:center; }
+.lp-hero-eyebrow { font-size:13px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#f97316; margin-bottom:20px; }
+.lp-hero-title { font-size:clamp(32px,5vw,64px); font-weight:900; letter-spacing:-2px; line-height:1.05; margin-bottom:24px; }
 .lp-hero-title span { color:#f97316; }
-.lp-hero-sub { font-size:clamp(15px,2vw,19px); opacity:.88; max-width:700px; margin:0 auto 36px; line-height:1.6; }
-.lp-hero-ctas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:40px; }
-.lp-btn-primary { padding:14px 32px; background:#f97316; color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:800; cursor:pointer; transition:background .15s; letter-spacing:.2px; }
-.lp-btn-primary:hover { background:#ea6c0a; }
-.lp-btn-ghost { padding:13px 28px; background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.35); border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; transition:background .15s; }
-.lp-btn-ghost:hover { background:rgba(255,255,255,.2); }
-.lp-trust-row { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; }
-.lp-trust-chip { display:flex; align-items:center; gap:6px; font-size:12.5px; color:rgba(255,255,255,.75); font-weight:600; }
+.lp-hero-sub { font-size:clamp(16px,1.8vw,20px); opacity:.8; max-width:620px; margin:0 auto 44px; line-height:1.65; font-weight:400; }
+.lp-hero-ctas { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-bottom:52px; }
+.lp-btn-hero-primary { padding:16px 40px; background:#f97316; color:#fff; border:none; border-radius:8px; font-size:16px; font-weight:800; cursor:pointer; transition:background .15s,transform .1s; letter-spacing:.1px; }
+.lp-btn-hero-primary:hover { background:#ea6c0a; transform:translateY(-1px); }
+.lp-btn-hero-ghost { padding:15px 36px; background:transparent; color:rgba(255,255,255,.9); border:1.5px solid rgba(255,255,255,.4); border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; transition:border-color .15s,background .15s; }
+.lp-btn-hero-ghost:hover { border-color:rgba(255,255,255,.8); background:rgba(255,255,255,.08); }
+.lp-trust-row { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; }
+.lp-trust-chip { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,255,255,.6); font-weight:600; }
 .lp-trust-chip::before { content:'✓'; color:#4ade80; font-weight:900; }
-.lp-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:0; border-bottom:1px solid #e2e8f0; }
-@media (max-width:700px) { .lp-metrics { grid-template-columns:1fr 1fr; } }
-.lp-metric { padding:32px 24px; text-align:center; border-right:1px solid #e2e8f0; }
-.lp-metric:last-child { border-right:none; }
-.lp-metric-num { font-size:clamp(24px,3vw,38px); font-weight:900; color:#0b2d5f; line-height:1; margin-bottom:6px; }
-.lp-metric-num span { color:#f97316; }
-.lp-metric-label { font-size:13px; color:#64748b; line-height:1.4; }
-.lp-section { padding:64px 48px; max-width:1200px; margin:0 auto; }
-.lp-section-title { font-size:clamp(22px,3vw,34px); font-weight:900; color:#0b2d5f; margin-bottom:10px; letter-spacing:-.5px; }
-.lp-section-sub { font-size:16px; color:#64748b; margin-bottom:48px; max-width:600px; line-height:1.6; }
-.lp-features { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
-@media (max-width:900px) { .lp-features { grid-template-columns:1fr 1fr; } }
-@media (max-width:600px) { .lp-features { grid-template-columns:1fr; } }
-.lp-feature-card { border:1px solid #e2e8f0; border-radius:12px; padding:24px; background:#fff; transition:box-shadow .15s,border-color .15s; }
-.lp-feature-card:hover { box-shadow:0 4px 20px rgba(11,45,95,.08); border-color:#bfdbfe; }
-.lp-feature-icon { font-size:28px; margin-bottom:12px; }
-.lp-feature-title { font-size:15px; font-weight:800; color:#0b2d5f; margin-bottom:6px; }
-.lp-feature-desc { font-size:13px; color:#64748b; line-height:1.6; }
-.lp-feature-roi { display:inline-block; margin-top:10px; font-size:11.5px; font-weight:700; color:#15803d; background:#dcfce7; padding:3px 10px; border-radius:20px; }
-.lp-roi-banner { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:40px; text-align:center; margin:32px 0; }
-.lp-roi-title { font-size:22px; font-weight:800; color:#0b2d5f; margin-bottom:8px; }
-.lp-roi-sub { font-size:14px; color:#64748b; margin-bottom:28px; }
-.lp-roi-calc { display:flex; gap:20px; justify-content:center; align-items:center; flex-wrap:wrap; }
-.lp-roi-item { text-align:center; padding:20px 28px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; min-width:160px; }
-.lp-roi-item-num { font-size:28px; font-weight:900; color:#b81c1c; margin-bottom:4px; }
-.lp-roi-item-label { font-size:12px; color:#64748b; }
-.lp-roi-arrow { font-size:24px; color:#0b2d5f; font-weight:900; }
-.lp-roi-result { text-align:center; padding:20px 28px; background:#dcfce7; border:1px solid #bbf7d0; border-radius:10px; min-width:160px; }
-.lp-roi-result-num { font-size:28px; font-weight:900; color:#15803d; margin-bottom:4px; }
-.lp-roi-result-label { font-size:12px; color:#15803d; }
-.lp-pricing { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-@media (max-width:900px) { .lp-pricing { grid-template-columns:1fr 1fr; } }
-@media (max-width:600px) { .lp-pricing { grid-template-columns:1fr; } }
-.lp-price-card { border:1px solid #e2e8f0; border-radius:12px; padding:28px 24px; background:#fff; }
-.lp-price-card.featured { border:2px solid #0b2d5f; background:#f8fafc; }
-.lp-price-tier { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:#64748b; margin-bottom:4px; }
-.lp-price-name { font-size:18px; font-weight:800; color:#0b2d5f; margin-bottom:12px; }
-.lp-price-amount { font-size:32px; font-weight:900; color:#0b2d5f; margin-bottom:4px; }
-.lp-price-period { font-size:13px; color:#64748b; margin-bottom:16px; }
-.lp-price-aum { font-size:12px; color:#64748b; padding:6px 10px; background:#f1f5f9; border-radius:6px; margin-bottom:16px; }
-.lp-price-features { list-style:none; display:flex; flex-direction:column; gap:8px; font-size:13px; color:#374151; }
-.lp-price-features li::before { content:'✓ '; color:#15803d; font-weight:700; }
-.lp-footer-cta { background:linear-gradient(135deg,#0b2d5f,#1e40af); color:#fff; padding:64px 48px; text-align:center; }
-.lp-footer-cta h2 { font-size:clamp(22px,3vw,36px); font-weight:900; margin-bottom:12px; }
-.lp-footer-cta p { font-size:16px; opacity:.85; margin-bottom:32px; }
-.lp-footer-bottom { background:#0b2d5f; color:rgba(255,255,255,.55); padding:20px 48px; display:flex; justify-content:space-between; font-size:12px; flex-wrap:wrap; gap:8px; }
+
+/* Deadline Strip */
+.lp-deadline-strip { background:#050f2c; color:#fff; padding:28px 56px; display:flex; align-items:center; justify-content:center; gap:20px; text-align:center; flex-wrap:wrap; }
+.lp-deadline-num { font-size:clamp(40px,5vw,72px); font-weight:900; color:#f97316; line-height:1; }
+.lp-deadline-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.5); }
+.lp-deadline-text { font-size:clamp(14px,1.5vw,17px); color:rgba(255,255,255,.75); max-width:600px; line-height:1.6; }
+.lp-deadline-divider { width:1px; height:60px; background:rgba(255,255,255,.15); flex-shrink:0; }
+
+/* Pillars */
+.lp-pillar { display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:80px; padding:88px 56px; max-width:1200px; margin:0 auto; }
+.lp-pillar-alt { direction:rtl; }
+.lp-pillar-alt > * { direction:ltr; }
+.lp-pillar-overline { font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#f97316; margin-bottom:14px; }
+.lp-pillar-headline { font-size:clamp(26px,3vw,42px); font-weight:900; color:#0b2d5f; letter-spacing:-1px; line-height:1.1; margin-bottom:20px; }
+.lp-pillar-body { font-size:17px; color:#475569; line-height:1.75; }
+.lp-stat-block { background:#f8fafc; border-radius:16px; padding:40px 36px; text-align:center; border:1px solid #e2e8f0; }
+.lp-stat-num { font-size:clamp(52px,7vw,88px); font-weight:900; color:#0b2d5f; line-height:1; letter-spacing:-3px; }
+.lp-stat-unit { font-size:clamp(16px,2vw,22px); font-weight:700; color:#f97316; margin-top:4px; margin-bottom:12px; }
+.lp-stat-label { font-size:14px; color:#64748b; line-height:1.5; max-width:220px; margin:0 auto; }
+.lp-pillar-sep { border:none; border-top:1px solid #e2e8f0; margin:0 56px; }
+@media (max-width:800px) { .lp-pillar { grid-template-columns:1fr; gap:40px; padding:56px 28px; } .lp-pillar-alt { direction:ltr; } }
+
+/* Competitor Comparison */
+.lp-compare-section { background:#f8fafc; padding:88px 56px; }
+.lp-compare-inner { max-width:1000px; margin:0 auto; }
+.lp-compare-eyebrow { font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#f97316; margin-bottom:14px; }
+.lp-compare-title { font-size:clamp(26px,3.5vw,42px); font-weight:900; color:#0b2d5f; letter-spacing:-1px; margin-bottom:14px; line-height:1.1; }
+.lp-compare-sub { font-size:17px; color:#475569; line-height:1.7; max-width:680px; margin-bottom:48px; }
+.lp-compare-table-wrap { overflow-x:auto; border-radius:12px; box-shadow:0 2px 20px rgba(11,45,95,.08); }
+.lp-compare-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; font-size:14.5px; }
+.lp-compare-table thead th { padding:14px 20px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:#64748b; background:#f1f5f9; text-align:left; border-bottom:2px solid #e2e8f0; }
+.lp-compare-table tbody td { padding:16px 20px; border-bottom:1px solid #f1f5f9; color:#374151; }
+.lp-compare-competitor td { background:#fff; }
+.lp-compare-competitor:hover td { background:#fafbfc; }
+.lp-compare-us td { background:#eff6ff; font-size:15px; }
+.lp-compare-us td:first-child { font-weight:800; color:#0b2d5f; }
+.lp-compare-us-badge { display:inline-block; font-size:10px; font-weight:700; background:#0b2d5f; color:#fff; padding:1px 7px; border-radius:10px; margin-left:6px; vertical-align:middle; }
+.lp-check-yes { color:#15803d; font-weight:900; font-size:16px; }
+.lp-check-no { color:#b91c1c; font-weight:900; font-size:16px; }
+
+/* Pilot / Contact CTA */
+.lp-pilot-section { background:linear-gradient(150deg,#050f2c 0%,#0b2d5f 100%); color:#fff; padding:96px 56px; text-align:center; }
+.lp-pilot-inner { max-width:680px; margin:0 auto; }
+.lp-pilot-title { font-size:clamp(28px,4vw,52px); font-weight:900; letter-spacing:-1.5px; margin-bottom:20px; line-height:1.1; }
+.lp-pilot-sub { font-size:17px; opacity:.8; line-height:1.7; margin-bottom:40px; }
+.lp-pilot-actions { display:flex; flex-direction:column; align-items:center; gap:16px; }
+.lp-contact-link { font-size:16px; color:rgba(255,255,255,.75); text-decoration:none; font-weight:600; transition:color .15s; }
+.lp-contact-link:hover { color:#fff; }
+.lp-pilot-note { margin-top:24px; font-size:12.5px; color:rgba(255,255,255,.45); }
+
+/* Footer */
+.lp-footer-bottom { background:#050f2c; color:rgba(255,255,255,.4); padding:20px 56px; display:flex; justify-content:space-between; font-size:12px; flex-wrap:wrap; gap:8px; align-items:center; }
 
 /* ── SESSION TIMEOUT WARNING ── */
 .session-warn-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; display:flex; align-items:center; justify-content:center; }
@@ -787,161 +802,187 @@ function LoginModal({ onLogin, onClose, onGetStarted }) {
 /* ── Marketing Landing Page ── */
 function LandingPage({ onLogin, onGetStarted }) {
   const [showLogin, setShowLogin] = useState(false);
-
-  const features = [
-    { icon:'🎯', title:'AI Action Queue', desc:'Opens every session with your 5 most urgent OSFI obligations, ranked by exam citation risk. Not a dashboard — a directive. Risk Pulse score tells your CRO exactly where you stand today.', roi:'Replaces 2h/week of CRO triage' },
-    { icon:'📄', title:'Validation Report Generator', desc:'Log findings → Claude drafts the complete formal validation report in 90 seconds. Executive summary, findings matrix, risk opinion, sign-off page — indistinguishable from a $30K consultant deliverable.', roi:'Replaces $15K–$50K per report' },
-    { icon:'📜', title:'MRM Policy Generator', desc:'10 questions → Claude generates a complete 13-section OSFI E-23 MRM Policy with board attestation page. Version-locked on approval. Ready for your next board meeting.', roi:'Replaces $25K–$50K in legal fees' },
-    { icon:'🏛', title:'Insurance Model Taxonomy', desc:'14 insurance-specific model categories: actuarial reserving, pricing/rating, catastrophe (RMS/AIR), capital/ORSA, IFRS 17 (CSM, risk adjustment, discount curve), underwriting scoring, claims, fraud detection, ALM and more.', roi:'Built for insurers, not banks' },
-    { icon:'📊', title:'Actuarial Assumption Register', desc:'Every key model input — tail factors, discount rates, lapse rates, loss development factors — versioned, approved, and audit-ready. Current vs. prior value with change reason and sign-off. Examiner-ready on demand.', roi:'Replaces manual spreadsheet registers' },
-    { icon:'🔬', title:'Structured Backtesting Log', desc:'Capture predicted vs. actual outcomes per validation cycle — tolerance threshold, variance %, pass/fail verdict. The structured backtesting record OSFI expects to see, replacing narrative paragraphs with verifiable data.', roi:'Turns validation findings into audit evidence' },
-    { icon:'🕸', title:'Model Dependency Map', desc:'Map cascade risk chains: Cat Model → Reinsurance Optimization → Capital/MCT → ORSA. See what breaks downstream when an upstream model fails. Tier badges show the propagation severity at a glance.', roi:'Exposes hidden cascade risk' },
-    { icon:'🩺', title:'Portfolio Doctor', desc:'One-click full portfolio health scan. Health grade A–F, critical findings, concentration risks, systemic gaps. Knows the difference between a GLM pricing model and a CAT model — graded accordingly.', roi:'Replaces days of manual gap analysis' },
-    { icon:'🚨', title:'Emergency Exam Sprint', desc:'OSFI examiner arriving in 30 days? AI generates a full gap analysis plus a 30/60/90-day remediation plan with likely examiner questions — tailored to your actual model inventory.', roi:'Exam prep in minutes, not months' },
-  ];
+  const daysLeft = Math.ceil((new Date('2027-05-01') - new Date()) / (1000*60*60*24));
 
   return (
     <div className="landing">
-      {/* Nav */}
+
+      {/* ── Nav ── */}
       <nav className="lp-nav">
         <div className="lp-nav-logo">
           <div className="lp-nav-brand">Clear<span>MRM</span></div>
-          <div className="lp-nav-badge">OSFI E-23 Compliant</div>
+          <div className="lp-nav-badge">OSFI E-23</div>
         </div>
         <div className="lp-nav-actions">
-          <button className="lp-btn-ghost" style={{ padding:'9px 20px', fontSize:13.5 }} onClick={() => setShowLogin(true)}>Sign In</button>
-          <button className="lp-btn-primary" style={{ padding:'9px 20px', fontSize:13.5 }} onClick={onGetStarted}>Start 30-Day Pilot</button>
+          <button className="lp-btn-nav-ghost" onClick={() => setShowLogin(true)}>Sign In</button>
+          <button className="lp-btn-nav-primary" onClick={onGetStarted}>Start Free Pilot</button>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* ── Hero ── */}
       <div className="lp-hero">
-        <div className="lp-hero-title">Canada's Only AI-Powered<br /><span>OSFI E-23</span> Compliance Platform</div>
-        <div className="lp-hero-sub">
-          Built for Canadian FRFIs and insurers. The first MRM platform that generates your validation reports, writes your MRM policy, tracks actuarial assumptions, maps cascade risk, and tells your CRO exactly what to do today — all within Canada via AWS Bedrock ca-central-1.
-        </div>
+        <div className="lp-hero-eyebrow">For Canadian Banks &amp; Insurers</div>
+        <h1 className="lp-hero-title">Model Risk Management.<br /><span>Finally Automated.</span></h1>
+        <p className="lp-hero-sub">
+          The AI compliance platform that generates your validation reports, writes your MRM policy, and keeps your institution OSFI E-23 ready — without the consultant fees.
+        </p>
         <div className="lp-hero-ctas">
-          <button className="lp-btn-primary" style={{ fontSize:16, padding:'15px 36px' }} onClick={onGetStarted}>Start 30-Day Pilot — No Setup Fee</button>
-          <button className="lp-btn-ghost" style={{ fontSize:16, padding:'15px 36px' }} onClick={() => setShowLogin(true)}>Sign In →</button>
+          <button className="lp-btn-hero-primary" onClick={onGetStarted}>Start 30-Day Pilot — No Setup Fee</button>
+          <button className="lp-btn-hero-ghost" onClick={() => setShowLogin(true)}>Sign In →</button>
         </div>
         <div className="lp-trust-row">
-          <span className="lp-trust-chip">OSFI E-23 (September 2025)</span>
-          <span className="lp-trust-chip">Built for Banks &amp; Insurers</span>
-          <span className="lp-trust-chip">AWS ca-central-1 · Canadian Data Sovereignty</span>
-          <span className="lp-trust-chip">PIPEDA + Quebec Law 25 Compliant</span>
-          <span className="lp-trust-chip">Cryptographic Audit Integrity</span>
+          <span className="lp-trust-chip">OSFI E-23 Compliant</span>
+          <span className="lp-trust-chip">Canadian Data Sovereignty</span>
+          <span className="lp-trust-chip">PIPEDA Compliant</span>
           <span className="lp-trust-chip">SOC 2 In Progress</span>
         </div>
       </div>
 
-      {/* Metrics Strip */}
-      <div className="lp-metrics">
-        <div className="lp-metric">
-          <div className="lp-metric-num">90<span>sec</span></div>
-          <div className="lp-metric-label">To generate a complete formal validation report</div>
+      {/* ── Deadline Strip ── */}
+      <div className="lp-deadline-strip">
+        <div style={{ textAlign:'center' }}>
+          <div className="lp-deadline-num">{daysLeft}</div>
+          <div className="lp-deadline-label">days remaining</div>
         </div>
-        <div className="lp-metric">
-          <div className="lp-metric-num">$<span>72K</span></div>
-          <div className="lp-metric-label">Annual subscription — breaks even on Month 1</div>
-        </div>
-        <div className="lp-metric">
-          <div className="lp-metric-num">May<span> 2027</span></div>
-          <div className="lp-metric-label">OSFI E-23 deadline — 170+ FRFIs must comply</div>
-        </div>
-        <div className="lp-metric">
-          <div className="lp-metric-num">20<span>+</span></div>
-          <div className="lp-metric-label">AI capabilities across every OSFI E-23 section</div>
+        <div className="lp-deadline-divider" />
+        <div className="lp-deadline-text">
+          OSFI Guideline E-23 is enforceable May 1, 2027. Over 170 Canadian federally regulated financial institutions must demonstrate a fully documented, independently validated model risk management program. Most are not ready.
         </div>
       </div>
 
-      {/* Features */}
-      <div className="lp-section">
-        <div className="lp-section-title">From Document Storage to Compliance Automation</div>
-        <div className="lp-section-sub">Every other tool helps you store compliance data. ClearMRM executes your compliance program — generating the deliverables that used to require expensive consultants, with insurance-native depth built in from the start.</div>
-        <div className="lp-features">
-          {features.map((f, i) => (
-            <div key={i} className="lp-feature-card">
-              <div className="lp-feature-icon">{f.icon}</div>
-              <div className="lp-feature-title">{f.title}</div>
-              <div className="lp-feature-desc">{f.desc}</div>
-              <div className="lp-feature-roi">{f.roi}</div>
-            </div>
-          ))}
+      {/* ── Pillar 1: Generate ── */}
+      <div className="lp-pillar">
+        <div>
+          <div className="lp-pillar-overline">What ClearMRM does</div>
+          <div className="lp-pillar-headline">Generate the deliverables.</div>
+          <p className="lp-pillar-body">
+            Validation reports. MRM policies. Board pack summaries. OSFI examiner packages. What used to take weeks and tens of thousands in consulting fees now takes minutes. Every output is formally structured, board-ready, and stored with an immutable audit record.
+          </p>
+        </div>
+        <div className="lp-stat-block">
+          <div className="lp-stat-num">90</div>
+          <div className="lp-stat-unit">seconds</div>
+          <div className="lp-stat-label">to generate a complete formal validation report, ready for sign-off</div>
         </div>
       </div>
 
-      {/* ROI Calculator */}
-      <div style={{ background:'#f8fafc', padding:'0 48px' }}>
-        <div style={{ maxWidth:1200, margin:'0 auto', padding:'48px 0' }}>
-          <div className="lp-roi-banner">
-            <div className="lp-roi-title">The Business Case Writes Itself</div>
-            <div className="lp-roi-sub">For a Tier 2 FRFI with 6 annual validations at $30K each in consulting fees:</div>
-            <div className="lp-roi-calc">
-              <div className="lp-roi-item">
-                <div className="lp-roi-item-num">$180K</div>
-                <div className="lp-roi-item-label">Annual validation consulting fees</div>
-              </div>
-              <div className="lp-roi-arrow">+</div>
-              <div className="lp-roi-item">
-                <div className="lp-roi-item-num">$50K</div>
-                <div className="lp-roi-item-label">MRM Policy legal/counsel fees</div>
-              </div>
-              <div className="lp-roi-arrow">+</div>
-              <div className="lp-roi-item">
-                <div className="lp-roi-item-num">$75K</div>
-                <div className="lp-roi-item-label">Staff time (manual MRM work)</div>
-              </div>
-              <div className="lp-roi-arrow">vs.</div>
-              <div className="lp-roi-result">
-                <div className="lp-roi-result-num">$72K</div>
-                <div className="lp-roi-result-label">ClearMRM annual subscription</div>
-              </div>
-            </div>
-            <div style={{ marginTop:20, fontSize:13, color:'#64748b' }}>
-              <strong style={{ color:'#15803d' }}>ROI: 4.2× in Year 1.</strong> Your first AI-generated validation report pays for 5 months of the subscription.
-            </div>
+      <hr className="lp-pillar-sep" />
+
+      {/* ── Pillar 2: Monitor ── */}
+      <div className="lp-pillar lp-pillar-alt">
+        <div>
+          <div className="lp-pillar-overline">Always current</div>
+          <div className="lp-pillar-headline">Monitor every model. Every risk.</div>
+          <p className="lp-pillar-body">
+            Every model in your inventory — reserving, pricing, catastrophe, capital, IFRS 17, underwriting, fraud — tracked, risk-rated, and monitored for drift. Your CRO sees a live risk posture every morning, not a quarterly spreadsheet update.
+          </p>
+        </div>
+        <div className="lp-stat-block">
+          <div className="lp-stat-num">Zero</div>
+          <div className="lp-stat-unit">blind spots</div>
+          <div className="lp-stat-label">every model in your portfolio, visible and governed in one place</div>
+        </div>
+      </div>
+
+      <hr className="lp-pillar-sep" />
+
+      {/* ── Pillar 3: Prove ── */}
+      <div className="lp-pillar">
+        <div>
+          <div className="lp-pillar-overline">Examiner-ready</div>
+          <div className="lp-pillar-headline">Prove it when it counts.</div>
+          <p className="lp-pillar-body">
+            Every action creates a tamper-proof, cryptographically-linked audit record. One click produces a complete Supervisory Review Package in OSFI's expected format. No scrambling before the examination. No gaps in the record.
+          </p>
+        </div>
+        <div className="lp-stat-block">
+          <div className="lp-stat-num">1</div>
+          <div className="lp-stat-unit">click</div>
+          <div className="lp-stat-label">to export your complete OSFI Supervisory Review Package, any day of the year</div>
+        </div>
+      </div>
+
+      {/* ── Competitor Comparison ── */}
+      <div className="lp-compare-section">
+        <div className="lp-compare-inner">
+          <div className="lp-compare-eyebrow">The Business Case</div>
+          <h2 className="lp-compare-title">A fraction of what the alternatives cost.</h2>
+          <p className="lp-compare-sub">
+            Enterprise MRM platforms were built for Tier 1 banks with nine-figure technology budgets. ClearMRM was built for the 170+ Canadian FRFIs and insurers that weren't.
+          </p>
+          <div className="lp-compare-table-wrap">
+            <table className="lp-compare-table">
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Implementation Cost</th>
+                  <th>Annual Licence</th>
+                  <th>OSFI E-23 Ready</th>
+                  <th>Time to Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="lp-compare-competitor">
+                  <td><strong>IBM OpenPages MRG</strong></td>
+                  <td>$500K – $1M+</td>
+                  <td>$800K+ / year</td>
+                  <td><span className="lp-check-yes">✓</span></td>
+                  <td>12 – 18 months</td>
+                </tr>
+                <tr className="lp-compare-competitor">
+                  <td><strong>SAS Model Risk Governance</strong></td>
+                  <td>$300K – $600K</td>
+                  <td>$500K+ / year</td>
+                  <td><span className="lp-check-yes">✓</span></td>
+                  <td>6 – 12 months</td>
+                </tr>
+                <tr className="lp-compare-competitor">
+                  <td><strong>Spreadsheets &amp; Email</strong></td>
+                  <td>—</td>
+                  <td>Non-compliant after May 2027</td>
+                  <td><span className="lp-check-no">✗</span></td>
+                  <td>Never</td>
+                </tr>
+                <tr className="lp-compare-us">
+                  <td><strong>ClearMRM</strong> <span className="lp-compare-us-badge">Canadian-Built</span></td>
+                  <td>Included</td>
+                  <td>Contact us for pricing</td>
+                  <td><span className="lp-check-yes">✓</span></td>
+                  <td><strong>30 days</strong></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      {/* Pricing */}
-      <div className="lp-section">
-        <div className="lp-section-title">Simple, Transparent Pricing</div>
-        <div className="lp-section-sub">No implementation fees. No per-user charges. No professional services required. Running in 30 days.</div>
-        <div className="lp-pricing">
-          {[
-            { tier:'Community', name:'Under $1B AUM', price:'$30,000', period:'/year', aum:'Credit unions, trust companies, small insurers', features:['All 15 modules', 'All 20+ AI features', 'Up to 50 models', 'Insurance taxonomy', 'Email support'] },
-            { tier:'Regional', name:'$1B–$20B AUM', price:'$72,000', period:'/year', aum:'Mid-tier banks, regional insurers, P&C carriers', features:['All 15 modules', 'All 20+ AI features', 'Up to 500 models', 'SSO / SAML 2.0', 'Priority support'], featured:true },
-            { tier:'National', name:'$20B–$100B AUM', price:'$144,000', period:'/year', aum:'Large regional banks, national P&C and life insurers', features:['All features', 'Unlimited models', 'Dedicated success manager', 'Custom integrations', 'SLA guarantee'] },
-            { tier:'Enterprise', name:'$100B+ AUM', price:'Custom', period:'', aum:'Schedule I banks, large crown corps, reinsurers', features:['White-glove onboarding', 'On-site validation support', 'Regulatory counsel review', 'Board presentation', 'Validator Marketplace access'] },
-          ].map((p, i) => (
-            <div key={i} className={`lp-price-card${p.featured ? ' featured' : ''}`}>
-              <div className="lp-price-tier">{p.tier}</div>
-              <div className="lp-price-name">{p.name}</div>
-              <div className="lp-price-amount">{p.price}</div>
-              <div className="lp-price-period">{p.period || ' '}</div>
-              <div className="lp-price-aum">{p.aum}</div>
-              <ul className="lp-price-features">{p.features.map((f,j) => <li key={j}>{f}</li>)}</ul>
-            </div>
-          ))}
+      {/* ── Pilot / Contact CTA ── */}
+      <div className="lp-pilot-section">
+        <div className="lp-pilot-inner">
+          <h2 className="lp-pilot-title">Start your 30-day pilot.</h2>
+          <p className="lp-pilot-sub">
+            We provision your environment, migrate your existing model inventory, and have you producing AI-generated compliance deliverables in your first session. No setup fee. No long-term commitment required to start.
+          </p>
+          <div className="lp-pilot-actions">
+            <button className="lp-btn-hero-primary" style={{ fontSize:17, padding:'18px 48px' }} onClick={onGetStarted}>
+              Start Free 30-Day Pilot
+            </button>
+            <a className="lp-contact-link" href="mailto:myousufshariff@gmail.com">
+              Contact us for pricing →
+            </a>
+          </div>
+          <div className="lp-pilot-note">For Canadian FRFIs and insurers · PIPEDA compliant from day one · All data stays in Canada</div>
         </div>
       </div>
 
-      {/* Footer CTA */}
-      <div className="lp-footer-cta">
-        <h2>OSFI's May 2027 deadline is {Math.ceil((new Date('2027-05-01')-new Date())/(1000*60*60*24))} days away.</h2>
-        <p>Every month without a structured MRM program is a month closer to a supervisory review finding. Start your 30-day pilot today — we provision your environment, migrate your existing Excel inventory, and have you OSFI-ready within the first session.</p>
-        <button className="lp-btn-primary" style={{ fontSize:16, padding:'16px 40px' }} onClick={onGetStarted}>Start Free 30-Day Pilot</button>
-      </div>
-
+      {/* ── Footer ── */}
       <div className="lp-footer-bottom">
-        <span>ClearMRM by Nimblestride Inc. · clearmrm.nimblestride.ca</span>
-        <span>AWS ca-central-1 · PIPEDA Compliant · SOC 2 In Progress · OSFI E-23 Ready</span>
+        <span>© 2026 Nimblestride Inc. · ClearMRM · clearmrm.nimblestride.ca</span>
+        <span>OSFI E-23 · PIPEDA · Canadian Data Sovereignty · SOC 2 In Progress</span>
+        <span><a href="mailto:myousufshariff@gmail.com" style={{ color:'rgba(255,255,255,.4)', textDecoration:'none' }}>myousufshariff@gmail.com</a></span>
       </div>
 
-      {showLogin && (
-        <LoginModal onLogin={onLogin} onClose={() => setShowLogin(false)} onGetStarted={onGetStarted} />
-      )}
+      {showLogin && <LoginModal onLogin={onLogin} onClose={() => setShowLogin(false)} onGetStarted={onGetStarted} />}
     </div>
   );
 }
