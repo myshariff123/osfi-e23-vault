@@ -753,6 +753,66 @@ OSFI E-23 is enforceable May 1, 2027. Enterprise compliance SaaS sales cycles to
 
 ---
 
+### AI+ Functionality — Phases 3–8 (Session 7, June 24, 2026)
+
+Each existing phase screen received dedicated Claude AI analysis capabilities. All routes protected by `aiLimiter` (10 req/60s), Bedrock ca-central-1, Sonnet primary. All AI output surfaces now include `AIDisclaimer` ("Human-in-the-loop required").
+
+| Phase | Screen | AI Feature | Backend Route |
+|---|---|---|---|
+| Phase 4 | Change History (ModelChangeSection) | AI Change Impact analysis — impact level, affected components, revalidation flag | `POST /api/model-versions/:id/ai-impact` |
+| Phase 4 | Ongoing Monitoring (ModelMonitoringSection) | AI Drift Analysis — overall drift level, revalidation trigger, OSFI implication | `POST /api/models/:id/ai-drift-analysis` |
+| Phase 4 | Ongoing Monitoring (ModelMonitoringSection) | PSI Analysis — per-metric PSI table, Stable/Monitor/Action Required status, narrative | `POST /api/models/:id/psi-analysis` |
+| Phase 5 | Audit Trail | AI Anomaly Detection — unusual patterns, actor anomalies, off-hours activity | `GET /api/audit/ai-anomaly` |
+| Phase 7 | Assumption Register | AI Assumption Sensitivity — high-sensitivity assumptions, stress test recommendations | `POST /api/models/:id/ai-assumption-sensitivity` |
+| Phase 7 | Model Dependency Map | AI Cascade Risk — failure chains, mitigation actions, cascade severity | `POST /api/models/:id/ai-cascade-risk` |
+| Phase 7 | Backtesting Log (in ValDetailModal) | AI Backtesting Narrative — formal narrative, overall verdict, OSFI implications | `POST /api/validations/:id/ai-backtest-narrative` |
+| Phase 3 | Admin Panel (new tab) | AI Onboarding Plan — quick wins, 30-day P1/P2 actions, examiner focus areas, CRO brief | `POST /api/admin/ai-onboarding-plan` |
+
+**AIDisclaimer retrofit** — added to all existing AI output panels that previously lacked it:
+- ValidationReportModal (AI Validation Report)
+- Portfolio Doctor scan result (Model Inventory)
+- ExamSprintMode executive summary + sprint tabs
+- MRAWizard statement output
+- MRMPolicyGenerator 13-section result
+
+---
+
+### Can Build Right Now — 7 High-Value Features (Session 7, June 24, 2026)
+
+All 7 features deployed with zero DB schema changes and zero infrastructure changes.
+
+| # | Feature | Screen | Backend Route | Value |
+|---|---|---|---|---|
+| 1 | OSFI Model Readiness Assessment | Model Detail → modal | `POST /api/models/:id/readiness-assessment` | Checklist grade A–F, critical gaps, OSFI E-23 section refs |
+| 2 | PSI Population Stability Index Analysis | Ongoing Monitoring | `POST /api/models/:id/psi-analysis` | Quantitative drift: <0.1 Stable, 0.1–0.25 Monitor, >0.25 Action Required |
+| 3 | Policy Gap Checker | New nav screen | `POST /api/mrm-policy/gap-check` | Compliance score, gap severity, priority additions vs OSFI E-23 |
+| 4 | Validation Sprint Brief | Validations header | `POST /api/validations/sprint-brief` | AI scope/hours estimate, price range vs $75K market rate |
+| 5 | AI Audit Summary | New nav screen | `GET /api/audit/ai-summary` | 12-month narrative, key activities, significant events — examiner-ready |
+| 6 | B-10 Third-Party Risk Package | New nav screen | `POST /api/vendor-assessments/b10-package` | Board-ready B-10 report with 7 sections and action items |
+| 7 | AI Examiner Preparation Brief | New nav screen | `POST /api/examiner/ai-prep` | Readiness score, critical findings, likely examiner questions, 30-day actions, exam day checklist |
+
+**Frontend additions:**
+- 4 new nav items: B-10 Package, Policy Gap Check, Audit Summary, Examiner Prep AI
+- 7 new React components: `ReadinessModal`, `SprintBriefModal`, `PolicyGapChecker`, `AuditSummary`, `B10Package`, `AIExaminerPrep`, `AIDisclaimer`
+- Model Inventory: Readiness score column (10-field check, color-coded Good/Fair/Low)
+- Model Detail: OSFI Readiness card with `ReadinessModal`
+- Validations: Sprint Brief button + `SprintBriefModal`
+
+---
+
+### Change Log Additions (Session 7 — June 24, 2026)
+
+| Date | Change | Reason | Decided By |
+|---|---|---|---|
+| 2026-06-24 | **AI+ buttons added to all Phase 3–8 screens** — 8 new AI panels in existing screens | OSFI E-23 compliance requires ongoing AI-assisted monitoring; differentiates from document-parking competitors | Founder |
+| 2026-06-24 | **7 Can-Build-Now features deployed** — PSI, Policy Gap, Sprint Brief, Audit Summary, B-10 Package, Examiner Prep, Model Readiness | High value, zero infrastructure cost; addresses every validator objection from first customer demo | Founder |
+| 2026-06-24 | **AIDisclaimer retrofitted to all existing AI output surfaces** | OSFI E-23 requires human oversight of AI-generated regulatory deliverables; strategic assessment confirmed human-in-the-loop messaging critical for enterprise trust | Expert Panel |
+| 2026-06-24 | **Admin Panel: AI Onboarding Plan tab added** — CRO-level executive summary + P1/P2 30-day action list | New clients need immediate compliance roadmap at setup; replaces $10K–$15K consulting engagement for gap analysis | Founder |
+| 2026-06-24 | **Bug fixes: 4 broken routes corrected** — Action Queue, Calendar, Generate Report, NLS Search all had wrong column names vs schema | Schema had `model_owner_name`, `methodology_type`, `is_third_party`, `purpose` — routes had legacy names from initial draft | Dev |
+| 2026-06-24 | **Startup banner updated** to reflect Phase 1–8 + AI+ + 7 Can-Build-Now | Operational clarity for PM2 status checks | Dev |
+
+---
+
 *This document must be updated after every strategic session, product decision, customer conversation, or architecture change. The goal is that any new team member can read this document and understand exactly what we are building, why, who we are building it for, and what decisions have already been made.*
 
 *Next scheduled update: After first customer discovery call, or after Validator Marketplace partnership outreach begins.*

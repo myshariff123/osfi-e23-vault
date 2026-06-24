@@ -995,15 +995,19 @@ const NAV_ITEMS = [
   { key: 'models',           label: 'Model Inventory',     icon: '🗂️' },
   { key: 'validations',      label: 'Validations',         icon: '✅' },
   { key: 'vendors',          label: 'Vendor Assessments',  icon: '🏢' },
+  { key: 'b10_package',      label: 'B-10 Package',        icon: '📦' },
   { key: 'search',           label: 'Smart Search',        icon: '🔍' },
   { key: 'mrm_policy',       label: 'MRM Policy',          icon: '📜' },
+  { key: 'policy_gap',       label: 'Policy Gap Check',    icon: '🔬' },
   { key: 'doc_ingest',       label: 'Doc Intelligence',    icon: '🧾' },
   { key: 'audit',            label: 'Audit Trail',         icon: '📋' },
+  { key: 'audit_summary',    label: 'Audit Summary',       icon: '📊' },
   { key: 'board',            label: 'Board Report',        icon: '📑' },
   { key: 'examiner_export',  label: 'Examiner Export',     icon: '🏛️' },
+  { key: 'ai_examiner_prep', label: 'Examiner Prep AI',    icon: '🎓' },
   { key: 'exam_sprint',      label: 'Exam Sprint',         icon: '🚨' },
   { key: 'calendar',         label: 'Reg. Calendar',       icon: '📅' },
-  { key: 'mra_wizard',       label: 'Risk Appetite',       icon: '🎯' },
+  { key: 'mra_wizard',       label: 'Risk Appetite',       icon: '⚖️' },
   { key: 'import',           label: 'Import CSV',          icon: '📥' },
   { key: 'admin',            label: 'Admin Panel',         icon: '⚙️' },
 ];
@@ -1192,6 +1196,14 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
   const [showScan, setShowScan] = useState(false);
   const toast = useToast();
 
+  function calcReadiness(m) {
+    const checks = [m.name, m.methodology_type, m.purpose, m.input_data_sources, m.model_owner_name, m.description, m.business_unit, m.risk_tier, m.last_validated_at, m.version];
+    const score = Math.round(checks.filter(Boolean).length / checks.length * 100);
+    const color = score >= 80 ? '#15803d' : score >= 60 ? '#c07500' : '#b81c1c';
+    const label = score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Low';
+    return { score, color, label };
+  }
+
   function load() {
     const q = new URLSearchParams();
     if (search) q.set('search', search);
@@ -1248,6 +1260,7 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
           {scanning && <div className="spinner-center"><Spinner dark size={24} /></div>}
           {scanResult && (
             <>
+              <AIDisclaimer />
               <div className="pd-hero">
                 <div>
                   <div style={{ fontSize:19, fontWeight:800, marginBottom:4 }}>{scanResult.headline}</div>
@@ -1310,7 +1323,7 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
               <thead>
                 <tr>
                   <th>Name / Version</th><th>Business Unit</th><th>Owner</th>
-                  <th>Methodology</th><th>Tier</th><th>Next Validation</th><th>Vendor</th><th>Actions</th>
+                  <th>Methodology</th><th>Tier</th><th>Readiness</th><th>Next Validation</th><th>Vendor</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1324,6 +1337,7 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
                     <td>{m.model_owner_name || '—'}</td>
                     <td style={{ fontSize: 12.5 }}>{(m.methodology_type || '').replace(/_/g, ' ') || '—'}</td>
                     <td><TierBadge tier={m.risk_tier} /></td>
+                    <td>{(() => { const r=calcReadiness(m); return <span style={{fontSize:11.5,fontWeight:700,color:r.color,background:r.color+'18',padding:'2px 8px',borderRadius:20,whiteSpace:'nowrap'}}>{r.score}% {r.label}</span>; })()}</td>
                     <td style={{ fontSize: 13 }}>{m.next_validation_due || '—'}</td>
                     <td>{m.is_third_party ? <span className="badge badge-vendor">Vendor</span> : '—'}</td>
                     <td>
@@ -1619,6 +1633,7 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
   const [allModels, setAllModels] = useState([]);
   const [aiAdvice, setAiAdvice] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [showReadiness, setShowReadiness] = useState(false);
   const toast = useToast();
 
   function reload() {
@@ -1838,9 +1853,23 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
                 Estimated Effort: <strong>{aiAdvice.estimated_effort}</strong>
               </div>
             )}
+            <AIDisclaimer />
           </div>
         )}
       </div>
+
+      {/* Can Build Now #1: Model Readiness Assessment */}
+      <div className="card" style={{marginTop:12}}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">📋 OSFI E-23 Readiness Assessment <span className="ai-tag">Can Build Now</span></div>
+            <div style={{fontSize:12.5,color:'var(--text-muted)',marginTop:3}}>AI gap analysis against the full OSFI E-23 checklist — generates a readiness grade and prioritized remediation list.</div>
+          </div>
+          <button className="btn btn-ai btn-sm" onClick={() => setShowReadiness(true)}>Run Readiness Check</button>
+        </div>
+      </div>
+      {showReadiness && model && <ReadinessModal modelId={modelId} modelName={model.name} onClose={() => setShowReadiness(false)} />}
+
       <ModelChangeSection modelId={modelId} onRevalidationNeeded={reload} />
       <ModelMonitoringSection modelId={modelId} />
     </div>
@@ -1856,7 +1885,9 @@ function ModelChangeSection({ modelId, onRevalidationNeeded }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm]         = useState({ version_label:'', change_type:'minor', change_category:'other', change_reason:'', is_material:false });
   const [saving, setSaving]     = useState(false);
-  const [aiLoading, setAiLoading] = useState({});
+  const [aiLoading, setAiLoading]       = useState({});
+  const [impactLoading, setImpactLoading] = useState({});
+  const [impactResult, setImpactResult]   = useState({});
   const toast = useToast();
 
   function load() {
@@ -1890,6 +1921,16 @@ function ModelChangeSection({ modelId, onRevalidationNeeded }) {
       if (onRevalidationNeeded) onRevalidationNeeded();
     } catch(e) { toast(e.message,'error'); }
     finally { setAiLoading(p => ({...p,[c.id]:false})); }
+  }
+
+  async function runAIImpact(c) {
+    setImpactLoading(p => ({...p,[c.id]:true}));
+    try {
+      const r = await apiFetch(`/api/model-versions/${c.id}/ai-impact`, { method:'POST' });
+      setImpactResult(p => ({...p,[c.id]:r}));
+      toast('AI change impact analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setImpactLoading(p => ({...p,[c.id]:false})); }
   }
 
   const CAT = { methodology:'Methodology', data_source:'Data Source', threshold:'Threshold', vendor:'Vendor', regulatory:'Regulatory', other:'Other' };
@@ -1984,6 +2025,26 @@ function ModelChangeSection({ modelId, onRevalidationNeeded }) {
                   {aiLoading[c.id] ? <><Spinner /> Assessing…</> : '🧠 AI Materiality Check (OSFI §4.3)'}
                 </button>
               )}
+              <button className="btn btn-ai btn-sm" style={{ marginTop:8, marginLeft: c.ai_materiality ? 0 : 8 }} onClick={() => runAIImpact(c)} disabled={impactLoading[c.id]}>
+                {impactLoading[c.id] ? <><Spinner /> Analysing…</> : '⚡ AI Change Impact'}
+              </button>
+              {impactResult[c.id] && (
+                <div className="ai-panel" style={{ marginTop:8, padding:'10px 14px' }}>
+                  <AIDisclaimer />
+                  <div style={{ fontWeight:700, fontSize:12, color:'var(--navy)', marginBottom:6 }}>
+                    Change Impact: {impactResult[c.id].impact_level?.toUpperCase()} · Revalidation: {impactResult[c.id].revalidation_recommended ? 'Required' : 'Not Required'}
+                  </div>
+                  <div style={{ fontSize:12.5, marginBottom:6 }}>{impactResult[c.id].impact_summary}</div>
+                  {(impactResult[c.id].affected_components||[]).length > 0 && (
+                    <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:4 }}>
+                      <strong>Affected:</strong> {impactResult[c.id].affected_components.join(', ')}
+                    </div>
+                  )}
+                  {impactResult[c.id].osfi_ref && (
+                    <div style={{ fontSize:11.5, color:'var(--blue)', fontWeight:600 }}>{impactResult[c.id].osfi_ref}</div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -2065,7 +2126,19 @@ function AssumptionRegister({ modelId }) {
   const blankForm = { assumption_name:'', current_value:'', prior_value:'', unit:'', approved_by:'', effective_date:'', change_reason:'' };
   const [form, setForm] = useState(blankForm);
   const [saving, setSaving] = useState(false);
+  const [sensResult, setSensResult] = useState(null);
+  const [sensLoading, setSensLoading] = useState(false);
   const toast = useToast();
+
+  async function runSensitivity() {
+    setSensLoading(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/ai-assumption-sensitivity`, { method:'POST' });
+      setSensResult(r);
+      toast('AI assumption sensitivity analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSensLoading(false); }
+  }
 
   function reload() {
     apiFetch(`/api/models/${modelId}/assumptions`)
@@ -2096,12 +2169,17 @@ function AssumptionRegister({ modelId }) {
 
   return (
     <div className="card" style={{ marginBottom:16 }}>
-      <div className="section-hdr" style={{ marginBottom:items.length ? 12 : 0 }}>
+      <div className="section-hdr" style={{ marginBottom:items.length ? 12 : 0, flexWrap:'wrap', gap:8 }}>
         <div>
           <div className="section-title">Actuarial Assumption Register</div>
           <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>Key inputs that drive this model — versioned, approved, audit-ready</div>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={startAdd}>+ Add Assumption</button>
+        <div style={{ display:'flex', gap:6 }}>
+          <button className="btn btn-ai btn-sm" onClick={runSensitivity} disabled={sensLoading}>
+            {sensLoading ? <><Spinner /> Analysing…</> : '🧠 AI Sensitivity'}
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={startAdd}>+ Add Assumption</button>
+        </div>
       </div>
       {loading ? <div className="spinner-center"><Spinner dark size={20}/></div> : items.length === 0 && !showForm ? (
         <div style={{ fontSize:13, color:'var(--text-muted)' }}>No assumptions recorded. Add the key parameters that govern this model's outputs (e.g. tail factors, discount rate, lapse rate).</div>
@@ -2148,6 +2226,32 @@ function AssumptionRegister({ modelId }) {
               </div>
             </div>
           )}
+          {sensResult && (
+            <div className="ai-panel" style={{ marginTop:14, padding:'12px 16px' }}>
+              <AIDisclaimer />
+              <div style={{ fontWeight:800, fontSize:13, color:'var(--navy)', marginBottom:8 }}>🧠 AI Assumption Sensitivity Analysis</div>
+              <div style={{ fontSize:13, marginBottom:10 }}>{sensResult.sensitivity_narrative}</div>
+              {(sensResult.high_sensitivity_assumptions||[]).length > 0 && (
+                <div style={{ marginBottom:10 }}>
+                  <div style={{ fontSize:12, fontWeight:700, marginBottom:6 }}>High-Sensitivity Assumptions:</div>
+                  {sensResult.high_sensitivity_assumptions.map((a,i) => (
+                    <div key={i} style={{ padding:'6px 10px', background:'#fff1f2', borderRadius:6, marginBottom:6, fontSize:12.5 }}>
+                      <strong>{a.assumption_name}</strong> — {a.sensitivity_reason}
+                      {a.osfi_ref && <span style={{ marginLeft:8, fontSize:11, color:'var(--blue)', fontWeight:600 }}>{a.osfi_ref}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(sensResult.recommended_stress_tests||[]).length > 0 && (
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Recommended Stress Tests:</div>
+                  <ul style={{ paddingLeft:16, margin:0 }}>
+                    {sensResult.recommended_stress_tests.map((t,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{t}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -2163,7 +2267,19 @@ function ModelDependencies({ modelId, allModels }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ direction:'upstream', other_model_id:'', dependency_type:'feeds_into', notes:'' });
   const [saving, setSaving] = useState(false);
+  const [cascadeResult, setCascadeResult] = useState(null);
+  const [cascadeLoading, setCascadeLoading] = useState(false);
   const toast = useToast();
+
+  async function runCascadeRisk() {
+    setCascadeLoading(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/ai-cascade-risk`, { method:'POST' });
+      setCascadeResult(r);
+      toast('AI cascade risk analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setCascadeLoading(false); }
+  }
 
   function reload() {
     apiFetch(`/api/models/${modelId}/dependencies`)
@@ -2191,12 +2307,17 @@ function ModelDependencies({ modelId, allModels }) {
 
   return (
     <div className="card" style={{ marginBottom:16 }}>
-      <div className="section-hdr" style={{ marginBottom: (deps.feeds_into.length || deps.fed_by.length) ? 12 : 0 }}>
+      <div className="section-hdr" style={{ marginBottom: (deps.feeds_into.length || deps.fed_by.length) ? 12 : 0, flexWrap:'wrap', gap:8 }}>
         <div>
           <div className="section-title">Model Dependency Map</div>
           <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>Upstream/downstream cascade risk — a failure here propagates to linked models</div>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(!showForm)}>+ Link Model</button>
+        <div style={{ display:'flex', gap:6 }}>
+          <button className="btn btn-ai btn-sm" onClick={runCascadeRisk} disabled={cascadeLoading}>
+            {cascadeLoading ? <><Spinner /> Analysing…</> : '🧠 AI Cascade Risk'}
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowForm(!showForm)}>+ Link Model</button>
+        </div>
       </div>
       {loading ? <div className="spinner-center"><Spinner dark size={20}/></div> : (
         <div>
@@ -2264,6 +2385,37 @@ function ModelDependencies({ modelId, allModels }) {
               </div>
             </div>
           )}
+          {cascadeResult && (
+            <div className="ai-panel" style={{ marginTop:14, padding:'12px 16px' }}>
+              <AIDisclaimer />
+              <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:8, flexWrap:'wrap' }}>
+                <span style={{ fontWeight:800, fontSize:13, color:'var(--navy)' }}>🧠 AI Cascade Risk Analysis</span>
+                <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, fontWeight:700,
+                  background: cascadeResult.cascade_severity==='high'?'#fee2e2':cascadeResult.cascade_severity==='medium'?'#fef3c7':'#dcfce7',
+                  color: cascadeResult.cascade_severity==='high'?'var(--red)':cascadeResult.cascade_severity==='medium'?'#92400e':'var(--green)'
+                }}>{(cascadeResult.cascade_severity||'').toUpperCase()} CASCADE RISK</span>
+              </div>
+              <div style={{ fontSize:13, marginBottom:8 }}>{cascadeResult.cascade_narrative}</div>
+              {(cascadeResult.failure_chains||[]).length > 0 && (
+                <div style={{ marginBottom:10 }}>
+                  <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Failure Chains:</div>
+                  {cascadeResult.failure_chains.map((c,i) => (
+                    <div key={i} style={{ padding:'6px 10px', background:'#fff7ed', borderRadius:6, marginBottom:5, fontSize:12, borderLeft:'3px solid #f97316' }}>
+                      <strong>{c.chain}</strong>{c.impact ? ` — ${c.impact}` : ''}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(cascadeResult.mitigation_actions||[]).length > 0 && (
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Mitigation Actions:</div>
+                  <ul style={{ paddingLeft:16, margin:0 }}>
+                    {cascadeResult.mitigation_actions.map((a,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{a}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -2280,7 +2432,19 @@ function BacktestingLog({ validationId }) {
   const blankForm = { test_name:'', period_start:'', period_end:'', predicted_value:'', actual_value:'', tolerance_threshold:'', variance_pct:'', verdict:'pass', notes:'' };
   const [form, setForm] = useState(blankForm);
   const [saving, setSaving] = useState(false);
+  const [narrativeResult, setNarrativeResult] = useState(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
   const toast = useToast();
+
+  async function runNarrative() {
+    setNarrativeLoading(true);
+    try {
+      const r = await apiFetch(`/api/validations/${validationId}/ai-backtest-narrative`, { method:'POST' });
+      setNarrativeResult(r);
+      toast('AI backtesting narrative complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setNarrativeLoading(false); }
+  }
 
   function reload() {
     apiFetch(`/api/validations/${validationId}/backtesting`)
@@ -2307,9 +2471,14 @@ function BacktestingLog({ validationId }) {
 
   return (
     <div style={{ marginBottom:14 }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8, flexWrap:'wrap', gap:6 }}>
         <span style={{ fontSize:12.5, fontWeight:700, color:'var(--navy)' }}>Backtesting Log</span>
-        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(!showForm)}>+ Add Test Result</button>
+        <div style={{ display:'flex', gap:6 }}>
+          <button className="btn btn-ai btn-sm" onClick={runNarrative} disabled={narrativeLoading}>
+            {narrativeLoading ? <><Spinner /> Drafting…</> : '🧠 AI Narrative'}
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowForm(!showForm)}>+ Add Test Result</button>
+        </div>
       </div>
       {loading ? <div className="spinner-center"><Spinner dark size={18}/></div> : (
         <>
@@ -2371,6 +2540,25 @@ function BacktestingLog({ validationId }) {
                     <button className="btn btn-ghost btn-sm" onClick={()=>{setShowForm(false);setForm(blankForm);}}>Cancel</button>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+          {narrativeResult && (
+            <div className="ai-panel" style={{ marginTop:12, padding:'10px 14px' }}>
+              <AIDisclaimer />
+              <div style={{ fontWeight:800, fontSize:12.5, color:'var(--navy)', marginBottom:6 }}>🧠 AI Backtesting Narrative</div>
+              <div style={{ fontSize:13, lineHeight:1.6, marginBottom:8 }}>{narrativeResult.narrative}</div>
+              {narrativeResult.overall_verdict && (
+                <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>
+                  Overall Verdict: <span style={{ color: narrativeResult.overall_verdict==='pass'?'var(--green)':narrativeResult.overall_verdict==='fail'?'var(--red)':'var(--grey)' }}>
+                    {narrativeResult.overall_verdict.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              {(narrativeResult.osfi_implications||[]).length > 0 && (
+                <ul style={{ paddingLeft:16, margin:'4px 0 0' }}>
+                  {narrativeResult.osfi_implications.map((imp,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{imp}</li>)}
+                </ul>
               )}
             </div>
           )}
@@ -2522,6 +2710,7 @@ function Validations() {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected]     = useState(null);
   const [reportVal, setReportVal]   = useState(null);
+  const [showSprintBrief, setShowSprintBrief] = useState(false);
   const toast = useToast();
 
   function load() {
@@ -2542,7 +2731,10 @@ function Validations() {
           <div className="section-title">Validations</div>
           <WorkflowStates current={null} />
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ Request Validation</button>
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-ai" onClick={() => setShowSprintBrief(true)} title="Generate a scoped Validation Sprint Brief">⚡ Sprint Brief</button>
+          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ Request Validation</button>
+        </div>
       </div>
       <div className="card">
         {loading ? (
@@ -2584,6 +2776,7 @@ function Validations() {
       {showCreate && <CreateValModal models={models} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
       {selected && <ValDetailModal val={selected} onClose={() => { setSelected(null); load(); }} />}
       {reportVal && <ValidationReportModal val={reportVal} onClose={() => setReportVal(null)} />}
+      {showSprintBrief && <SprintBriefModal models={models} onClose={() => setShowSprintBrief(false)} />}
     </div>
   );
 }
@@ -2624,6 +2817,7 @@ function ValidationReportModal({ val, onClose }) {
       )}
       {!loading && report && (
         <div>
+          <AIDisclaimer />
           <div style={{ marginBottom:14, padding:'10px 14px', background:'#dcfce7', borderRadius:8, fontSize:13, color:'#15803d', fontWeight:600 }}>
             Report generated in seconds. Estimated consultant cost to produce manually: $15,000–$50,000. Print this page or export to PDF via Ctrl+P.
           </div>
@@ -3279,6 +3473,8 @@ function AuditTrail() {
   const [loading, setLoading] = useState(true);
   const [integrity, setIntegrity] = useState(null);
   const [intLoading, setIntLoading] = useState(false);
+  const [anomaly, setAnomaly] = useState(null);
+  const [anomalyLoading, setAnomalyLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -3295,6 +3491,16 @@ function AuditTrail() {
       setIntegrity(r);
     } catch(e) { toast(e.message, 'error'); }
     finally { setIntLoading(false); }
+  }
+
+  async function runAnomalyDetection() {
+    setAnomalyLoading(true);
+    try {
+      const r = await apiFetch('/api/audit/ai-anomaly');
+      setAnomaly(r);
+      toast('AI anomaly detection complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setAnomalyLoading(false); }
   }
 
   function copyHash(h) { navigator.clipboard?.writeText(h).then(() => toast('Hash copied', 'success')); }
@@ -3351,10 +3557,47 @@ function AuditTrail() {
 
       {/* Events Table */}
       <div className="card">
-        <div className="section-hdr" style={{ marginBottom:14 }}>
-          <div className="section-title">Audit Events</div>
-          <div style={{ fontSize:12, color:'var(--text-muted)' }}>Append-only · Immutable DB trigger · Hash-chained</div>
+        <div className="section-hdr" style={{ marginBottom:14, flexWrap:'wrap', gap:8 }}>
+          <div>
+            <div className="section-title">Audit Events</div>
+            <div style={{ fontSize:12, color:'var(--text-muted)' }}>Append-only · Immutable DB trigger · Hash-chained</div>
+          </div>
+          <button className="btn btn-ai btn-sm" onClick={runAnomalyDetection} disabled={anomalyLoading}>
+            {anomalyLoading ? <><Spinner /> Scanning…</> : '🧠 AI Anomaly Detection'}
+          </button>
         </div>
+        {anomaly && (
+          <div className="ai-panel" style={{ marginBottom:14, padding:'12px 16px' }}>
+            <AIDisclaimer />
+            <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:8, flexWrap:'wrap' }}>
+              <span style={{ fontWeight:800, fontSize:13, color:'var(--navy)' }}>🧠 AI Audit Anomaly Detection</span>
+              <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, fontWeight:700,
+                background: anomaly.risk_level==='high'?'#fee2e2':anomaly.risk_level==='medium'?'#fef3c7':'#dcfce7',
+                color: anomaly.risk_level==='high'?'var(--red)':anomaly.risk_level==='medium'?'#92400e':'var(--green)'
+              }}>{(anomaly.risk_level||'').toUpperCase()} RISK</span>
+            </div>
+            <div style={{ fontSize:13, marginBottom:10 }}>{anomaly.anomaly_summary}</div>
+            {(anomaly.anomalies||[]).length > 0 && (
+              <div style={{ marginBottom:10 }}>
+                <div style={{ fontSize:12, fontWeight:700, marginBottom:6 }}>Detected Anomalies:</div>
+                {anomaly.anomalies.map((a,i) => (
+                  <div key={i} style={{ padding:'6px 10px', background:'#fff1f2', borderRadius:6, marginBottom:5, fontSize:12.5, borderLeft:'3px solid var(--red)' }}>
+                    <strong>{a.anomaly_type}</strong> — {a.description}
+                    {a.osfi_ref && <span style={{ marginLeft:8, fontSize:11, color:'var(--blue)', fontWeight:600 }}>{a.osfi_ref}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {(anomaly.recommended_actions||[]).length > 0 && (
+              <div>
+                <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Recommended Actions:</div>
+                <ul style={{ paddingLeft:16, margin:0 }}>
+                  {anomaly.recommended_actions.map((a,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{a}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="spinner-center"><Spinner dark size={26} /></div>
         ) : events.length === 0 ? (
@@ -3756,7 +3999,19 @@ function AdminPanel({ user }) {
   const [ssoSaving, setSsoSaving] = useState(false);
   const [addUserForm, setAddUserForm] = useState({ email: '', full_name: '', role: 'analyst', temp_password: '' });
   const [addUserSaving, setAddUserSaving] = useState(false);
+  const [onboardingPlan, setOnboardingPlan] = useState(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
   const toast = useToast();
+
+  async function generateOnboardingPlan() {
+    setOnboardingLoading(true);
+    try {
+      const r = await apiFetch('/api/admin/ai-onboarding-plan', { method:'POST' });
+      setOnboardingPlan(r);
+      toast('AI onboarding plan generated','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setOnboardingLoading(false); }
+  }
 
   const tenantId = user?.tenant_id || '';
 
@@ -3803,7 +4058,7 @@ function AdminPanel({ user }) {
   return (
     <div>
       <div className="admin-tabs">
-        {[['users', 'User Management'], ['sso', 'SSO Configuration'], ['tenants', 'All Tenants']].map(([k, l]) => (
+        {[['users', 'User Management'], ['sso', 'SSO Configuration'], ['tenants', 'All Tenants'], ['ai_onboarding', '🧠 AI Onboarding Plan']].map(([k, l]) => (
           <button key={k} className={`admin-tab${activeTab === k ? ' active' : ''}`} onClick={() => setActiveTab(k)}>{l}</button>
         ))}
       </div>
@@ -3929,6 +4184,75 @@ function AdminPanel({ user }) {
           </div>
         </div>
       )}
+
+      {activeTab === 'ai_onboarding' && (
+        <div>
+          <div className="card" style={{ marginBottom:16 }}>
+            <div className="section-hdr" style={{ marginBottom:14 }}>
+              <div>
+                <div className="section-title">🧠 AI Onboarding Plan</div>
+                <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:4 }}>
+                  Claude analyses your current inventory state and generates a prioritized onboarding roadmap for OSFI E-23 compliance.
+                </div>
+              </div>
+              <button className="btn btn-ai" onClick={generateOnboardingPlan} disabled={onboardingLoading}>
+                {onboardingLoading ? <><Spinner /> Generating…</> : onboardingPlan ? '↻ Refresh Plan' : '⚡ Generate Onboarding Plan'}
+              </button>
+            </div>
+            {!onboardingPlan && !onboardingLoading && (
+              <div style={{ fontSize:13, color:'var(--text-muted)' }}>
+                The AI Onboarding Plan analyses your model inventory gaps and generates a step-by-step OSFI E-23 compliance roadmap including quick wins, 30-day priorities, examiner focus areas, and an executive summary for your CRO.
+              </div>
+            )}
+          </div>
+          {onboardingPlan && (
+            <div>
+              <AIDisclaimer />
+              {onboardingPlan.executive_summary && (
+                <div className="card" style={{ marginBottom:16 }}>
+                  <div style={{ fontWeight:700, fontSize:14, marginBottom:8 }}>Executive Summary (CRO Brief)</div>
+                  <div style={{ fontSize:13.5, lineHeight:1.65 }}>{onboardingPlan.executive_summary}</div>
+                </div>
+              )}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
+                {onboardingPlan.quick_wins?.length > 0 && (
+                  <div className="card">
+                    <div style={{ fontWeight:700, marginBottom:10, fontSize:13 }}>⚡ Quick Wins (Do This Week)</div>
+                    <ul style={{ paddingLeft:16, margin:0 }}>
+                      {onboardingPlan.quick_wins.map((w,i) => <li key={i} style={{ fontSize:13, marginBottom:6, lineHeight:1.5 }}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {onboardingPlan.examiner_focus_areas?.length > 0 && (
+                  <div className="card">
+                    <div style={{ fontWeight:700, marginBottom:10, fontSize:13 }}>🏛️ OSFI Examiner Focus Areas</div>
+                    <ul style={{ paddingLeft:16, margin:0 }}>
+                      {onboardingPlan.examiner_focus_areas.map((a,i) => <li key={i} style={{ fontSize:13, marginBottom:6, lineHeight:1.5 }}>{a}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              {onboardingPlan.priority_actions?.length > 0 && (
+                <div className="card" style={{ marginBottom:16 }}>
+                  <div style={{ fontWeight:700, marginBottom:12, fontSize:13 }}>📋 30-Day Priority Actions</div>
+                  {onboardingPlan.priority_actions.map((a,i) => (
+                    <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:10, padding:'8px 12px', background:'#f8fafc', borderRadius:8 }}>
+                      <span style={{ fontSize:11, padding:'2px 8px', borderRadius:10, fontWeight:700, flexShrink:0, marginTop:1,
+                        background: a.priority==='P1'?'#fee2e2':a.priority==='P2'?'#fef3c7':'#eff6ff',
+                        color: a.priority==='P1'?'var(--red)':a.priority==='P2'?'#92400e':'var(--blue)'
+                      }}>{a.priority}</span>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>{a.action}</div>
+                        {a.osfi_ref && <div style={{ fontSize:11.5, color:'var(--blue)', fontWeight:600 }}>{a.osfi_ref}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -3937,24 +4261,28 @@ function AdminPanel({ user }) {
    APP SHELL
 ═══════════════════════════════════════════════════ */
 const SCREEN_TITLES = {
-  dashboard:       'AI Action Queue',
-  models:          'Model Inventory',
-  model_form:      'Model Form',
-  model_detail:    'Model Detail',
-  rate_wizard:     'Risk Rating Wizard',
-  validations:     'Validations',
-  vendors:         'Vendor Assessments',
-  search:          'Smart Search',
-  mrm_policy:      'MRM Policy Generator',
-  doc_ingest:      'Document Intelligence',
-  audit:           'Audit Trail',
-  board:           'Board Report',
-  examiner_export: 'OSFI Examiner Export',
-  exam_sprint:     'Emergency Exam Sprint',
-  calendar:        'Regulatory Calendar',
-  mra_wizard:      'Model Risk Appetite Statement',
-  import:          'Import CSV',
-  admin:           'Admin Panel',
+  dashboard:        'AI Action Queue',
+  models:           'Model Inventory',
+  model_form:       'Model Form',
+  model_detail:     'Model Detail',
+  rate_wizard:      'Risk Rating Wizard',
+  validations:      'Validations',
+  vendors:          'Vendor Assessments',
+  b10_package:      'B-10 Third-Party Risk Package',
+  search:           'Smart Search',
+  mrm_policy:       'MRM Policy Generator',
+  policy_gap:       'AI Policy Gap Checker',
+  doc_ingest:       'Document Intelligence',
+  audit:            'Audit Trail',
+  audit_summary:    'AI Audit Summary — Examiner Ready',
+  board:            'Board Report',
+  examiner_export:  'OSFI Examiner Export',
+  ai_examiner_prep: 'AI Examiner Preparation Brief',
+  exam_sprint:      'Emergency Exam Sprint',
+  calendar:         'Regulatory Calendar',
+  mra_wizard:       'Model Risk Appetite Statement',
+  import:           'Import CSV',
+  admin:            'Admin Panel',
 };
 
 /* ═══════════════════════════════════════════════════
@@ -3968,7 +4296,31 @@ function ModelMonitoringSection({ modelId }) {
   const [saving, setSaving]     = useState(false);
   const [aiAnalysis, setAiAnalysis]   = useState({});
   const [aiLoading, setAiLoading]     = useState({});
+  const [driftResult, setDriftResult] = useState(null);
+  const [driftLoading, setDriftLoading] = useState(false);
+  const [psiResult, setPsiResult]     = useState(null);
+  const [psiLoading, setPsiLoading]   = useState(false);
   const toast = useToast();
+
+  async function runDriftAnalysis() {
+    setDriftLoading(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/ai-drift-analysis`, { method:'POST' });
+      setDriftResult(r);
+      toast('AI drift analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setDriftLoading(false); }
+  }
+
+  async function runPsiAnalysis() {
+    setPsiLoading(true);
+    try {
+      const r = await apiFetch(`/api/models/${modelId}/psi-analysis`, { method:'POST' });
+      setPsiResult(r);
+      toast('PSI analysis complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setPsiLoading(false); }
+  }
 
   const COMMON_METRICS = ['PSI','Gini','KS Statistic','Accuracy','F1 Score','AUC-ROC','Default Rate','Override Rate','Custom'];
 
@@ -4016,11 +4368,19 @@ function ModelMonitoringSection({ modelId }) {
 
   return (
     <div className="card" style={{ marginTop:16 }}>
-      <div className="section-hdr">
+      <div className="section-hdr" style={{ flexWrap:'wrap', gap:8 }}>
         <div className="section-title">📈 Ongoing Monitoring (OSFI E-23 §4.5)</div>
-        <button className="btn btn-outline btn-sm" onClick={() => setShowForm(p => !p)}>
-          {showForm ? 'Cancel' : '+ Log Metric'}
-        </button>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+          <button className="btn btn-ai btn-sm" onClick={runPsiAnalysis} disabled={psiLoading}>
+            {psiLoading ? <><Spinner /> Calculating…</> : '📊 PSI Analysis'}
+          </button>
+          <button className="btn btn-ai btn-sm" onClick={runDriftAnalysis} disabled={driftLoading}>
+            {driftLoading ? <><Spinner /> Analysing…</> : '🧠 AI Drift Analysis'}
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => setShowForm(p => !p)}>
+            {showForm ? 'Cancel' : '+ Log Metric'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -4129,6 +4489,75 @@ function ModelMonitoringSection({ modelId }) {
             );
           })}
         </>
+      )}
+
+      {psiResult && (
+        <div className="ai-panel" style={{ marginTop:16, padding:'12px 16px' }}>
+          <AIDisclaimer />
+          <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:10, flexWrap:'wrap' }}>
+            <span style={{ fontWeight:800, fontSize:13, color:'var(--navy)' }}>📊 PSI Analysis</span>
+            <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, fontWeight:700,
+              background: (psiResult.overall_psi||0) >= 0.25 ? '#fee2e2' : (psiResult.overall_psi||0) >= 0.1 ? '#fef3c7' : '#dcfce7',
+              color: (psiResult.overall_psi||0) >= 0.25 ? 'var(--red)' : (psiResult.overall_psi||0) >= 0.1 ? '#92400e' : 'var(--green)'
+            }}>{psiResult.stability_status}</span>
+            {psiResult.overall_psi != null && <span style={{ fontSize:12, color:'var(--text-muted)' }}>PSI: {Number(psiResult.overall_psi).toFixed(4)}</span>}
+          </div>
+          <div style={{ fontSize:13, marginBottom:8 }}>{psiResult.drift_narrative}</div>
+          {(psiResult.metric_breakdown||[]).length > 0 && (
+            <table style={{ width:'100%', fontSize:12, borderCollapse:'collapse' }}>
+              <thead><tr style={{ borderBottom:'1px solid var(--border)' }}>
+                <th style={{ textAlign:'left', padding:'4px 8px', color:'var(--text-muted)', fontWeight:600 }}>Metric</th>
+                <th style={{ textAlign:'left', padding:'4px 8px', color:'var(--text-muted)', fontWeight:600 }}>PSI</th>
+                <th style={{ textAlign:'left', padding:'4px 8px', color:'var(--text-muted)', fontWeight:600 }}>Status</th>
+                <th style={{ textAlign:'left', padding:'4px 8px', color:'var(--text-muted)', fontWeight:600 }}>OSFI Action</th>
+              </tr></thead>
+              <tbody>
+                {psiResult.metric_breakdown.map((m,i) => (
+                  <tr key={i} style={{ borderBottom:'1px solid var(--border)' }}>
+                    <td style={{ padding:'4px 8px', fontWeight:600 }}>{m.metric_name}</td>
+                    <td style={{ padding:'4px 8px' }}>{m.psi != null ? Number(m.psi).toFixed(4) : '—'}</td>
+                    <td style={{ padding:'4px 8px' }}>
+                      <span style={{ fontSize:11, padding:'1px 7px', borderRadius:8, fontWeight:700,
+                        background: m.status==='Action Required'?'#fee2e2':m.status==='Monitor'?'#fef3c7':'#dcfce7',
+                        color: m.status==='Action Required'?'var(--red)':m.status==='Monitor'?'#92400e':'var(--green)'
+                      }}>{m.status}</span>
+                    </td>
+                    <td style={{ padding:'4px 8px', color:'var(--text-muted)', fontSize:11.5 }}>{m.osfi_action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {(psiResult.recommended_actions||[]).length > 0 && (
+            <div style={{ marginTop:10 }}>
+              <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Recommended Actions:</div>
+              <ul style={{ paddingLeft:16, margin:0 }}>
+                {psiResult.recommended_actions.map((a,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{a}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {driftResult && (
+        <div className="ai-panel" style={{ marginTop:16, padding:'12px 16px' }}>
+          <AIDisclaimer />
+          <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:10, flexWrap:'wrap' }}>
+            <span style={{ fontWeight:800, fontSize:13, color:'var(--navy)' }}>🧠 AI Drift Analysis</span>
+            <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, fontWeight:700,
+              background: driftResult.overall_drift_level==='high'?'#fee2e2':driftResult.overall_drift_level==='medium'?'#fef3c7':'#dcfce7',
+              color: driftResult.overall_drift_level==='high'?'var(--red)':driftResult.overall_drift_level==='medium'?'#92400e':'var(--green)'
+            }}>{(driftResult.overall_drift_level||'').toUpperCase()} DRIFT</span>
+            {driftResult.revalidation_triggered && <span style={{ fontSize:11, background:'#fee2e2', color:'var(--red)', padding:'1px 8px', borderRadius:10, fontWeight:700 }}>Revalidation Triggered</span>}
+          </div>
+          <div style={{ fontSize:13, marginBottom:8 }}>{driftResult.drift_summary}</div>
+          {driftResult.osfi_e23_implication && <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:8 }}>{driftResult.osfi_e23_implication}</div>}
+          {(driftResult.recommended_actions||[]).length > 0 && (
+            <ul style={{ paddingLeft:16, margin:0 }}>
+              {driftResult.recommended_actions.map((a,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{a}</li>)}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );
@@ -4413,6 +4842,7 @@ function MRAWizard() {
 
       {statement && (
         <div className="card">
+          <AIDisclaimer />
           <div className="section-hdr" style={{ marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <span className="section-title">Statement {statement.version}</span>
@@ -4535,6 +4965,7 @@ function ExamSprintMode() {
 
       {sprint && (
         <>
+          <AIDisclaimer />
           <div className="card" style={{ marginBottom:16 }}>
             <div style={{ fontWeight:700, marginBottom:8, fontSize:14 }}>Executive Summary</div>
             <div style={{ fontSize:13.5, lineHeight:1.65 }}>{sprint.executive_summary}</div>
@@ -4797,6 +5228,7 @@ function MRMPolicyGenerator() {
             </div>
           </div>
 
+          <AIDisclaimer />
           <div style={{ marginBottom:14, padding:'10px 14px', background:'#dcfce7', borderRadius:8, fontSize:13, color:'#15803d', fontWeight:600 }}>
             13 policy sections generated. Have your regulatory counsel review and sign off before board submission.
           </div>
@@ -5105,6 +5537,502 @@ function DocumentIntelligence({ setScreen, setEditModelId }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════
+   AI DISCLAIMER — shared across all AI panels
+═══════════════════════════════════════════════════ */
+function AIDisclaimer() {
+  return (
+    <div style={{background:'#fffbeb',border:'1px solid #fbbf24',borderRadius:6,padding:'7px 12px',marginTop:10,fontSize:12,color:'#78350f',display:'flex',alignItems:'center',gap:8}}>
+      <span style={{fontSize:15}}>⚠️</span>
+      <span><strong>Human-in-the-loop required</strong> — This AI-generated output references OSFI E-23 (September 2025). It must be reviewed and approved by a qualified model risk professional before operational use.</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   POLICY GAP CHECKER (Phase 5 AI+)
+═══════════════════════════════════════════════════ */
+function PolicyGapChecker() {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const toast = useToast();
+
+  async function run() {
+    setLoading(true);
+    try {
+      const r = await apiFetch('/api/mrm-policy/gap-check', { method:'POST', body:'{}' });
+      setResult(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  const gradeColor = g => ({ A:'#15803d', B:'#1d4ed8', C:'#c07500', D:'#c2410c', F:'#b81c1c' }[g] || '#6b7280');
+
+  return (
+    <div>
+      <div className="card" style={{marginBottom:16}}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">AI Policy Gap Checker <span className="ai-tag">Phase 5 AI+</span></div>
+            <div style={{fontSize:13,color:'var(--text-muted)',marginTop:4}}>Compares your latest MRM Policy against all OSFI E-23 (September 2025) required sections and identifies gaps with specific remediation guidance.</div>
+          </div>
+          <button className="btn btn-ai" onClick={run} disabled={loading}>
+            {loading ? <><span className="spinner" /> Analyzing...</> : '🔬 Run Gap Analysis'}
+          </button>
+        </div>
+        {!result && !loading && <div className="empty-state"><div className="empty-icon">📜</div><div>Generate your MRM Policy first, then run the gap analysis to see compliance score and OSFI-mapped gaps.</div></div>}
+      </div>
+      {result && (
+        <div>
+          <div className="kpi-grid" style={{marginBottom:16}}>
+            <div className="kpi-card"><div className="kpi-label">Compliance Score</div><div className="kpi-value kpi-navy">{result.compliance_score}%</div></div>
+            <div className="kpi-card"><div className="kpi-label">Grade</div><div className="kpi-value" style={{color:gradeColor(result.compliance_grade)}}>{result.compliance_grade}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Gaps Found</div><div className="kpi-value kpi-red">{(result.gaps||[]).length}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Sections Covered</div><div className="kpi-value kpi-green">{(result.osfi_sections_covered||[]).length}</div></div>
+          </div>
+          <div className="card" style={{marginBottom:12}}>
+            <div className="ai-panel-hdr" style={{background:'linear-gradient(135deg,#1d4ed8,#4f46e5)',borderRadius:6,padding:'10px 16px',marginBottom:12}}>
+              <span style={{color:'#fff',fontWeight:700}}>Overall Assessment</span>
+            </div>
+            <p style={{fontSize:13.5,lineHeight:1.7}}>{result.overall_assessment}</p>
+            <div style={{marginTop:10,padding:'8px 12px',background:'#fff7ed',borderRadius:6,fontSize:12.5,color:'#92400e'}}>
+              <strong>Examiner risk:</strong> {result.examiner_risk}
+            </div>
+            <AIDisclaimer />
+          </div>
+          {(result.gaps||[]).length > 0 && (
+            <div className="card" style={{marginBottom:12}}>
+              <div className="section-title" style={{marginBottom:12}}>Compliance Gaps</div>
+              {result.gaps.map((g,i) => (
+                <div key={i} className="remediation-item" style={{borderLeft:`4px solid ${g.severity==='Critical'?'#b81c1c':g.severity==='High'?'#c2410c':g.severity==='Medium'?'#c07500':'#1a8a34'}`}}>
+                  <div className="remediation-action">{g.section} — {g.title} <span className={`badge badge-${g.severity==='Critical'?'red':g.severity==='High'?'orange':g.severity==='Medium'?'amber':'green'}`}>{g.severity}</span></div>
+                  <div style={{fontSize:12.5,color:'var(--text-muted)',margin:'4px 0'}}>{g.description}</div>
+                  <div style={{fontSize:12.5,color:'#1e3a8a'}}><strong>Add:</strong> {g.recommended_addition}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {(result.priority_additions||[]).length > 0 && (
+            <div className="card">
+              <div className="section-title" style={{marginBottom:10}}>Priority Additions</div>
+              {result.priority_additions.map((a,i) => <div key={i} style={{padding:'5px 0',fontSize:13.5,borderBottom:'1px solid var(--border)'}}>→ {a}</div>)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   AUDIT SUMMARY — 12-Month Examiner Narrative (Can Build Now #4)
+═══════════════════════════════════════════════════ */
+function AuditSummary() {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const toast = useToast();
+
+  async function generate() {
+    setLoading(true);
+    try {
+      const r = await apiFetch('/api/audit/ai-summary');
+      setResult(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  const postureColor = p => ({ Strong:'#15803d', Adequate:'#1d4ed8', Developing:'#c07500' }[p] || '#6b7280');
+
+  return (
+    <div>
+      <div className="card" style={{marginBottom:16}}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">AI 12-Month Audit Summary <span className="ai-tag">Can Build Now</span></div>
+            <div style={{fontSize:13,color:'var(--text-muted)',marginTop:4}}>Generates a formal examiner-ready narrative of all MRM activity over the past 12 months, citing OSFI E-23 sections throughout.</div>
+          </div>
+          <button className="btn btn-ai" onClick={generate} disabled={loading}>
+            {loading ? <><span className="spinner" /> Generating...</> : '📊 Generate Summary'}
+          </button>
+        </div>
+        {!result && !loading && <div className="empty-state"><div className="empty-icon">📊</div><div>Click Generate to create a formal 12-month MRM activity narrative ready for an OSFI examiner.</div></div>}
+      </div>
+      {result && (
+        <div>
+          <div className="kpi-grid" style={{marginBottom:16}}>
+            <div className="kpi-card"><div className="kpi-label">Period</div><div style={{fontSize:14,fontWeight:700}}>{result.period_from} → {result.period_to}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Events Analyzed</div><div className="kpi-value kpi-navy">{result.events_analyzed}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Unique Actors</div><div className="kpi-value kpi-navy">{result.unique_actors}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Compliance Posture</div><div className="kpi-value" style={{fontSize:18,color:postureColor(result.compliance_posture)}}>{result.compliance_posture}</div></div>
+          </div>
+          <div className="card" style={{marginBottom:12}}>
+            <div style={{fontWeight:700,marginBottom:10}}>Executive Narrative</div>
+            <div style={{fontSize:13.5,lineHeight:1.8,whiteSpace:'pre-wrap',color:'var(--text)'}}>{result.executive_narrative}</div>
+            <AIDisclaimer />
+          </div>
+          {(result.key_activities||[]).length > 0 && (
+            <div className="card" style={{marginBottom:12}}>
+              <div style={{fontWeight:700,marginBottom:12}}>Key MRM Activities</div>
+              {result.key_activities.map((a,i) => (
+                <div key={i} style={{display:'flex',gap:12,padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
+                  <div style={{minWidth:120,fontWeight:600,fontSize:12.5,color:'var(--navy)'}}>{a.category}</div>
+                  <div style={{flex:1,fontSize:13}}>{a.description}</div>
+                  <div style={{fontSize:12,color:'var(--text-muted)',whiteSpace:'nowrap'}}>{a.event_count} events · {a.osfi_ref}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {(result.significant_events||[]).length > 0 && (
+            <div className="card" style={{marginBottom:12}}>
+              <div style={{fontWeight:700,marginBottom:12}}>Significant Events</div>
+              {result.significant_events.map((e,i) => (
+                <div key={i} style={{display:'flex',gap:12,padding:'8px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>
+                  <div style={{minWidth:80,color:'var(--text-muted)',fontSize:12}}>{e.date}</div>
+                  <div style={{flex:1}}>{e.event}</div>
+                  <div style={{fontSize:12,color:'#15803d'}}>{e.outcome}</div>
+                  <div style={{fontSize:11.5,color:'var(--text-muted)'}}>{e.osfi_section}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="card">
+            <div style={{fontWeight:700,marginBottom:8}}>Conclusion</div>
+            <div style={{fontSize:13.5,lineHeight:1.7}}>{result.conclusion}</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:14}}>
+              <div><div style={{fontWeight:600,fontSize:12,color:'#15803d',marginBottom:6}}>Areas of Progress</div>{(result.areas_of_progress||[]).map((a,i)=><div key={i} style={{fontSize:12.5,padding:'2px 0'}}>✓ {a}</div>)}</div>
+              <div><div style={{fontWeight:600,fontSize:12,color:'var(--amber)',marginBottom:6}}>Areas for Improvement</div>{(result.areas_for_improvement||[]).map((a,i)=><div key={i} style={{fontSize:12.5,padding:'2px 0'}}>→ {a}</div>)}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   B-10 VENDOR PACKAGE (Can Build Now #6)
+═══════════════════════════════════════════════════ */
+function B10Package() {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const toast = useToast();
+
+  async function generate() {
+    setLoading(true);
+    try {
+      const r = await apiFetch('/api/vendor-assessments/b10-package', { method:'POST', body:'{}' });
+      setResult(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div>
+      <div className="card" style={{marginBottom:16}}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">B-10 Third-Party Risk Package <span className="ai-tag">Can Build Now</span></div>
+            <div style={{fontSize:13,color:'var(--text-muted)',marginTop:4}}>Generates a Board-ready Third-Party Model Risk Report per OSFI B-10 and E-23 §5, covering vendor inventory, risk assessment, concentration risk, and remediation plan.</div>
+          </div>
+          <button className="btn btn-ai" onClick={generate} disabled={loading}>
+            {loading ? <><span className="spinner" /> Generating...</> : '📦 Generate B-10 Package'}
+          </button>
+        </div>
+        {!result && !loading && <div className="empty-state"><div className="empty-icon">📦</div><div>Complete at least one Vendor Assessment before generating the B-10 package.</div></div>}
+      </div>
+      {result && (
+        <div>
+          <div className="kpi-grid" style={{marginBottom:16}}>
+            <div className="kpi-card"><div className="kpi-label">Total Vendors</div><div className="kpi-value kpi-navy">{result.vendor_summary?.total||0}</div></div>
+            <div className="kpi-card"><div className="kpi-label">High Risk</div><div className="kpi-value kpi-red">{result.vendor_summary?.high_risk||0}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Medium Risk</div><div className="kpi-value kpi-amber">{result.vendor_summary?.medium_risk||0}</div></div>
+            <div className="kpi-card"><div className="kpi-label">B-10 Score</div><div className="kpi-value kpi-green">{result.b10_compliance_score||0}%</div></div>
+          </div>
+          <div className="card" style={{marginBottom:12}}>
+            <div style={{fontWeight:700,marginBottom:6}}>{result.report_title}</div>
+            <div style={{fontSize:12,color:'var(--text-muted)',marginBottom:12}}>{result.institution} · {result.report_date}</div>
+            <div style={{fontSize:13.5,lineHeight:1.75}}>{result.executive_summary}</div>
+            <AIDisclaimer />
+          </div>
+          {(result.sections||[]).map((s,i) => (
+            <div key={i} className="card" style={{marginBottom:10}}>
+              <div style={{fontWeight:700,marginBottom:6,color:'var(--navy)'}}>{s.number}. {s.title}</div>
+              <div style={{fontSize:13.5,lineHeight:1.7}}>{s.content}</div>
+            </div>
+          ))}
+          {(result.action_items||[]).length > 0 && (
+            <div className="card" style={{marginBottom:10}}>
+              <div style={{fontWeight:700,marginBottom:12}}>Action Items</div>
+              {result.action_items.map((a,i) => (
+                <div key={i} className="remediation-item" style={{borderLeft:`4px solid ${a.priority==='Critical'?'#b81c1c':a.priority==='High'?'#c2410c':'#c07500'}`}}>
+                  <div className="remediation-action">{a.item} <span className={`badge badge-${a.priority==='Critical'?'red':a.priority==='High'?'orange':'amber'}`}>{a.priority}</span></div>
+                  <div className="remediation-meta"><span>Owner: {a.owner}</span><span>{a.timeline}</span><span>{a.osfi_ref}</span></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   AI EXAMINER PREP (Phase 3 AI+)
+═══════════════════════════════════════════════════ */
+function AIExaminerPrep() {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const toast = useToast();
+
+  async function generate() {
+    setLoading(true);
+    try {
+      const r = await apiFetch('/api/examiner/ai-prep', { method:'POST', body:'{}' });
+      setResult(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  const readinessColor = r => ({ Strong:'#15803d', Adequate:'#1d4ed8', 'Needs Work':'#c07500', 'At Risk':'#b81c1c' }[r] || '#6b7280');
+
+  return (
+    <div>
+      <div className="card" style={{marginBottom:16}}>
+        <div className="section-hdr">
+          <div>
+            <div className="section-title">AI Examiner Preparation Brief <span className="ai-tag">Phase 3 AI+</span></div>
+            <div style={{fontSize:13,color:'var(--text-muted)',marginTop:4}}>Synthesizes your full MRM portfolio into a frank, actionable exam readiness brief — including what the examiner will scrutinize, likely questions, and your 30-day priority actions.</div>
+          </div>
+          <button className="btn btn-ai" onClick={generate} disabled={loading}>
+            {loading ? <><span className="spinner" /> Analyzing...</> : '🎓 Generate Exam Prep Brief'}
+          </button>
+        </div>
+        {!result && !loading && <div className="empty-state"><div className="empty-icon">🎓</div><div>Click to generate a frank AI assessment of your OSFI exam readiness across all platform data.</div></div>}
+      </div>
+      {result && (
+        <div>
+          <div className="kpi-grid" style={{marginBottom:16}}>
+            <div className="kpi-card"><div className="kpi-label">Readiness</div><div className="kpi-value" style={{fontSize:18,color:readinessColor(result.overall_readiness)}}>{result.overall_readiness}</div></div>
+            <div className="kpi-card"><div className="kpi-label">Score</div><div className="kpi-value kpi-navy">{result.readiness_score}/100</div></div>
+            <div className="kpi-card"><div className="kpi-label">Critical Findings</div><div className="kpi-value kpi-red">{(result.critical_findings||[]).filter(f=>f.severity==='critical').length}</div></div>
+            <div className="kpi-card"><div className="kpi-label">30-Day Actions</div><div className="kpi-value kpi-amber">{(result['30_day_priority_actions']||[]).length}</div></div>
+          </div>
+          <div className="card" style={{marginBottom:12}}>
+            <div style={{fontWeight:700,marginBottom:8}}>Executive Summary</div>
+            <div style={{fontSize:13.5,lineHeight:1.75}}>{result.executive_summary}</div>
+            <AIDisclaimer />
+          </div>
+          {(result.critical_findings||[]).length > 0 && (
+            <div className="card" style={{marginBottom:12}}>
+              <div style={{fontWeight:700,marginBottom:12}}>Critical Findings</div>
+              {result.critical_findings.map((f,i) => (
+                <div key={i} className="remediation-item" style={{borderLeft:`4px solid ${f.severity==='critical'?'#b81c1c':f.severity==='high'?'#c2410c':'#c07500'}`}}>
+                  <div className="remediation-action">{f.issue} <span className="badge badge-red">{f.osfi_ref}</span></div>
+                  <div style={{fontSize:12.5,color:'var(--text-muted)',margin:'4px 0'}}>{f.remediation}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+            <div className="card">
+              <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>Likely Examiner Questions</div>
+              {(result.examiner_questions||[]).map((q,i) => <div key={i} style={{padding:'6px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>Q: {q}</div>)}
+            </div>
+            <div className="card">
+              <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>Exam Day Checklist</div>
+              {(result.exam_day_checklist||[]).map((c,i) => <div key={i} style={{padding:'4px 0',fontSize:12.5}}>☐ {c}</div>)}
+            </div>
+          </div>
+          <div className="card">
+            <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>30-Day Priority Actions</div>
+            {(result['30_day_priority_actions']||[]).map((a,i) => <div key={i} style={{padding:'5px 0',borderBottom:'1px solid var(--border)',fontSize:13}}>→ {a}</div>)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   MODEL READINESS ASSESSMENT MODAL (Can Build Now #1)
+   Invoked from ModelDetail
+═══════════════════════════════════════════════════ */
+function ReadinessModal({ modelId, modelName, onClose }) {
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const toast = useToast();
+
+  React.useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const r = await apiFetch(`/api/models/${modelId}/readiness-assessment`, { method:'POST', body:'{}' });
+        setResult(r);
+      } catch(e) { toast(e.message,'error'); }
+      finally { setLoading(false); }
+    })();
+  }, [modelId]);
+
+  const gradeColor = g => ({ A:'#15803d', B:'#1d4ed8', C:'#c07500', D:'#c2410c', F:'#b81c1c' }[g] || '#6b7280');
+
+  return (
+    <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:720}}>
+        <div className="modal-hdr">
+          <h2>Model Readiness Assessment — {modelName}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          {loading && <div className="spinner-center"><span className="spinner spinner-dark" /></div>}
+          {result && (
+            <div>
+              <div style={{display:'flex',gap:16,marginBottom:16,flexWrap:'wrap'}}>
+                <div style={{flex:1,textAlign:'center',background:'#f8fafc',borderRadius:8,padding:16}}>
+                  <div style={{fontSize:48,fontWeight:900,color:gradeColor(result.readiness_grade)}}>{result.readiness_grade}</div>
+                  <div style={{fontSize:13,color:'var(--text-muted)'}}>{result.readiness_label}</div>
+                </div>
+                <div style={{flex:2}}>
+                  <div style={{fontSize:13.5,lineHeight:1.75}}>{result.executive_summary}</div>
+                  <div style={{marginTop:10,fontSize:12.5,padding:'8px 12px',background:'#fff7ed',borderRadius:6,color:'#92400e'}}><strong>Examiner risk:</strong> {result.examiner_risk}</div>
+                  {result.validation_sprint_recommended && <div style={{marginTop:8,fontSize:12.5,padding:'8px 12px',background:'#eff6ff',borderRadius:6,color:'#1e3a8a'}}><strong>Sprint recommended:</strong> {result.sprint_rationale}</div>}
+                </div>
+              </div>
+              <div style={{marginBottom:14}}>
+                <div style={{fontWeight:700,marginBottom:10,fontSize:13}}>OSFI E-23 Checklist</div>
+                {(result.checklist||[]).map((c,i) => (
+                  <div key={i} style={{display:'flex',gap:10,padding:'7px 0',borderBottom:'1px solid var(--border)',alignItems:'flex-start'}}>
+                    <span style={{fontSize:14,marginTop:1}}>{c.status==='Complete'?'✅':c.status==='Partial'?'⚠️':'❌'}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12.5,fontWeight:600}}>{c.item}</div>
+                      <div style={{fontSize:12,color:'var(--text-muted)'}}>{c.evidence}</div>
+                    </div>
+                    <span className={`badge badge-${c.impact==='High'?'red':c.impact==='Medium'?'amber':'green'}`}>{c.impact}</span>
+                  </div>
+                ))}
+              </div>
+              {(result.critical_gaps||[]).length > 0 && (
+                <div>
+                  <div style={{fontWeight:700,marginBottom:10,fontSize:13}}>Critical Gaps</div>
+                  {result.critical_gaps.sort((a,b)=>a.priority-b.priority).map((g,i) => (
+                    <div key={i} className="remediation-item">
+                      <div className="remediation-action">#{g.priority} {g.gap} <span className="badge badge-red">{g.osfi_ref}</span></div>
+                      <div style={{fontSize:12.5,color:'var(--text-muted)',marginTop:3}}>{g.action}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <AIDisclaimer />
+            </div>
+          )}
+        </div>
+        <div className="modal-ftr"><button className="btn btn-ghost" onClick={onClose}>Close</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
+   SPRINT BRIEF MODAL (Can Build Now #3)
+   Invoked from Validations
+═══════════════════════════════════════════════════ */
+function SprintBriefModal({ models, onClose }) {
+  const [form, setForm] = React.useState({ model_id:'', validation_type:'full', scope_notes:'', urgency:'standard' });
+  const [loading, setLoading] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const toast = useToast();
+
+  async function generate(e) {
+    e.preventDefault();
+    if (!form.model_id) return toast('Select a model first','error');
+    setLoading(true);
+    try {
+      const r = await apiFetch('/api/validations/sprint-brief', { method:'POST', body:JSON.stringify(form) });
+      setResult(r);
+    } catch(e) { toast(e.message,'error'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:720}}>
+        <div className="modal-hdr"><h2>Validation Sprint Brief Generator</h2><button className="modal-close" onClick={onClose}>×</button></div>
+        <div className="modal-body">
+          {!result ? (
+            <form onSubmit={generate}>
+              <div className="form-grid">
+                <div className="form-group full">
+                  <label className="form-label">Model</label>
+                  <select className="form-control" value={form.model_id} onChange={e=>setForm(f=>({...f,model_id:e.target.value}))}>
+                    <option value="">Select model...</option>
+                    {models.map(m=><option key={m.id} value={m.id}>{m.name} {m.risk_tier?`(Tier ${m.risk_tier})`:''}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Validation Type</label>
+                  <select className="form-control" value={form.validation_type} onChange={e=>setForm(f=>({...f,validation_type:e.target.value}))}>
+                    <option value="full">Full Validation</option>
+                    <option value="targeted">Targeted Review</option>
+                    <option value="monitoring">Monitoring Assessment</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Urgency</label>
+                  <select className="form-control" value={form.urgency} onChange={e=>setForm(f=>({...f,urgency:e.target.value}))}>
+                    <option value="standard">Standard</option>
+                    <option value="urgent">Urgent (examiner prep)</option>
+                    <option value="emergency">Emergency (&lt;30 days)</option>
+                  </select>
+                </div>
+                <div className="form-group full">
+                  <label className="form-label">Additional Scope Notes</label>
+                  <textarea className="form-control" rows={3} placeholder="Any specific concerns, focus areas, or constraints..." value={form.scope_notes} onChange={e=>setForm(f=>({...f,scope_notes:e.target.value}))} />
+                </div>
+              </div>
+              <div className="modal-ftr" style={{padding:0,marginTop:16}}>
+                <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+                <button type="submit" className="btn btn-ai" disabled={loading}>
+                  {loading?<><span className="spinner"/>Generating...</>:'Generate Sprint Brief'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div>
+              <div style={{background:'linear-gradient(135deg,#0b2d5f,#1e3a8a)',borderRadius:8,padding:20,color:'#fff',marginBottom:16}}>
+                <div style={{fontSize:17,fontWeight:800,marginBottom:4}}>{result.brief_title}</div>
+                <div style={{fontSize:12.5,opacity:0.8}}>{result.institution} · {result.sprint_type}</div>
+                <div style={{marginTop:10,fontSize:13.5}}>{result.executive_summary}</div>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginBottom:16}}>
+                <div className="kpi-card"><div className="kpi-label">Est. Hours</div><div className="kpi-value kpi-navy">{result.estimated_hours?.total||'—'}</div></div>
+                <div className="kpi-card"><div className="kpi-label">ClearMRM Price</div><div className="kpi-value" style={{fontSize:18,color:'#15803d'}}>${ result.suggested_price_range?.low?.toLocaleString() }–{ result.suggested_price_range?.high?.toLocaleString() }</div></div>
+                <div className="kpi-card"><div className="kpi-label">Market Rate</div><div className="kpi-value" style={{fontSize:18,color:'var(--text-muted)'}}>${result.market_rate_comparison?.market_rate_low?.toLocaleString()}–{result.market_rate_comparison?.market_rate_high?.toLocaleString()}</div></div>
+              </div>
+              {result.market_rate_comparison?.savings && <div style={{textAlign:'center',fontSize:14,fontWeight:700,color:'#15803d',background:'#f0fdf4',padding:'8px 16px',borderRadius:6,marginBottom:14}}>Client saves {result.market_rate_comparison.savings} vs. market rate</div>}
+              <div style={{marginBottom:12}}>
+                <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Scope of Work</div>
+                {(result.scope_of_work||[]).map((s,i)=><div key={i} style={{padding:'4px 0',fontSize:13}}>• {s}</div>)}
+              </div>
+              <div style={{marginBottom:12}}>
+                <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>Deliverables</div>
+                {(result.deliverables||[]).map((d,i)=><div key={i} style={{padding:'4px 0',fontSize:13}}>• {d}</div>)}
+              </div>
+              <div style={{fontSize:12,padding:'8px 12px',background:'#eff6ff',borderRadius:6,color:'#1e3a8a',marginBottom:8}}>
+                ⚠️ {result.human_in_the_loop_note}
+              </div>
+              <AIDisclaimer />
+              <div className="modal-ftr" style={{padding:0,marginTop:16}}>
+                <button className="btn btn-ghost" onClick={()=>setResult(null)}>← New Brief</button>
+                <button className="btn btn-ghost" onClick={onClose}>Close</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppShell({ user: userProp }) {
   const [user, setUser]                   = useState(userProp);
   const [screen, setScreen]               = useState('dashboard');
@@ -5126,19 +6054,23 @@ function AppShell({ user: userProp }) {
       case 'model_form':   return <ModelForm modelId={editModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
       case 'model_detail': return <ModelDetail modelId={detailModelId} setScreen={setScreen} setEditModelId={setEditModelId} setRateModelId={setRateModelId} />;
       case 'rate_wizard':  return <RatingWizard modelId={rateModelId} setScreen={setScreen} setDetailModelId={setDetailModelId} />;
-      case 'validations':     return <Validations />;
-      case 'vendors':         return <VendorAssessments />;
-      case 'search':          return <NaturalLanguageSearch setScreen={setScreen} setDetailModelId={setDetailModelId} />;
-      case 'mrm_policy':      return <MRMPolicyGenerator />;
-      case 'doc_ingest':      return <DocumentIntelligence setScreen={setScreen} setEditModelId={setEditModelId} />;
-      case 'audit':           return <AuditTrail />;
-      case 'board':           return <BoardReport />;
-      case 'examiner_export': return <ExaminerExport />;
-      case 'exam_sprint':     return <ExamSprintMode />;
-      case 'calendar':        return <RegulatoryCalendar />;
-      case 'mra_wizard':      return <MRAWizard />;
-      case 'import':          return <CsvImport />;
-      case 'admin':           return <AdminPanel user={user} />;
+      case 'validations':       return <Validations />;
+      case 'vendors':           return <VendorAssessments />;
+      case 'b10_package':       return <B10Package />;
+      case 'search':            return <NaturalLanguageSearch setScreen={setScreen} setDetailModelId={setDetailModelId} />;
+      case 'mrm_policy':        return <MRMPolicyGenerator />;
+      case 'policy_gap':        return <PolicyGapChecker />;
+      case 'doc_ingest':        return <DocumentIntelligence setScreen={setScreen} setEditModelId={setEditModelId} />;
+      case 'audit':             return <AuditTrail />;
+      case 'audit_summary':     return <AuditSummary />;
+      case 'board':             return <BoardReport />;
+      case 'examiner_export':   return <ExaminerExport />;
+      case 'ai_examiner_prep':  return <AIExaminerPrep />;
+      case 'exam_sprint':       return <ExamSprintMode />;
+      case 'calendar':          return <RegulatoryCalendar />;
+      case 'mra_wizard':        return <MRAWizard />;
+      case 'import':            return <CsvImport />;
+      case 'admin':             return <AdminPanel user={user} />;
       default:                return <Dashboard setScreen={setScreen} setDetailModelId={setDetailModelId} />;
     }
   }

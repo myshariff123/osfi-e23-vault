@@ -2313,8 +2313,8 @@ app.get('/api/search', aiLimiter, requireAuth, async function(req, res) {
     if (!q) return res.json({ results:[], interpretation:'', query:q });
     const tid = req.user.tenant_id;
     const models = await pool.query(
-      `SELECT id,name,risk_tier,model_type,model_purpose,methodology,model_owner,
-              status,next_validation_due,revalidation_required,is_vendor_model,vendor_name
+      `SELECT id,name,risk_tier,methodology_type,purpose,model_owner_name,
+              status,next_validation_due,revalidation_required,is_third_party,vendor_name
        FROM models WHERE tenant_id=$1 AND status='active'`, [tid]);
 
     const aiResp = await callBedrock({
@@ -2367,6 +2367,543 @@ app.post('/api/ai/ingest-document', aiLimiter, requireAuth, async function(req, 
   } catch(e) { console.error('[ingest]',e.message); res.status(500).json({ error:e.message }); }
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 3 AI+ — ONBOARDING INTELLIGENCE & EXAMINER PREP
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/admin/ai-onboarding-plan', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const { institution_type, asset_size_tier, model_count_estimate, top_model_categories } = req.body;
+    const tRes = await pool.query('SELECT name FROM tenants WHERE id=$1',[req.user.tenant_id]);
+    const instName = tRes.rows[0]?.name || 'Financial Institution';
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
+      system: 'You are an OSFI E-23 implementation expert. Generate a customized MRM implementation roadmap for a Canadian FRFI. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Institution: ${instName}\nType: ${institution_type||'FRFI'}\nAsset Tier: ${asset_size_tier||'Tier 2'}\n`+
+        `Estimated model count: ${model_count_estimate||'20-50'}\nTop categories: ${(top_model_categories||[]).join(',')||'credit,market,operational'}\n`+
+        `OSFI E-23 effective: May 1 2027. Today: ${new Date().toISOString().split('T')[0]}.\n\n`+
+        `Return JSON: {"readiness_score":0,"readiness_label":"Not Started|Early Stage|In Progress|Near Complete","months_to_deadline":0,`+
+        `"priority_gaps":["gap"],"implementation_roadmap":[{"phase":"Phase 1","title":"...","timeline":"Month 1-2",`+
+        `"actions":["action"],"osfi_sections":["§3.1"],"effort":"Low|Medium|High"}],`+
+        `"quick_wins":["30-day action"],"examiner_focus_areas":["area"],"executive_summary":"2-3 sentences for CRO"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(req.user.tenant_id, null, req.user.email, 'ai_onboarding_plan_generated', { metadata:{} });
+    res.json({ ...result, institution_name: instName, generated_at: new Date().toISOString() });
+  } catch(e) { console.error('[ai-onboarding-plan]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/examiner/ai-prep', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const today = new Date().toISOString().split('T')[0];
+    const [mods, vals, vendors, sprint, policy, tRes] = await Promise.all([
+      pool.query(`SELECT id,name,risk_tier,next_validation_due,revalidation_required,methodology_type,is_third_party,current_version FROM models WHERE tenant_id=$1 AND status='active' ORDER BY risk_tier NULLS LAST LIMIT 50`,[tid]),
+      pool.query(`SELECT v.status,v.outcome,v.findings,m.name model_name,m.risk_tier FROM validations v JOIN models m ON m.id=v.model_id WHERE v.tenant_id=$1 ORDER BY v.created_at DESC LIMIT 30`,[tid]),
+      pool.query(`SELECT va.risk_level,va.next_review_due,m.vendor_name,m.name model_name FROM vendor_assessments va JOIN models m ON m.id=va.model_id WHERE va.tenant_id=$1`,[tid]),
+      pool.query(`SELECT overall_score,exam_risk_level FROM exam_sprints WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,[tid]),
+      pool.query(`SELECT status,version FROM mrm_policies WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,[tid]),
+      pool.query('SELECT name FROM tenants WHERE id=$1',[tid]),
+    ]);
+    const instName = tRes.rows[0]?.name || 'Financial Institution';
+    const overdueCount = mods.rows.filter(m => m.next_validation_due && m.next_validation_due < today).length;
+    const context = {
+      total_models:mods.rows.length, tier1:mods.rows.filter(m=>m.risk_tier===1).length,
+      overdue_validations:overdueCount, open_validations:vals.rows.filter(v=>!['approved','closed'].includes(v.status)).length,
+      high_risk_vendors:vendors.rows.filter(v=>v.risk_level==='high').length,
+      last_exam_score:sprint.rows[0]||null, policy_approved:policy.rows[0]?.status==='approved',
+      models:mods.rows.slice(0,20), recent_validations:vals.rows.slice(0,10),
+    };
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2500,
+      system: `You are a senior OSFI exam preparation advisor for ${instName}. Produce a frank, actionable exam prep brief based on MRM portfolio state. Reference OSFI E-23 sections. Return ONLY valid JSON.`,
+      messages: [{ role:'user', content:
+        `Portfolio: ${JSON.stringify(context)}\nDeadline: OSFI E-23 May 1 2027.\n\n`+
+        `Return JSON: {"overall_readiness":"Strong|Adequate|Needs Work|At Risk","readiness_score":0,`+
+        `"executive_summary":"3 sentences","critical_findings":[{"issue":"...","osfi_ref":"§X.X","severity":"critical|high|medium","remediation":"1 sentence"}],`+
+        `"strengths":["strength"],"documentation_gaps":["gap"],"examiner_questions":["likely question"],`+
+        `"30_day_priority_actions":["action with owner"],"exam_day_checklist":["artifact"]}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'ai_examiner_prep_generated', { metadata:{ readiness:result.overall_readiness } });
+    res.json({ ...result, institution_name: instName, generated_at: new Date().toISOString() });
+  } catch(e) { console.error('[ai-examiner-prep]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 4 AI+ — CHANGE IMPACT & DRIFT ANALYSIS
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/model-versions/:id/ai-impact', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const vr = await pool.query(
+      `SELECT mv.*,m.name model_name,m.risk_tier,m.methodology_type,m.purpose FROM model_versions mv JOIN models m ON m.id=mv.model_id WHERE mv.id=$1 AND mv.tenant_id=$2`,
+      [req.params.id, tid]);
+    if (!vr.rows.length) return res.status(404).json({ error:'Version not found' });
+    const v = vr.rows[0];
+    const deps = await pool.query(
+      `SELECT d.*,m.name AS downstream_name,m.risk_tier AS downstream_tier FROM model_dependencies d JOIN models m ON m.id=d.downstream_model_id WHERE d.upstream_model_id=$1 AND d.tenant_id=$2`,
+      [v.model_id, tid]);
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1500,
+      system: 'You are a model risk analyst assessing downstream impact of a model change per OSFI E-23 §4.2. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model: "${v.model_name}" (Tier ${v.risk_tier||'unrated'})\nChange: ${v.change_type} — ${v.change_reason}\n`+
+        `Category: ${v.change_category||'other'}  Material: ${v.is_material?'Yes':'No'}\n`+
+        `Downstream: ${deps.rows.map(d=>`${d.downstream_name} (Tier ${d.downstream_tier||'?'})`).join(', ')||'None'}\n\n`+
+        `Return JSON: {"impact_level":"Critical|High|Medium|Low","revalidation_required":true,"revalidation_urgency":"Immediate|Within 30 days|Within 90 days|Next cycle",`+
+        `"affected_downstream":[{"model":"...","risk":"1 sentence"}],"affected_processes":["process"],`+
+        `"osfi_implications":"1 sentence on §4.2","recommended_actions":[{"action":"...","owner":"CRO|MRM|IT|Business","timeline":"...","osfi_ref":"§X.X"}],`+
+        `"board_notification_required":false,"board_notification_rationale":"1 sentence"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, v.model_id, req.user.email, 'ai_change_impact_assessed', { metadata:{ version_id:req.params.id, impact:result.impact_level } });
+    res.json({ ...result, model_name:v.model_name, change_type:v.change_type, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-change-impact]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/ai-drift-analysis', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [mRes, metrics] = await Promise.all([
+      pool.query('SELECT id,name,risk_tier,methodology_type FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,tid]),
+      pool.query(`SELECT metric_name,metric_value,threshold_amber,threshold_red,logged_at FROM model_monitoring WHERE model_id=$1 AND tenant_id=$2 ORDER BY logged_at DESC LIMIT 60`,[req.params.id,tid]),
+    ]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    if (!metrics.rows.length) return res.status(400).json({ error:'No monitoring data found. Log at least one metric first.' });
+    const metricSummary = {};
+    metrics.rows.forEach(r => {
+      if (!metricSummary[r.metric_name]) metricSummary[r.metric_name] = [];
+      metricSummary[r.metric_name].push({ value:parseFloat(r.metric_value), date:r.logged_at, amber:parseFloat(r.threshold_amber)||null, red:parseFloat(r.threshold_red)||null });
+    });
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1500,
+      system: 'You are a quantitative model risk analyst detecting drift per OSFI E-23 §4.5. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model: "${m.name}" (Tier ${m.risk_tier||'unrated'}, ${m.methodology_type||'unknown'})\n`+
+        `Metrics: ${JSON.stringify(metricSummary)}\n\n`+
+        `Return JSON: {"drift_detected":false,"overall_severity":"Critical|High|Medium|Low|None","confidence":"High|Medium|Low",`+
+        `"metrics_analysis":[{"metric_name":"...","trend":"Increasing|Decreasing|Stable|Volatile","breach_count":0,"drift_signal":false,"interpretation":"1 sentence"}],`+
+        `"stability_assessment":"Stable|Minor Instability|Significant Instability|Unstable",`+
+        `"root_cause_hypotheses":["hypothesis"],"recommended_actions":[{"action":"...","urgency":"Immediate|This Week|This Month","osfi_ref":"§X.X"}],`+
+        `"revalidation_triggered":false,"revalidation_rationale":"1 sentence"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, req.params.id, req.user.email, 'ai_drift_analysis_run', { metadata:{ severity:result.overall_severity } });
+    res.json({ ...result, model_name:m.name, metric_count:Object.keys(metricSummary).length, data_points:metrics.rows.length, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-drift]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 5 AI+ — POLICY GAP CHECKER
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/mrm-policy/gap-check', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const pRes = await pool.query(`SELECT policy_text,version,status FROM mrm_policies WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`,[tid]);
+    if (!pRes.rows.length) return res.status(400).json({ error:'No MRM policy found. Generate one first.' });
+    const p = pRes.rows[0];
+    const policyText = typeof p.policy_text === 'string' ? p.policy_text : JSON.stringify(p.policy_text);
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
+      system: 'You are an OSFI E-23 compliance expert. Required sections: §3 Inventory; §3.2 Risk Tiering; §4 Validation (independence,scope,frequency,findings); §4.2 Change Management; §4.3 Documentation; §4.4 Audit Trail; §4.5 Monitoring (PSI); §5 Third-Party/Vendor; §6 Governance (Board,CRO,MRM Committee). Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `MRM Policy (${p.version}):\n\n${policyText.substring(0,6000)}\n\n`+
+        `Return JSON: {"compliance_score":0,"compliance_grade":"A|B|C|D|F","osfi_sections_covered":["§X.X"],`+
+        `"gaps":[{"section":"§X.X","title":"...","severity":"Critical|High|Medium|Low","description":"what is missing","recommended_addition":"1-2 sentences to add"}],`+
+        `"strengths":["strength"],"priority_additions":["most urgent addition"],`+
+        `"examiner_risk":"1 sentence","overall_assessment":"2-3 sentence summary"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'mrm_policy_gap_check', { metadata:{ score:result.compliance_score, grade:result.compliance_grade } });
+    res.json({ ...result, policy_version:p.version, policy_status:p.status, checked_at:new Date().toISOString() });
+  } catch(e) { console.error('[policy-gap]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 6 AI+ — AUDIT ANOMALY DETECTOR
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/audit/ai-anomaly', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const since = new Date(); since.setDate(since.getDate() - 30);
+    const evRes = await pool.query(
+      `SELECT actor_email,event_type,model_id,created_at FROM audit_events WHERE tenant_id=$1 AND created_at >= $2 ORDER BY created_at DESC LIMIT 200`,
+      [tid, since.toISOString()]);
+    if (!evRes.rows.length) return res.json({ anomaly_detected:false, risk_level:'None', findings:[], summary:'No audit activity in the last 30 days.', generated_at:new Date().toISOString() });
+    const byUser = {}; const byType = {};
+    evRes.rows.forEach(e => { byUser[e.actor_email]=(byUser[e.actor_email]||0)+1; byType[e.event_type]=(byType[e.event_type]||0)+1; });
+    const offHours = evRes.rows.filter(e => { const h=new Date(e.created_at).getUTCHours(); return h<6||h>22; }).length;
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-haiku-20240307-v1:0', max_tokens: 1200,
+      system: 'You are an audit risk analyst reviewing MRM audit logs for anomalies — unusual patterns, off-hours activity, bulk changes, compliance risks. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Last 30 days: ${evRes.rows.length} events. By user: ${JSON.stringify(byUser)}. By type: ${JSON.stringify(byType)}. Off-hours: ${offHours}.\n`+
+        `Sample: ${JSON.stringify(evRes.rows.slice(0,30).map(e=>({user:e.actor_email,type:e.event_type,time:e.created_at})))}\n\n`+
+        `Return JSON: {"anomaly_detected":false,"risk_level":"Critical|High|Medium|Low|None",`+
+        `"findings":[{"type":"...","description":"1-2 sentences","severity":"high|medium|low","recommendation":"1 sentence"}],`+
+        `"activity_summary":"2 sentences","compliance_posture":"Strong|Adequate|Concerning"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'ai_audit_anomaly_check', { metadata:{ anomaly:result.anomaly_detected } });
+    res.json({ ...result, events_analyzed:evRes.rows.length, period_days:30, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-anomaly]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 7 AI+ — ASSUMPTION SENSITIVITY, BACKTESTING NARRATIVE, CASCADE RISK
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/models/:id/ai-assumption-sensitivity', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [mRes, aRes] = await Promise.all([
+      pool.query('SELECT id,name,risk_tier,methodology_type,purpose,insurance_category,is_ifrs17_model FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,tid]),
+      pool.query('SELECT assumption_name,current_value,prior_value,unit,change_reason FROM model_assumptions WHERE model_id=$1 AND tenant_id=$2 ORDER BY assumption_name',[req.params.id,tid]),
+    ]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    if (!aRes.rows.length) return res.status(400).json({ error:'No assumptions registered. Add assumptions in the Assumption Register first.' });
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1800,
+      system: 'You are an actuarial model risk analyst assessing assumption sensitivity per OSFI E-23 §4.3 and IFRS 17. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model: "${m.name}" (${m.methodology_type||'unknown'}, ${m.insurance_category||'general'})\nIFRS 17: ${m.is_ifrs17_model?'Yes':'No'}\nPurpose: ${m.purpose||'unspecified'}\n`+
+        `Assumptions: ${JSON.stringify(aRes.rows)}\n\n`+
+        `Return JSON: {"overall_sensitivity":"High|Medium|Low",`+
+        `"sensitivity_matrix":[{"assumption":"...","current_value":"...","unit":"...","sensitivity_level":"High|Medium|Low","direction":"Increases output|Decreases output|Non-linear","impact_description":"1 sentence"}],`+
+        `"high_risk_assumptions":[{"assumption":"...","risk":"1 sentence"}],`+
+        `"stress_scenarios":[{"scenario":"...","assumptions_affected":["..."],"estimated_impact":"..."}],`+
+        `"osfi_implications":"1 sentence citing §4.3","recommended_monitoring":["monitoring action"]}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, req.params.id, req.user.email, 'ai_assumption_sensitivity_run', { metadata:{ sensitivity:result.overall_sensitivity } });
+    res.json({ ...result, model_name:m.name, assumption_count:aRes.rows.length, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-assumption-sensitivity]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/validations/:id/ai-backtest-narrative', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [vRes, btRes] = await Promise.all([
+      pool.query(`SELECT v.*,m.name model_name,m.risk_tier,m.methodology_type FROM validations v JOIN models m ON m.id=v.model_id WHERE v.id=$1 AND v.tenant_id=$2`,[req.params.id,tid]),
+      pool.query(`SELECT test_name,period_start,period_end,predicted_value,actual_value,tolerance_threshold,variance_pct,verdict,notes FROM backtesting_logs WHERE validation_id=$1 AND tenant_id=$2 ORDER BY test_name`,[req.params.id,tid]),
+    ]);
+    if (!vRes.rows.length) return res.status(404).json({ error:'Validation not found' });
+    const v = vRes.rows[0];
+    if (!btRes.rows.length) return res.status(400).json({ error:'No backtesting logs found for this validation.' });
+    const summary = { total:btRes.rows.length, pass:btRes.rows.filter(b=>b.verdict==='pass').length, fail:btRes.rows.filter(b=>b.verdict==='fail').length, inconclusive:btRes.rows.filter(b=>b.verdict==='inconclusive').length };
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
+      system: 'You are a senior model validator writing a formal backtesting findings section for an OSFI E-23 compliant validation report. Formal regulatory language. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model: "${v.model_name}" (Tier ${v.risk_tier||'unrated'}, ${v.methodology_type||'unknown'})\n`+
+        `Tests: ${summary.total} total — ${summary.pass} pass, ${summary.fail} fail, ${summary.inconclusive} inconclusive\n`+
+        `Test details: ${JSON.stringify(btRes.rows)}\n\n`+
+        `Return JSON: {"overall_verdict":"Pass|Conditional Pass|Fail","pass_rate_pct":0,`+
+        `"narrative":"3-5 formal paragraphs","material_findings":[{"test":"...","issue":"...","severity":"Material|Moderate|Minor","osfi_ref":"§X.X"}],`+
+        `"statistical_observations":"1-2 sentences","model_stability_conclusion":"1 paragraph",`+
+        `"conditions_if_conditional":["condition"],"osfi_implications":"1 sentence on §4"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, v.model_id, req.user.email, 'ai_backtest_narrative_generated', { metadata:{ verdict:result.overall_verdict } });
+    res.json({ ...result, model_name:v.model_name, test_summary:summary, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-backtest]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/models/:id/ai-cascade-risk', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const mRes = await pool.query('SELECT id,name,risk_tier,methodology_type,purpose,is_third_party,vendor_name FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,tid]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    const [upDeps, downDeps] = await Promise.all([
+      pool.query(`SELECT d.*,mu.name upstream_name,mu.risk_tier upstream_tier,mu.methodology_type upstream_method FROM model_dependencies d JOIN models mu ON mu.id=d.upstream_model_id WHERE d.downstream_model_id=$1 AND d.tenant_id=$2`,[req.params.id,tid]),
+      pool.query(`SELECT d.*,md.name downstream_name,md.risk_tier downstream_tier,md.purpose downstream_purpose FROM model_dependencies d JOIN models md ON md.id=d.downstream_model_id WHERE d.upstream_model_id=$1 AND d.tenant_id=$2`,[req.params.id,tid]),
+    ]);
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1800,
+      system: 'You are a model risk specialist analyzing cascading failure risk per OSFI E-23 §3.1 and §4.5. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Focus: "${m.name}" (Tier ${m.risk_tier||'unrated'}, ${m.methodology_type||'unknown'})\n`+
+        `Upstream (feed IN): ${JSON.stringify(upDeps.rows.map(d=>({name:d.upstream_name,tier:d.upstream_tier,method:d.upstream_method})))}\n`+
+        `Downstream (fed INTO): ${JSON.stringify(downDeps.rows.map(d=>({name:d.downstream_name,tier:d.downstream_tier,purpose:d.downstream_purpose})))}\n\n`+
+        `Return JSON: {"cascade_risk_level":"Critical|High|Medium|Low","cascade_risk_score":0,`+
+        `"upstream_risk":"1 sentence","downstream_impact":"1 sentence",`+
+        `"critical_paths":[{"path":["A","B","C"],"risk":"1 sentence"}],`+
+        `"single_points_of_failure":["model/process with no backup"],"concentration_risk":"1 sentence",`+
+        `"risk_scenarios":[{"scenario":"...","probability":"High|Medium|Low","impact":"...","osfi_ref":"§X.X"}],`+
+        `"mitigations":[{"action":"...","priority":"Immediate|Near-term|Long-term"}],"board_disclosure_recommended":false}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, req.params.id, req.user.email, 'ai_cascade_risk_analyzed', { metadata:{ risk_level:result.cascade_risk_level } });
+    res.json({ ...result, model_name:m.name, upstream_count:upDeps.rows.length, downstream_count:downDeps.rows.length, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-cascade]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 8 AI+ — ROI CALCULATOR & DEMO AGENDA (PUBLIC, NO AUTH)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const publicAiLimiter = rateLimit({ windowMs:60000, max:10, standardHeaders:true, legacyHeaders:false });
+
+app.post('/api/public/ai-roi', publicAiLimiter, async function(req, res) {
+  try {
+    const { institution_type, total_models, tier1_count, annual_validation_spend, current_tool } = req.body;
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-haiku-20240307-v1:0', max_tokens: 1000,
+      system: 'You are a financial ROI analyst calculating the business case for a Canadian FRFI adopting ClearMRM. Be specific with dollar figures. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Type: ${institution_type||'credit union'}  Models: ${total_models||30}  Tier 1: ${tier1_count||10}\n`+
+        `Current annual validation spend: $${annual_validation_spend||150000}  Tool: ${current_tool||'SharePoint/Excel'}\n`+
+        `ClearMRM: $72K/year. Validation Sprint: $20-35K vs $75K market rate.\n\n`+
+        `Return JSON: {"current_annual_cost":0,"projected_clearMRM_cost":72000,"annual_savings":0,"roi_pct":0,"payback_months":0,`+
+        `"savings_breakdown":[{"item":"...","current":"$X","with_clearMRM":"$X","saving":"$X"}],`+
+        `"first_year_narrative":"2 sentences","three_year_narrative":"2 sentences","key_benefits":["benefit with $ figure"],`+
+        `"osfi_penalty_risk":"1 sentence"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    res.json({ ...result, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-roi]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+app.post('/api/public/ai-demo-agenda', publicAiLimiter, async function(req, res) {
+  try {
+    const { company_name, role, model_count, primary_pain_points, institution_type } = req.body;
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-haiku-20240307-v1:0', max_tokens: 1000,
+      system: 'You are a B2B SaaS sales consultant preparing a personalized ClearMRM demo agenda. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Prospect: ${company_name||'Financial Institution'} | Role: ${role||'CRO'} | Type: ${institution_type||'credit union'}\n`+
+        `Models: ~${model_count||30} | Pain points: ${(primary_pain_points||[]).join(',')||'manual processes, OSFI deadline'}\n\n`+
+        `Return JSON: {"agenda_title":"Personalized ClearMRM Demo","duration_minutes":45,`+
+        `"agenda_items":[{"time":"0:00","duration_min":5,"topic":"...","talking_points":["..."]}],`+
+        `"features_to_highlight":["feature most relevant to prospect"],"roi_talking_point":"$X specific to their profile",`+
+        `"objections_to_anticipate":[{"objection":"...","response":"1 sentence"}],"suggested_next_steps":["pilot offer"]}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    res.json({ ...result, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[ai-demo-agenda]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAN BUILD NOW #1 — MODEL READINESS ASSESSMENT (OSFI E-23 CHECKLIST)
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/models/:id/readiness-assessment', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [mRes, rRes, vRes, aRes, monRes] = await Promise.all([
+      pool.query(`SELECT id,name,risk_tier,methodology_type,purpose,input_data_sources,model_owner_name,is_third_party,vendor_name,current_version,revalidation_required,last_validated_at,next_validation_due,description,business_unit,is_ifrs17_model,insurance_category FROM models WHERE id=$1 AND tenant_id=$2`,[req.params.id,tid]),
+      pool.query(`SELECT computed_tier,score_total FROM risk_ratings WHERE model_id=$1 AND tenant_id=$2 ORDER BY created_at DESC LIMIT 1`,[req.params.id,tid]),
+      pool.query(`SELECT status,outcome,assigned_to_email FROM validations WHERE model_id=$1 AND tenant_id=$2 ORDER BY created_at DESC LIMIT 3`,[req.params.id,tid]),
+      pool.query(`SELECT COUNT(*) cnt FROM model_assumptions WHERE model_id=$1 AND tenant_id=$2`,[req.params.id,tid]),
+      pool.query(`SELECT COUNT(*) cnt FROM model_monitoring WHERE model_id=$1 AND tenant_id=$2`,[req.params.id,tid]),
+    ]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    const filled = [m.name, m.methodology_type, m.purpose, m.input_data_sources, m.model_owner_name, m.description, m.business_unit].filter(Boolean).length;
+    const context = {
+      model: { name:m.name, tier:m.risk_tier, methodology:m.methodology_type, purpose:m.purpose, owner:m.model_owner_name, data_sources:m.input_data_sources, vendor:m.is_third_party?m.vendor_name:null, version:m.current_version, ifrs17:m.is_ifrs17_model, insurance_category:m.insurance_category },
+      risk_rated: !!rRes.rows.length, rating_tier: rRes.rows[0]?.computed_tier||null,
+      doc_completeness_pct: Math.round((filled/7)*100), validation_history: vRes.rows, last_validated: m.last_validated_at, next_due: m.next_validation_due,
+      assumption_count: parseInt(aRes.rows[0]?.cnt||0), monitoring_entries: parseInt(monRes.rows[0]?.cnt||0), revalidation_flag: m.revalidation_required,
+    };
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
+      system: 'You are an OSFI E-23 model readiness expert. Checklist: §3 Inventory completeness (name,purpose,methodology,owner,data sources,BU); §3.2 Risk Tier assigned; §4 Independent validation completed; §4.2 Version/change docs; §4.3 Documentation standards; §4.5 Monitoring configured; §5 Vendor due diligence if third-party; IFRS 17 if applicable. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model state: ${JSON.stringify(context)}\n\n`+
+        `Return JSON: {"readiness_score":0,"readiness_grade":"A|B|C|D|F","readiness_label":"Exam Ready|Near Ready|In Progress|Needs Work|Not Started",`+
+        `"checklist":[{"item":"OSFI E-23 §X.X — description","status":"Complete|Partial|Missing","evidence":"what is present or absent","impact":"High|Medium|Low"}],`+
+        `"critical_gaps":[{"gap":"...","osfi_ref":"§X.X","action":"specific remediation","priority":1}],`+
+        `"strengths":["strength"],"examiner_risk":"1 sentence on highest exam risk",`+
+        `"validation_sprint_recommended":false,"sprint_rationale":"1 sentence","executive_summary":"2-3 sentences for CRO"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, req.params.id, req.user.email, 'readiness_assessment_run', { metadata:{ score:result.readiness_score, grade:result.readiness_grade } });
+    res.json({ ...result, model_name:m.name, doc_completeness:context.doc_completeness_pct, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[readiness]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAN BUILD NOW #2 — PSI MONITORING ANALYSIS
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/models/:id/psi-analysis', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const { metric_name } = req.body;
+    const mRes = await pool.query('SELECT id,name,risk_tier FROM models WHERE id=$1 AND tenant_id=$2',[req.params.id,tid]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    const mArgs = metric_name ? [req.params.id, tid, metric_name] : [req.params.id, tid];
+    const mQuery = metric_name
+      ? 'SELECT metric_name,metric_value,threshold_amber,threshold_red,logged_at FROM model_monitoring WHERE model_id=$1 AND tenant_id=$2 AND metric_name=$3 ORDER BY logged_at ASC LIMIT 100'
+      : 'SELECT metric_name,metric_value,threshold_amber,threshold_red,logged_at FROM model_monitoring WHERE model_id=$1 AND tenant_id=$2 ORDER BY logged_at ASC LIMIT 100';
+    const metrics = await pool.query(mQuery, mArgs);
+    if (metrics.rows.length < 4) return res.status(400).json({ error:'Need at least 4 data points for PSI. Log more monitoring observations first.' });
+    const grouped = {};
+    metrics.rows.forEach(r => {
+      if (!grouped[r.metric_name]) grouped[r.metric_name] = [];
+      grouped[r.metric_name].push({ v:parseFloat(r.metric_value), d:r.logged_at, amber:r.threshold_amber, red:r.threshold_red });
+    });
+    const psiData = {};
+    Object.entries(grouped).forEach(([name, pts]) => {
+      if (pts.length < 4) return;
+      const half = Math.floor(pts.length / 2);
+      const baseAvg = pts.slice(0,half).reduce((a,b)=>a+b.v,0)/half;
+      const currAvg = pts.slice(half).reduce((a,b)=>a+b.v,0)/(pts.length-half);
+      psiData[name] = { psi:Math.round(Math.abs(currAvg-baseAvg)/(baseAvg||1)*1000)/1000, base_avg:Math.round(baseAvg*100)/100, current_avg:Math.round(currAvg*100)/100, data_points:pts.length, breach_count:pts.filter(p=>p.red&&p.v>=parseFloat(p.red)).length };
+    });
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-haiku-20240307-v1:0', max_tokens: 800,
+      system: 'PSI interpreter: <0.1=Stable; 0.1-0.25=Monitor; >0.25=Action Required. Return ONLY valid JSON.',
+      messages: [{ role:'user', content:
+        `Model: "${m.name}" (Tier ${m.risk_tier||'unrated'})\nPSI results: ${JSON.stringify(psiData)}\n\n`+
+        `Return JSON: {"overall_stability":"Stable|Monitor|Action Required","psi_metrics":[{"metric":"...","psi":0,"interpretation":"Stable|Monitor|Action Required","flag_color":"green|amber|red","narrative":"1 sentence"}],"immediate_actions":["action if PSI>0.25"],"monitoring_recommendation":"1 sentence","osfi_ref":"§4.5"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, req.params.id, req.user.email, 'psi_analysis_run', { metadata:{ stability:result.overall_stability } });
+    res.json({ ...result, model_name:m.name, psi_data:psiData, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[psi]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAN BUILD NOW #3 — VALIDATION SPRINT BRIEF
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/validations/sprint-brief', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const { model_id, validation_type, scope_notes, urgency } = req.body;
+    if (!model_id) return res.status(400).json({ error:'model_id is required' });
+    const [mRes, rRes, vRes, tRes] = await Promise.all([
+      pool.query(`SELECT id,name,risk_tier,methodology_type,purpose,input_data_sources,model_owner_name,is_third_party,vendor_name,current_version,last_validated_at,description,business_unit,insurance_category,is_ifrs17_model FROM models WHERE id=$1 AND tenant_id=$2`,[model_id,tid]),
+      pool.query(`SELECT computed_tier,score_total FROM risk_ratings WHERE model_id=$1 AND tenant_id=$2 ORDER BY created_at DESC LIMIT 1`,[model_id,tid]),
+      pool.query(`SELECT status,outcome FROM validations WHERE model_id=$1 AND tenant_id=$2 ORDER BY created_at DESC LIMIT 2`,[model_id,tid]),
+      pool.query('SELECT name FROM tenants WHERE id=$1',[tid]),
+    ]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found' });
+    const m = mRes.rows[0];
+    const instName = tRes.rows[0]?.name || 'Financial Institution';
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
+      system: `You are a senior model validator producing a Validation Sprint Brief for ${instName}. Scoping document for a paid engagement. Be specific about scope, hours, deliverables. Reference OSFI E-23. Return ONLY valid JSON.`,
+      messages: [{ role:'user', content:
+        `Model: ${JSON.stringify({name:m.name,tier:m.risk_tier,methodology:m.methodology_type,purpose:m.purpose,owner:m.model_owner_name,vendor:m.is_third_party?m.vendor_name:null,version:m.current_version,insurance_category:m.insurance_category,ifrs17:m.is_ifrs17_model})}\n`+
+        `Rating: ${rRes.rows[0]?`Tier ${rRes.rows[0].computed_tier}, Score ${rRes.rows[0].score_total}/22`:'Not rated'}  Prior validations: ${vRes.rows.length}\n`+
+        `Type: ${validation_type||'full'}  Scope notes: ${scope_notes||'none'}  Urgency: ${urgency||'standard'}\n\n`+
+        `Return JSON: {"brief_title":"Validation Sprint Brief: ${m.name}","model_name":"${m.name}","institution":"${instName}",`+
+        `"sprint_type":"Full Validation|Targeted Review|Monitoring Assessment",`+
+        `"executive_summary":"2 sentences","scope_of_work":["item 1"],"osfi_requirements":["§X.X — req"],"deliverables":["Deliverable — desc"],`+
+        `"estimated_hours":{"conceptual_soundness":0,"data_analysis":0,"outcomes_testing":0,"documentation_review":0,"report_writing":0,"total":0},`+
+        `"suggested_price_range":{"low":0,"high":0,"currency":"CAD"},`+
+        `"market_rate_comparison":{"market_rate_low":50000,"market_rate_high":75000,"clearMRM_discount_pct":0,"savings":"$X"},`+
+        `"timeline_weeks":0,"human_in_the_loop_note":"All findings require qualified validator sign-off before use"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, model_id, req.user.email, 'sprint_brief_generated', { metadata:{ model_name:m.name } });
+    res.json({ ...result, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[sprint-brief]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAN BUILD NOW #4 — EXAMINER AUDIT SUMMARY (12-MONTH NARRATIVE)
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/audit/ai-summary', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const since = new Date(); since.setFullYear(since.getFullYear()-1);
+    const [evRes, mRes, tRes] = await Promise.all([
+      pool.query(`SELECT actor_email,event_type,created_at FROM audit_events WHERE tenant_id=$1 AND created_at >= $2 ORDER BY created_at DESC LIMIT 500`,[tid, since.toISOString()]),
+      pool.query(`SELECT COUNT(*) total, COUNT(CASE WHEN risk_tier=1 THEN 1 END) tier1 FROM models WHERE tenant_id=$1 AND status='active'`,[tid]),
+      pool.query('SELECT name FROM tenants WHERE id=$1',[tid]),
+    ]);
+    const instName = tRes.rows[0]?.name || 'Financial Institution';
+    const byType = {};
+    evRes.rows.forEach(e => { byType[e.event_type]=(byType[e.event_type]||0)+1; });
+    const uniqueUsers = [...new Set(evRes.rows.map(e=>e.actor_email))];
+    const fromDate = since.toISOString().split('T')[0];
+    const toDate = new Date().toISOString().split('T')[0];
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2500,
+      system: `You are an OSFI E-23 compliance officer writing a formal 12-month MRM Activity Summary for ${instName} to present to an OSFI examiner. Formal regulatory language. Cite E-23 sections. Return ONLY valid JSON.`,
+      messages: [{ role:'user', content:
+        `Institution: ${instName}\nPeriod: ${fromDate} to ${toDate}\n`+
+        `Total events: ${evRes.rows.length}  Event types: ${JSON.stringify(byType)}  Unique actors: ${uniqueUsers.length}\n`+
+        `Portfolio: ${JSON.stringify(mRes.rows[0])}\nSample: ${JSON.stringify(evRes.rows.slice(0,50).map(e=>({type:e.event_type,actor:e.actor_email,time:e.created_at})))}\n\n`+
+        `Return JSON: {"period_from":"${fromDate}","period_to":"${toDate}","institution_name":"${instName}",`+
+        `"executive_narrative":"3-4 formal paragraphs","key_activities":[{"category":"Model Inventory|Validation|Monitoring|Governance|Vendor","description":"formal description","event_count":0,"osfi_ref":"§X.X"}],`+
+        `"significant_events":[{"date":"YYYY-MM","event":"...","outcome":"...","osfi_section":"§X.X"}],`+
+        `"compliance_posture":"Strong|Adequate|Developing","compliance_narrative":"2 sentences",`+
+        `"areas_of_progress":["strength"],"areas_for_improvement":["gap"],"conclusion":"1 closing paragraph"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'ai_audit_summary_generated', { metadata:{ events:evRes.rows.length } });
+    res.json({ ...result, events_analyzed:evRes.rows.length, unique_actors:uniqueUsers.length, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[audit-summary]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CAN BUILD NOW #6 — B-10 VENDOR PACKAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+app.post('/api/vendor-assessments/b10-package', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const [vaRes, tRes] = await Promise.all([
+      pool.query(`SELECT va.*,m.name model_name,m.vendor_name,m.vendor_product,m.methodology_type,m.risk_tier FROM vendor_assessments va JOIN models m ON m.id=va.model_id WHERE va.tenant_id=$1 ORDER BY va.risk_level DESC, m.risk_tier NULLS LAST LIMIT 30`,[tid]),
+      pool.query('SELECT name FROM tenants WHERE id=$1',[tid]),
+    ]);
+    const instName = tRes.rows[0]?.name || 'Financial Institution';
+    if (!vaRes.rows.length) return res.status(400).json({ error:'No vendor assessments found. Complete at least one vendor assessment first.' });
+    const summary = { total:vaRes.rows.length, high_risk:vaRes.rows.filter(v=>v.risk_level==='high').length, medium_risk:vaRes.rows.filter(v=>v.risk_level==='medium').length, low_risk:vaRes.rows.filter(v=>v.risk_level==='low').length, overdue_reviews:vaRes.rows.filter(v=>v.next_review_due&&v.next_review_due<new Date().toISOString().split('T')[0]).length };
+    const aiResp = await callBedrock({
+      model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 3000,
+      system: `You are a compliance officer drafting a Board-ready Third-Party Model Risk Report for ${instName} per OSFI B-10 and E-23 §5. Formal language. Return ONLY valid JSON.`,
+      messages: [{ role:'user', content:
+        `Institution: ${instName}  Date: ${new Date().toISOString().split('T')[0]}\n`+
+        `Summary: ${JSON.stringify(summary)}\nAssessments: ${JSON.stringify(vaRes.rows.map(v=>({model:v.model_name,vendor:v.vendor_name,product:v.vendor_product,risk:v.risk_level,tier:v.risk_tier,sla:v.q_sla_documented,audit_rights:v.q_audit_rights,exit_plan:v.q_exit_plan,concentration:v.q_concentration_risk,next_review:v.next_review_due})))}\n\n`+
+        `Return JSON: {"report_title":"Third-Party Model Risk Management Report","institution":"${instName}","report_date":"${new Date().toISOString().split('T')[0]}",`+
+        `"executive_summary":"3-4 sentences for Board","sections":[{"number":"1","title":"Vendor Model Inventory","content":"formal paragraph"},`+
+        `{"number":"2","title":"Risk Assessment Summary (OSFI E-23 §5 & B-10)","content":"formal paragraph"},`+
+        `{"number":"3","title":"High-Risk Vendor Findings","content":"formal paragraph"},`+
+        `{"number":"4","title":"Concentration Risk Analysis","content":"formal paragraph"},`+
+        `{"number":"5","title":"Due Diligence Gaps","content":"formal paragraph"},`+
+        `{"number":"6","title":"Remediation Plan","content":"formal paragraph"},`+
+        `{"number":"7","title":"Board Attestation","content":"board statement"}],`+
+        `"action_items":[{"item":"...","owner":"CRO|Procurement","timeline":"30|60|90 days","osfi_ref":"§X.X","priority":"Critical|High|Medium"}],`+
+        `"b10_compliance_score":0,"b10_compliance_narrative":"1 sentence"}`
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    await audit(tid, null, req.user.email, 'b10_package_generated', { metadata:{ vendors:vaRes.rows.length, high_risk:summary.high_risk } });
+    res.json({ ...result, vendor_summary:summary, generated_at:new Date().toISOString() });
+  } catch(e) { console.error('[b10-package]',e.message); res.status(500).json({ error:e.message }); }
+});
+
 // ── SPA fallback ──────────────────────────────────────────────────────────────
 app.get('/{*path}', function(req, res) {
   res.sendFile(path.join(__dirname,'public','index.html'));
@@ -2374,5 +2911,5 @@ app.get('/{*path}', function(req, res) {
 
 const PORT=process.env.PORT||3001;
 app.listen(PORT, function() {
-  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1–7');
+  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1–8 + AI+ + 7 Can-Build-Now');
 });
