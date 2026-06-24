@@ -546,23 +546,51 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .lp-pillar-sep { border:none; border-top:1px solid #e2e8f0; margin:0 56px; }
 @media (max-width:800px) { .lp-pillar { grid-template-columns:1fr; gap:40px; padding:56px 28px; } .lp-pillar-alt { direction:ltr; } }
 
-/* Competitor Comparison */
-.lp-compare-section { background:#f8fafc; padding:88px 56px; }
-.lp-compare-inner { max-width:1000px; margin:0 auto; }
-.lp-compare-eyebrow { font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#f97316; margin-bottom:14px; }
+/* Shared section title (reused across new sections) */
 .lp-compare-title { font-size:clamp(26px,3.5vw,42px); font-weight:900; color:#0b2d5f; letter-spacing:-1px; margin-bottom:14px; line-height:1.1; }
 .lp-compare-sub { font-size:17px; color:#475569; line-height:1.7; max-width:680px; margin-bottom:48px; }
-.lp-compare-table-wrap { overflow-x:auto; border-radius:12px; box-shadow:0 2px 20px rgba(11,45,95,.08); }
-.lp-compare-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; font-size:14.5px; }
-.lp-compare-table thead th { padding:14px 20px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:#64748b; background:#f1f5f9; text-align:left; border-bottom:2px solid #e2e8f0; }
-.lp-compare-table tbody td { padding:16px 20px; border-bottom:1px solid #f1f5f9; color:#374151; }
-.lp-compare-competitor td { background:#fff; }
-.lp-compare-competitor:hover td { background:#fafbfc; }
-.lp-compare-us td { background:#eff6ff; font-size:15px; }
-.lp-compare-us td:first-child { font-weight:800; color:#0b2d5f; }
-.lp-compare-us-badge { display:inline-block; font-size:10px; font-weight:700; background:#0b2d5f; color:#fff; padding:1px 7px; border-radius:10px; margin-left:6px; vertical-align:middle; }
-.lp-check-yes { color:#15803d; font-weight:900; font-size:16px; }
-.lp-check-no { color:#b91c1c; font-weight:900; font-size:16px; }
+
+/* Intro — What is ClearMRM */
+.lp-intro-section { padding:80px 56px; background:#fff; }
+.lp-intro-inner { max-width:1100px; margin:0 auto; }
+.lp-intro-grid { display:grid; grid-template-columns:1fr 1fr; gap:48px; margin-top:32px; }
+@media (max-width:800px) { .lp-intro-grid { grid-template-columns:1fr; } }
+
+/* Roles — Who uses ClearMRM */
+.lp-roles-section { padding:80px 56px; background:#f8fafc; border-top:1px solid #e2e8f0; }
+.lp-roles-inner { max-width:1100px; margin:0 auto; }
+.lp-roles-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:36px; }
+@media (max-width:900px) { .lp-roles-grid { grid-template-columns:1fr 1fr; } }
+@media (max-width:600px) { .lp-roles-grid { grid-template-columns:1fr; } }
+.lp-role-card { padding:22px 24px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; border-top:3px solid #0b2d5f; }
+.lp-role-title { font-size:12.5px; font-weight:800; color:#0b2d5f; margin-bottom:10px; text-transform:uppercase; letter-spacing:.6px; }
+.lp-role-desc { font-size:13px; color:#475569; line-height:1.65; }
+
+/* Why ClearMRM — 4-point differentiator */
+.lp-diff-section { padding:88px 56px; background:#fff; border-top:1px solid #e2e8f0; }
+.lp-diff-inner { max-width:1000px; margin:0 auto; }
+.lp-diff-grid { display:grid; gap:24px; margin-top:48px; }
+.lp-diff-point { display:grid; grid-template-columns:56px 1fr; gap:24px; padding:28px 32px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; transition:border-color .15s; }
+.lp-diff-point:hover { border-color:#bfdbfe; }
+.lp-diff-num { font-size:28px; font-weight:900; color:#e2e8f0; line-height:1.1; padding-top:2px; }
+.lp-diff-title { font-size:16px; font-weight:800; color:#0b2d5f; margin-bottom:10px; line-height:1.3; }
+.lp-diff-body { font-size:14px; color:#475569; line-height:1.72; }
+
+/* Platform Capabilities Grid */
+.lp-caps-section { background:#f8fafc; padding:80px 56px; border-top:1px solid #e2e8f0; }
+.lp-caps-inner { max-width:1100px; margin:0 auto; }
+.lp-caps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:40px; }
+@media (max-width:900px) { .lp-caps-grid { grid-template-columns:1fr 1fr; } }
+@media (max-width:600px) { .lp-caps-grid { grid-template-columns:1fr; } }
+.lp-cap-item { padding:20px 22px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; border-left:3px solid #f97316; }
+.lp-cap-title { font-size:12px; font-weight:800; color:#0b2d5f; margin-bottom:7px; text-transform:uppercase; letter-spacing:.5px; }
+.lp-cap-desc { font-size:12.5px; color:#64748b; line-height:1.6; }
+
+/* Canadian-built section */
+.lp-ca-section { background:linear-gradient(150deg,#050f2c 0%,#0b2d5f 100%); padding:80px 56px; text-align:center; }
+.lp-ca-inner { max-width:820px; margin:0 auto; }
+.lp-ca-chips { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:36px; }
+.lp-ca-chip { padding:8px 18px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:20px; font-size:13px; color:rgba(255,255,255,.85); }
 
 /* Pilot / Contact CTA */
 .lp-pilot-section { background:linear-gradient(150deg,#050f2c 0%,#0b2d5f 100%); color:#fff; padding:96px 56px; text-align:center; }
@@ -817,6 +845,41 @@ function LandingPage({ onLogin, onGetStarted }) {
   const [showLogin, setShowLogin] = useState(false);
   const daysLeft = Math.ceil((new Date('2027-05-01') - new Date()) / (1000*60*60*24));
 
+  const ROLES = [
+    { role:'Chief Risk Officer', desc:'Live portfolio risk dashboard. AI-generated board summaries. Risk appetite statement with board approval workflow. Examination readiness score. One-click OSFI supervisory package.' },
+    { role:'Model Risk Analyst', desc:'Model inventory management. Risk rating wizard. Change management tracking. Ongoing monitoring cycles. AI-assisted analysis, backtesting logs, and model dependency mapping.' },
+    { role:'Independent Validator', desc:'Structured 6-state validation workflow. AI pre-assessment, findings analysis, approval readiness check, and peer benchmark. Formal validation report generation with sign-off capture.' },
+    { role:'Chief Compliance Officer', desc:'MRM policy generation and gap analysis. Regulatory calendar with Canadian deadlines. OSFI examiner export. Immutable audit trail with cryptographic integrity verification.' },
+    { role:'Internal Audit', desc:'AI anomaly detection on audit events. Audit summary for any 12-month period. Full event log with actor identity, timestamps, and Merkle hash chain verification. Examiner prep brief.' },
+    { role:'Board Risk Committee', desc:'Board-ready PDF with risk heatmap and executive summary. Model Risk Appetite Statement with structured approval workflow. AI-generated compliance narrative for any reporting period.' },
+  ];
+
+  const CAPS = [
+    ['Model Inventory', 'Centralized registry for all models. Risk tiering, ownership tracking, version history, and insurance-specific taxonomy including IFRS 17 components and capital framework linkage.'],
+    ['Risk Rating Wizard', '8-question, 22-point scoring aligned to OSFI E-23 Section 3.2. Tier 1/2/3 assignment with AI-generated rationale, gap identification, and remediation recommendations.'],
+    ['Validation Workflow', '6-state workflow from request to formal closure. AI pre-assessment, findings analysis, approval readiness check, peer benchmark, and closure narrative at every stage.'],
+    ['MRM Policy Generator', 'AI generates a complete 13-section Model Risk Management Policy covering all OSFI E-23 governance requirements. Approval workflow and version control included.'],
+    ['Board Report', 'One-click PDF generation: risk heatmap, validation status, policy compliance, and AI-written executive summary — formatted for board risk committee presentation.'],
+    ['OSFI Examiner Export', '6-page supervisory review PDF in OSFI-expected format. Risk ratings, validation evidence, vendor assessments, audit trail summary, and AI compliance narrative.'],
+    ['Vendor Assessment', 'OSFI Section 5 governance for third-party models. 7-question due diligence checklist, risk scoring, AI deep-dive, and trend analysis across assessment cycles.'],
+    ['Regulatory Calendar', 'Pre-loaded Canadian regulatory deadlines — E-23, B-10, IFRS 17, capital frameworks. AI portfolio impact analysis identifies which models are affected by each upcoming event.'],
+    ['Exam Sprint Mode', 'AI generates a 30/60/90-day examination preparation plan with gap analysis, priority remediation actions, and predicted examiner focus areas for your specific portfolio.'],
+    ['Risk Appetite Statement', 'AI generates a Model Risk Appetite Statement from your portfolio profile. Board approval workflow captures sign-off in the immutable audit trail. AI compliance scoring against OSFI E-23.'],
+    ['Cryptographic Audit Trail', 'Immutable PostgreSQL append-only log with Merkle hash chain (SHA-256) for tamper detection. OSFI E-23 Section 4.4 compliant. Per-event hash verification in the UI.'],
+    ['Policy Gap Checker', 'AI compares your current MRM policy against OSFI E-23 requirements and returns a prioritized gap list with specific section references and remediation guidance.'],
+  ];
+
+  const DIFFS = [
+    ['OSFI E-23 alignment is the product, not a configuration layer',
+     'Enterprise risk platforms are horizontal GRC frameworks — governance, risk, and compliance across dozens of regulatory regimes. Mapping them specifically to OSFI E-23 requires a professional services engagement, a data model customization project, and regulatory workshops. ClearMRM was built from a single regulatory document — the final OSFI Guideline E-23 — and every screen, every AI prompt, every PDF output, and every workflow references specific sections of that guideline directly. No configuration. No engagement. Operational in 30 days.'],
+    ['AI that generates regulatory deliverables, not workflow notifications',
+     'Most governance platforms use AI to route tasks, score risks, or surface dashboards. ClearMRM AI generates the actual regulatory output: a structurally complete MRM Policy document covering all 13 required governance sections, a formal Model Validation Report ready for independent review, a Risk Appetite Statement with board approval workflow, and a complete OSFI Supervisory Review Package. These are production-quality documents. AI drafts — your team reviews, approves, and signs. Human authority at every critical gate.'],
+    ['Canadian data sovereignty as the architecture, not a compliance checkbox',
+     'ClearMRM runs entirely on Amazon Web Services Canada (ca-central-1). Every model record, every AI inference, every authentication event, every audit log entry stays in Canada. PIPEDA compliance and OSFI\'s data governance expectations are met structurally — not through vendor attestations that require legal review to interpret. For institutions handling sensitive model documentation, this architectural clarity matters.'],
+    ['The May 2027 compliance deadline is real — time to value is the decision',
+     'OSFI E-23 is enforceable May 1, 2027. Enterprise governance platforms commonly require 6 to 18 months from contract to go-live, before any OSFI-specific configuration begins. A procurement decision made today on a traditional platform produces a go-live date that falls after the compliance deadline. ClearMRM has institutions producing OSFI-ready compliance deliverables within 30 days of onboarding. For the 170+ Canadian FRFIs with a hard regulatory deadline, the implementation timeline is the decision.'],
+  ];
+
   return (
     <div className="landing">
 
@@ -828,23 +891,23 @@ function LandingPage({ onLogin, onGetStarted }) {
         </div>
         <div className="lp-nav-actions">
           <button className="lp-btn-nav-ghost" onClick={() => setShowLogin(true)}>Sign In</button>
-          <button className="lp-btn-nav-primary" onClick={onGetStarted}>Start Free Pilot</button>
+          <button className="lp-btn-nav-primary" onClick={onGetStarted}>Request Demo</button>
         </div>
       </nav>
 
       {/* ── Hero ── */}
       <div className="lp-hero">
-        <div className="lp-hero-eyebrow">For Canadian Banks &amp; Insurers</div>
-        <h1 className="lp-hero-title">Model Risk Management.<br /><span>Finally Automated.</span></h1>
+        <div className="lp-hero-eyebrow">Purpose-built for Canadian Federally Regulated Financial Institutions</div>
+        <h1 className="lp-hero-title">Model Risk Management.<br /><span>The way OSFI expects it.</span></h1>
         <p className="lp-hero-sub">
-          The AI compliance platform that generates your validation reports, writes your MRM policy, and keeps your institution OSFI E-23 ready — without the consultant fees.
+          ClearMRM is the AI-powered governance platform that enables Canadian banks, credit unions, and insurers to build, operate, and demonstrate a fully compliant Model Risk Management program under OSFI Guideline E-23.
         </p>
         <div className="lp-hero-ctas">
-          <button className="lp-btn-hero-primary" onClick={onGetStarted}>Start 30-Day Pilot — No Setup Fee</button>
+          <button className="lp-btn-hero-primary" onClick={onGetStarted}>Request a 30-Day Pilot</button>
           <button className="lp-btn-hero-ghost" onClick={() => setShowLogin(true)}>Sign In →</button>
         </div>
         <div className="lp-trust-row">
-          <span className="lp-trust-chip">OSFI E-23 Compliant</span>
+          <span className="lp-trust-chip">OSFI E-23 Aligned</span>
           <span className="lp-trust-chip">Canadian Data Sovereignty</span>
           <span className="lp-trust-chip">PIPEDA Compliant</span>
           <span className="lp-trust-chip">SOC 2 In Progress</span>
@@ -859,23 +922,46 @@ function LandingPage({ onLogin, onGetStarted }) {
         </div>
         <div className="lp-deadline-divider" />
         <div className="lp-deadline-text">
-          OSFI Guideline E-23 is enforceable May 1, 2027. Over 170 Canadian federally regulated financial institutions must demonstrate a fully documented, independently validated model risk management program. Most are not ready.
+          OSFI Guideline E-23 is enforceable May 1, 2027. All 170+ Canadian federally regulated financial institutions must demonstrate a fully documented, independently validated model risk management program to OSFI's examination standard. Most are not ready.
+        </div>
+      </div>
+
+      {/* ── What is ClearMRM ── */}
+      <div className="lp-intro-section">
+        <div className="lp-intro-inner">
+          <div className="lp-pillar-overline">What is ClearMRM</div>
+          <h2 className="lp-compare-title">A complete OSFI E-23 compliance platform. Built for Canada.</h2>
+          <div className="lp-intro-grid">
+            <div>
+              <p className="lp-pillar-body">
+                ClearMRM is a cloud-native SaaS platform that operationalizes every section of OSFI Guideline E-23. From model inventory and risk tiering to independent validation, board reporting, and supervisory examination packages — every OSFI E-23 requirement maps directly to a ClearMRM workflow, pre-configured and ready to use on day one.
+              </p>
+            </div>
+            <div>
+              <p className="lp-pillar-body">
+                At its core, ClearMRM uses AI to generate the regulatory deliverables that governance programs require — validation reports, MRM policy documents, risk appetite statements, board packages, and examiner-ready summaries. AI drafts the output. Your team reviews, approves, and signs. Every action is recorded in a tamper-proof, cryptographically-linked audit trail that meets OSFI E-23 Section 4.4 requirements.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ── Pillar 1: Generate ── */}
-      <div className="lp-pillar">
+      <div className="lp-pillar" style={{ borderTop:'1px solid #e2e8f0' }}>
         <div>
-          <div className="lp-pillar-overline">What ClearMRM does</div>
-          <div className="lp-pillar-headline">Generate the deliverables.</div>
+          <div className="lp-pillar-overline">Automated Deliverables</div>
+          <div className="lp-pillar-headline">AI generates. Your team approves.</div>
           <p className="lp-pillar-body">
-            Validation reports. MRM policies. Board pack summaries. OSFI examiner packages. What used to take weeks and tens of thousands in consulting fees now takes minutes. Every output is formally structured, board-ready, and stored with an immutable audit record.
+            Validation reports. MRM policies. Board pack summaries. OSFI examiner packages. Risk appetite statements. ClearMRM AI generates structurally complete, formally written regulatory outputs in minutes. Your team reviews, refines, and approves — human judgement remains at every critical gate.
+          </p>
+          <p style={{ fontSize:15, color:'#64748b', lineHeight:1.7, marginTop:14 }}>
+            Every AI output includes a human-in-the-loop disclosure and is stored with an immutable timestamp, the identity of the approver, and a cryptographic audit hash — meeting OSFI E-23 Section 4.4 requirements.
           </p>
         </div>
         <div className="lp-stat-block">
           <div className="lp-stat-num">90</div>
           <div className="lp-stat-unit">seconds</div>
-          <div className="lp-stat-label">to generate a complete formal validation report, ready for sign-off</div>
+          <div className="lp-stat-label">to generate a complete formal validation report, ready for independent review and sign-off</div>
         </div>
       </div>
 
@@ -884,16 +970,19 @@ function LandingPage({ onLogin, onGetStarted }) {
       {/* ── Pillar 2: Monitor ── */}
       <div className="lp-pillar lp-pillar-alt">
         <div>
-          <div className="lp-pillar-overline">Always current</div>
-          <div className="lp-pillar-headline">Monitor every model. Every risk.</div>
+          <div className="lp-pillar-overline">Continuous Governance</div>
+          <div className="lp-pillar-headline">Every model. Every risk. Always visible.</div>
           <p className="lp-pillar-body">
-            Every model in your inventory — reserving, pricing, catastrophe, capital, IFRS 17, underwriting, fraud — tracked, risk-rated, and monitored for drift. Your CRO sees a live risk posture every morning, not a quarterly spreadsheet update.
+            Every model in your portfolio — reserving, pricing, catastrophe, capital, IFRS 17, underwriting, fraud, credit — tracked, risk-tiered, and monitored for drift and performance degradation. Your Chief Risk Officer sees a live risk posture each morning, not a quarterly spreadsheet summary.
+          </p>
+          <p style={{ fontSize:15, color:'#64748b', lineHeight:1.7, marginTop:14 }}>
+            Population Stability Index monitoring, performance tracking, and AI drift analysis surface deteriorating models before they become examination findings.
           </p>
         </div>
         <div className="lp-stat-block">
           <div className="lp-stat-num">Zero</div>
           <div className="lp-stat-unit">blind spots</div>
-          <div className="lp-stat-label">every model in your portfolio, visible and governed in one place</div>
+          <div className="lp-stat-label">every model in your portfolio, risk-rated and governed in one auditable platform</div>
         </div>
       </div>
 
@@ -902,10 +991,13 @@ function LandingPage({ onLogin, onGetStarted }) {
       {/* ── Pillar 3: Prove ── */}
       <div className="lp-pillar">
         <div>
-          <div className="lp-pillar-overline">Examiner-ready</div>
-          <div className="lp-pillar-headline">Prove it when it counts.</div>
+          <div className="lp-pillar-overline">Examination Readiness</div>
+          <div className="lp-pillar-headline">Demonstrate compliance when OSFI walks in.</div>
           <p className="lp-pillar-body">
-            Every action creates a tamper-proof, cryptographically-linked audit record. One click produces a complete Supervisory Review Package in OSFI's expected format. No scrambling before the examination. No gaps in the record.
+            Every action creates a tamper-proof, cryptographically-linked audit record. One click produces a complete Supervisory Review Package in OSFI's expected format — model inventory, risk ratings, validation evidence, policy documentation, and board approval records.
+          </p>
+          <p style={{ fontSize:15, color:'#64748b', lineHeight:1.7, marginTop:14 }}>
+            ClearMRM's Exam Sprint mode generates a gap-to-deadline assessment, a 30/60/90-day remediation plan, and a predicted examiner finding summary — so your team enters every examination fully prepared.
           </p>
         </div>
         <div className="lp-stat-block">
@@ -915,73 +1007,93 @@ function LandingPage({ onLogin, onGetStarted }) {
         </div>
       </div>
 
-      {/* ── Competitor Comparison ── */}
-      <div className="lp-compare-section">
-        <div className="lp-compare-inner">
-          <div className="lp-compare-eyebrow">The Business Case</div>
-          <h2 className="lp-compare-title">A fraction of what the alternatives cost.</h2>
-          <p className="lp-compare-sub">
-            Enterprise MRM platforms were built for Tier 1 banks with nine-figure technology budgets. ClearMRM was built for the 170+ Canadian FRFIs and insurers that weren't.
-          </p>
-          <div className="lp-compare-table-wrap">
-            <table className="lp-compare-table">
-              <thead>
-                <tr>
-                  <th>Platform</th>
-                  <th>Implementation Cost</th>
-                  <th>Annual Licence</th>
-                  <th>OSFI E-23 Ready</th>
-                  <th>Time to Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="lp-compare-competitor">
-                  <td><strong>IBM OpenPages MRG</strong></td>
-                  <td>$500K – $1M+</td>
-                  <td>$800K+ / year</td>
-                  <td><span className="lp-check-yes">✓</span></td>
-                  <td>12 – 18 months</td>
-                </tr>
-                <tr className="lp-compare-competitor">
-                  <td><strong>SAS Model Risk Governance</strong></td>
-                  <td>$300K – $600K</td>
-                  <td>$500K+ / year</td>
-                  <td><span className="lp-check-yes">✓</span></td>
-                  <td>6 – 12 months</td>
-                </tr>
-                <tr className="lp-compare-competitor">
-                  <td><strong>Spreadsheets &amp; Email</strong></td>
-                  <td>—</td>
-                  <td>Non-compliant after May 2027</td>
-                  <td><span className="lp-check-no">✗</span></td>
-                  <td>Never</td>
-                </tr>
-                <tr className="lp-compare-us">
-                  <td><strong>ClearMRM</strong> <span className="lp-compare-us-badge">Canadian-Built</span></td>
-                  <td>Included</td>
-                  <td>Contact us for pricing</td>
-                  <td><span className="lp-check-yes">✓</span></td>
-                  <td><strong>30 days</strong></td>
-                </tr>
-              </tbody>
-            </table>
+      {/* ── Who uses ClearMRM ── */}
+      <div className="lp-roles-section">
+        <div className="lp-roles-inner">
+          <div className="lp-pillar-overline">For Your Organization</div>
+          <h2 className="lp-compare-title">Designed for every stakeholder in the MRM program.</h2>
+          <p className="lp-compare-sub">ClearMRM serves the full governance chain — from the analyst who builds the model inventory to the Board committee that approves the risk appetite.</p>
+          <div className="lp-roles-grid">
+            {ROLES.map((r, i) => (
+              <div key={i} className="lp-role-card">
+                <div className="lp-role-title">{r.role}</div>
+                <div className="lp-role-desc">{r.desc}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── Pilot / Contact CTA ── */}
+      {/* ── Why ClearMRM ── */}
+      <div className="lp-diff-section">
+        <div className="lp-diff-inner">
+          <div className="lp-pillar-overline">Why ClearMRM</div>
+          <h2 className="lp-compare-title">Built for this regulation. Not adapted to it.</h2>
+          <p className="lp-compare-sub">
+            Enterprise risk platforms are horizontal frameworks requiring significant professional services engagement to approximate OSFI E-23 alignment. ClearMRM was built from a single regulatory document. Four fundamental differences define what that means in practice.
+          </p>
+          <div className="lp-diff-grid">
+            {DIFFS.map(([title, body], i) => (
+              <div key={i} className="lp-diff-point">
+                <div className="lp-diff-num">0{i+1}</div>
+                <div>
+                  <div className="lp-diff-title">{title}</div>
+                  <div className="lp-diff-body">{body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Platform Capabilities ── */}
+      <div className="lp-caps-section">
+        <div className="lp-caps-inner">
+          <div className="lp-pillar-overline">Platform Capabilities</div>
+          <h2 className="lp-compare-title">Everything OSFI E-23 requires. In one platform.</h2>
+          <p className="lp-compare-sub">Twelve integrated modules covering every section of OSFI Guideline E-23, pre-configured and operational on day one.</p>
+          <div className="lp-caps-grid">
+            {CAPS.map(([t, d], i) => (
+              <div key={i} className="lp-cap-item">
+                <div className="lp-cap-title">{t}</div>
+                <div className="lp-cap-desc">{d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Canadian Built ── */}
+      <div className="lp-ca-section">
+        <div className="lp-ca-inner">
+          <div className="lp-pillar-overline" style={{ color:'rgba(249,115,22,.9)' }}>Built for Canada</div>
+          <h2 className="lp-compare-title" style={{ color:'#fff', marginBottom:16 }}>Data sovereignty is not a feature. It is the foundation.</h2>
+          <p style={{ fontSize:17, color:'rgba(255,255,255,.75)', lineHeight:1.7, maxWidth:720, margin:'0 auto' }}>
+            ClearMRM runs entirely on Amazon Web Services Canada (ca-central-1). Every model record, every AI inference, every authentication event, every audit log entry stays in Canada. PIPEDA compliance and OSFI's data governance expectations are met structurally — not through policy statements that require legal review to interpret.
+          </p>
+          <div className="lp-ca-chips">
+            <div className="lp-ca-chip"><strong>AI Processing:</strong> AWS Bedrock ca-central-1</div>
+            <div className="lp-ca-chip"><strong>Database:</strong> AWS RDS PostgreSQL ca-central-1</div>
+            <div className="lp-ca-chip"><strong>Authentication:</strong> AWS Cognito ca-central-1</div>
+            <div className="lp-ca-chip"><strong>Compliance:</strong> PIPEDA · Quebec Law 25</div>
+            <div className="lp-ca-chip"><strong>Security:</strong> SOC 2 Type I In Progress</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CTA ── */}
       <div className="lp-pilot-section">
         <div className="lp-pilot-inner">
           <h2 className="lp-pilot-title">Start your 30-day pilot.</h2>
           <p className="lp-pilot-sub">
-            We provision your environment, migrate your existing model inventory, and have you producing AI-generated compliance deliverables in your first session. No setup fee. No long-term commitment required to start.
+            We provision your environment, migrate your existing model inventory, and have you producing OSFI-ready compliance deliverables in your first session. No setup fee. No long-term commitment required to begin.
           </p>
           <div className="lp-pilot-actions">
             <button className="lp-btn-hero-primary" style={{ fontSize:17, padding:'18px 48px' }} onClick={onGetStarted}>
-              Start Free 30-Day Pilot
+              Request a 30-Day Pilot
             </button>
             <a className="lp-contact-link" href="mailto:myousufshariff@gmail.com">
-              Contact us for pricing →
+              Contact us →
             </a>
           </div>
           <div className="lp-pilot-note">For Canadian FRFIs and insurers · PIPEDA compliant from day one · All data stays in Canada</div>
@@ -2856,7 +2968,7 @@ function ValidationReportModal({ val, onClose }) {
         <div>
           <AIDisclaimer />
           <div style={{ marginBottom:14, padding:'10px 14px', background:'#dcfce7', borderRadius:8, fontSize:13, color:'#15803d', fontWeight:600 }}>
-            Report generated in seconds. Estimated consultant cost to produce manually: $15,000–$50,000. Print this page or export to PDF via Ctrl+P.
+            Report generated in seconds. Print this page or export to PDF via Ctrl+P.
           </div>
           <div className="vr-header">
             <div className="vr-title">{report.model_name} — Model Validation Report</div>
@@ -5433,7 +5545,7 @@ function MRMPolicyGenerator() {
     <div>
       <PageHelp
         title="MRM Policy Generator"
-        purpose="Generates a complete 13-section OSFI E-23 Model Risk Management Policy document — covering governance, model identification, risk tiering, validation standards, vendor model rules, ongoing monitoring, change management, and audit requirements. Replaces the need for $25K–$50K regulatory counsel fees."
+        purpose="Generates a complete 13-section OSFI E-23 Model Risk Management Policy document — covering governance, model identification, risk tiering, validation standards, vendor model rules, ongoing monitoring, change management, and audit requirements. Every section maps to a specific OSFI E-23 guideline requirement."
         who="Chief Compliance Officer, CRO. The policy is generated once, reviewed, approved by the board, and updated when OSFI guidance changes or when significant MRM program changes occur."
         inputs="A 10-question intake covering institution type, model count, in-house vs vendor mix, validation team structure, risk appetite, materiality thresholds, monitoring approach, committee structure, audit frequency, and board reporting cadence."
         outputs="13-section formal MRM Policy document, version-controlled with board approval workflow. Policy Gap Check (separate page) analyzes the generated policy for OSFI coverage gaps. Each generation is logged in the audit trail."
@@ -5455,7 +5567,7 @@ function MRMPolicyGenerator() {
       <div className="card">
         <div className="section-title" style={{ marginBottom:18 }}>Generate OSFI E-23 MRM Policy — 10 Questions</div>
         <div style={{ marginBottom:14, padding:'10px 14px', background:'#eff6ff', borderRadius:8, fontSize:13, color:'#1d4ed8' }}>
-          This generates a complete, board-ready MRM Policy document compliant with OSFI E-23. Equivalent to $25,000–$50,000 in regulatory counsel fees.
+          This generates a complete, board-ready MRM Policy document compliant with OSFI E-23. All 13 sections map directly to Guideline E-23 requirements.
         </div>
         <div className="policy-form">
           <div className="policy-form-grid">
@@ -5543,7 +5655,7 @@ function MRMPolicyGenerator() {
     <div style={{ padding:60, textAlign:'center' }}>
       <Spinner dark size={32} />
       <div style={{ marginTop:18, fontSize:15, fontWeight:600, color:'var(--navy)' }}>Drafting your OSFI E-23 MRM Policy…</div>
-      <div style={{ marginTop:8, fontSize:13, color:'var(--text-muted)' }}>Claude is writing 13 policy sections. This replaces $25K–$50K in regulatory counsel fees.</div>
+      <div style={{ marginTop:8, fontSize:13, color:'var(--text-muted)' }}>Claude is writing 13 policy sections. This may take 20–30 seconds.</div>
     </div>
   );
 
