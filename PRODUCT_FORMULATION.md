@@ -813,6 +813,25 @@ All 7 features deployed with zero DB schema changes and zero infrastructure chan
 
 ---
 
+### Change Log Additions (Session 8 — June 24, 2026 QA Sprint)
+
+**Commit:** `f3414e0` — QA bug fix cycle after systematic testing of all buttons and pages
+
+| Date | Change | Root Cause | Fix |
+|---|---|---|---|
+| 2026-06-24 | **callBedrock: exponential backoff + ThrottlingException retry** | 3 retries with 500ms linear backoff insufficient for AWS Bedrock rate limits — B-10 Package, MRM Policy Generator, Policy Gap Check all returned HTTP 500 | Changed to 5 retries, 2s→4s→8s→16s exponential backoff, ThrottlingException-only retry (other errors fail fast) |
+| 2026-06-24 | **callBedrock: temperature:0 now works** | `temperature !== 0` ternary always evaluated `0` as falsy and fell through to default 0.3 | Fixed to `temperature !== undefined` check |
+| 2026-06-24 | **extractJSON: truncation repair** | Long Bedrock responses could be truncated, producing unparseable JSON | Added repair logic: close open brackets/braces, strip trailing comma/colon, handle unclosed string |
+| 2026-06-24 | **apiFetch: actual error messages now surface** | Backend sends `{error:"..."}` but `apiFetch` read `err.message` — every error showed as "HTTP 500" | Changed to `err.error \|\| err.message \|\| HTTP ${status}` |
+| 2026-06-24 | **Portfolio Doctor: SQL column name fixes** | Query used legacy column names `model_type`, `model_owner`, `methodology`, `data_sources`, `primary_output` — none exist in schema | Corrected to `methodology_type`, `model_owner_name`, `input_data_sources`, `purpose` |
+| 2026-06-24 | **Vendor Assessment MODEL dropdown: shows all models** | Frontend filter `.filter(x => x.is_third_party)` returned empty array when no models were third-party — blocked assessment creation | Removed filter; show all models in optgroups: "Third-Party / Vendor Models" + "Internal Models" |
+| 2026-06-24 | **AI Audit Anomaly Detection: deterministic + correct fields** | (1) temperature:0.3 made output probabilistic. (2) Frontend read `anomaly.anomalies[]` but backend returns `findings[]`. (3) Read `anomaly_summary` not `activity_summary`. (4) `corrective_actions[]` missing from prompt. (5) Risk level case mismatch (`'High'` vs `'high'`). | Set temperature:0; fixed all field names; added `corrective_actions` to prompt; fixed capitalization check |
+| 2026-06-24 | **Risk Appetite: edit before approve** | No edit UI and no PUT route existed — users had to approve AI-generated statement as-is or regenerate | Added `PUT /api/risk-appetite/:id` (draft-only guard); added Edit Statement button + textarea + Save/Cancel flow in MRAWizard |
+
+**QA methodology:** Systematic end-to-end test of all nav screens, buttons, and AI panels as Senior Automation Testing Consultant. All reported issues resolved; endpoint verification confirmed all routes return 401 (auth-gated) or 200 (public) — no 404 or 500 on any route.
+
+---
+
 *This document must be updated after every strategic session, product decision, customer conversation, or architecture change. The goal is that any new team member can read this document and understand exactly what we are building, why, who we are building it for, and what decisions have already been made.*
 
 *Next scheduled update: After first customer discovery call, or after Validator Marketplace partnership outreach begins.*
