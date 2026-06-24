@@ -642,8 +642,8 @@ async function apiFetch(path, opts = {}) {
   const res = await fetch(path, { ...opts, headers });
   if (res.status === 401 || res.status === 403) { clearToken(); window.location.reload(); return; }
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-    throw new Error(err.message || `HTTP ${res.status}`);
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || err.message || `HTTP ${res.status}`);
   }
   if (res.status === 204) return null;
   const ct = res.headers.get('content-type') || '';
@@ -3244,7 +3244,7 @@ function VendorAssessments() {
   function load() {
     setLoading(true);
     Promise.all([apiFetch('/api/vendor-assessments'), apiFetch('/api/models')])
-      .then(([a, m]) => { setList(a || []); setModels((m || []).filter(x => x.is_third_party)); })
+      .then(([a, m]) => { setList(a || []); setModels(m || []); })
       .catch(e => toast(e.message, 'error'))
       .finally(() => setLoading(false));
   }
@@ -3328,9 +3328,14 @@ function CreateVendorModal({ models, onClose, onCreated }) {
           <label className="form-label">Model *</label>
           <select className="form-control" value={form.model_id} onChange={e => setForm(p => ({ ...p, model_id: e.target.value }))} required>
             <option value="">Select a model…</option>
-            {models.map(m => <option key={m.id} value={m.id}>{m.name} — {m.vendor_name}</option>)}
+            {models.filter(m=>m.is_third_party).length > 0 && <optgroup label="Third-Party / Vendor Models">
+              {models.filter(m=>m.is_third_party).map(m => <option key={m.id} value={m.id}>{m.name}{m.vendor_name ? ' — '+m.vendor_name : ''}</option>)}
+            </optgroup>}
+            {models.filter(m=>!m.is_third_party).length > 0 && <optgroup label="Internal Models">
+              {models.filter(m=>!m.is_third_party).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </optgroup>}
           </select>
-          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>Only vendor/third-party models are shown.</div>
+          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>OSFI §5 applies to third-party/vendor models. Internal models may also be assessed where third parties provide components.</div>
         </div>
         <div style={{ marginBottom: 16 }}>
           <div className="form-label" style={{ marginBottom: 8 }}>Due Diligence Checklist</div>
@@ -3563,36 +3568,43 @@ function AuditTrail() {
             <div style={{ fontSize:12, color:'var(--text-muted)' }}>Append-only · Immutable DB trigger · Hash-chained</div>
           </div>
           <button className="btn btn-ai btn-sm" onClick={runAnomalyDetection} disabled={anomalyLoading}>
-            {anomalyLoading ? <><Spinner /> Scanning…</> : '🧠 AI Anomaly Detection'}
+            {anomalyLoading ? <><Spinner /> Scanning…</> : anomaly ? '↻ Refresh Anomaly Scan' : '🧠 AI Anomaly Detection'}
           </button>
         </div>
         {anomaly && (
           <div className="ai-panel" style={{ marginBottom:14, padding:'12px 16px' }}>
             <AIDisclaimer />
-            <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:8, flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:8, flexWrap:'wrap' }}>
               <span style={{ fontWeight:800, fontSize:13, color:'var(--navy)' }}>🧠 AI Audit Anomaly Detection</span>
               <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, fontWeight:700,
-                background: anomaly.risk_level==='high'?'#fee2e2':anomaly.risk_level==='medium'?'#fef3c7':'#dcfce7',
-                color: anomaly.risk_level==='high'?'var(--red)':anomaly.risk_level==='medium'?'#92400e':'var(--green)'
-              }}>{(anomaly.risk_level||'').toUpperCase()} RISK</span>
+                background: ['Critical','High'].includes(anomaly.risk_level)?'#fee2e2':anomaly.risk_level==='Medium'?'#fef3c7':anomaly.risk_level==='None'?'#dcfce7':'#f1f5f9',
+                color: ['Critical','High'].includes(anomaly.risk_level)?'var(--red)':anomaly.risk_level==='Medium'?'#92400e':anomaly.risk_level==='None'?'var(--green)':'var(--text-muted)'
+              }}>{(anomaly.risk_level||'None').toUpperCase()} RISK</span>
+              <span style={{ fontSize:11.5, padding:'2px 8px', borderRadius:10, background:'#f1f5f9', color:'var(--text-muted)', fontWeight:600 }}>
+                {anomaly.compliance_posture}
+              </span>
+              <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:'auto' }}>
+                {anomaly.events_analyzed} events · Last {anomaly.period_days} days
+              </span>
             </div>
-            <div style={{ fontSize:13, marginBottom:10 }}>{anomaly.anomaly_summary}</div>
-            {(anomaly.anomalies||[]).length > 0 && (
+            <div style={{ fontSize:13, marginBottom:10, lineHeight:1.6 }}>{anomaly.activity_summary}</div>
+            {(anomaly.findings||[]).length > 0 && (
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:12, fontWeight:700, marginBottom:6 }}>Detected Anomalies:</div>
-                {anomaly.anomalies.map((a,i) => (
-                  <div key={i} style={{ padding:'6px 10px', background:'#fff1f2', borderRadius:6, marginBottom:5, fontSize:12.5, borderLeft:'3px solid var(--red)' }}>
-                    <strong>{a.anomaly_type}</strong> — {a.description}
-                    {a.osfi_ref && <span style={{ marginLeft:8, fontSize:11, color:'var(--blue)', fontWeight:600 }}>{a.osfi_ref}</span>}
+                <div style={{ fontSize:12, fontWeight:700, marginBottom:6, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)' }}>Detected Anomalies:</div>
+                {anomaly.findings.map((f,i) => (
+                  <div key={i} style={{ padding:'8px 12px', background: f.severity==='high'?'#fff1f2':'#fff7ed', borderRadius:6, marginBottom:6, fontSize:12.5, borderLeft:'3px solid '+(f.severity==='high'?'var(--red)':'#f97316') }}>
+                    <div style={{ fontWeight:700, marginBottom:3 }}>{f.type}</div>
+                    <div style={{ marginBottom:4 }}>{f.description}</div>
+                    {f.recommendation && <div style={{ fontSize:12, color:'var(--blue)', fontWeight:600 }}>→ {f.recommendation}</div>}
                   </div>
                 ))}
               </div>
             )}
-            {(anomaly.recommended_actions||[]).length > 0 && (
-              <div>
-                <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Recommended Actions:</div>
+            {(anomaly.corrective_actions||[]).length > 0 && (
+              <div style={{ padding:'8px 12px', background:'#eff6ff', borderRadius:6 }}>
+                <div style={{ fontSize:12, fontWeight:700, marginBottom:4 }}>Corrective Actions:</div>
                 <ul style={{ paddingLeft:16, margin:0 }}>
-                  {anomaly.recommended_actions.map((a,i) => <li key={i} style={{ fontSize:12, color:'var(--text-muted)', marginBottom:2 }}>{a}</li>)}
+                  {anomaly.corrective_actions.map((a,i) => <li key={i} style={{ fontSize:12, marginBottom:3 }}>{a}</li>)}
                 </ul>
               </div>
             )}
@@ -4715,6 +4727,9 @@ function MRAWizard() {
   const [showForm, setShowForm]   = useState(false);
   const [generating, setGenerating] = useState(false);
   const [approving, setApproving]   = useState(false);
+  const [editing, setEditing]       = useState(false);
+  const [editText, setEditText]     = useState('');
+  const [saving, setSaving]         = useState(false);
   const [form, setForm] = useState({
     institution_type: 'federally regulated credit union',
     risk_tolerance: 'low',
@@ -4753,6 +4768,23 @@ function MRAWizard() {
       toast('Statement approved and recorded in audit trail','success');
     } catch(e) { toast(e.message,'error'); }
     finally { setApproving(false); }
+  }
+
+  function startEdit() {
+    setEditText(statement.statement_text || '');
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!editText.trim()) return toast('Statement text cannot be empty','error');
+    setSaving(true);
+    try {
+      const r = await apiFetch(`/api/risk-appetite/${statement.id}`,{ method:'PUT', body:JSON.stringify({ statement_text:editText }) });
+      setStatement(r);
+      setEditing(false);
+      toast('Statement saved','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setSaving(false); }
   }
 
   if (loading) return <div className="spinner-center"><Spinner dark size={28} /></div>;
@@ -4865,7 +4897,35 @@ function MRAWizard() {
             </div>
           )}
 
-          <div className="mra-statement-body">{statement.statement_text}</div>
+          {editing ? (
+            <div>
+              <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:6 }}>
+                Edit the AI-generated statement before approval. Changes are saved as a draft and logged in the audit trail.
+              </div>
+              <textarea
+                className="form-textarea"
+                rows={20}
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                style={{ fontFamily:'Georgia, serif', fontSize:13.5, lineHeight:1.8, width:'100%' }}
+              />
+              <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                <button className="btn btn-primary btn-sm" onClick={saveEdit} disabled={saving}>
+                  {saving ? <><Spinner /> Saving…</> : '✓ Save Changes'}
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mra-statement-body">{statement.statement_text}</div>
+              {statement.status === 'draft' && (
+                <button className="btn btn-outline btn-sm" style={{ marginTop:10 }} onClick={startEdit}>
+                  ✏️ Edit Statement
+                </button>
+              )}
+            </>
+          )}
 
           <div style={{ marginTop:16, fontSize:12, color:'var(--text-muted)' }}>
             Generated {new Date(statement.created_at).toLocaleDateString('en-CA')} by {statement.created_by} · {statement.version}

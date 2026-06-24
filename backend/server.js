@@ -56,7 +56,7 @@ const _bedrockRT = new AWS.BedrockRuntime({ region: 'ca-central-1' });
 const cognito    = new AWS.CognitoIdentityServiceProvider({ region: 'ca-central-1' });
 
 async function callBedrock(params, maxRetries) {
-  if (!maxRetries) maxRetries = 3;
+  if (!maxRetries) maxRetries = 5;
   const modelId = params.model || 'anthropic.claude-3-haiku-20240307-v1:0';
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -65,24 +65,38 @@ async function callBedrock(params, maxRetries) {
         max_tokens:  params.max_tokens || 1024,
         messages:    params.messages,
         system:      params.system,
-        temperature: params.temperature || 0.3,
+        temperature: params.temperature !== undefined ? params.temperature : 0.3,
       });
       const resp = await _bedrockRT.invokeModel({ modelId, contentType:'application/json', accept:'application/json', body }).promise();
       const parsed = JSON.parse(resp.body.toString('utf8'));
       return { content: [{ text: parsed.content[0].text }] };
     } catch (e) {
-      if (attempt === maxRetries) throw e;
-      await new Promise(r => setTimeout(r, 500 * attempt));
+      const isThrottle = e.code === 'ThrottlingException' || (e.message||'').toLowerCase().includes('too many requests') || (e.message||'').toLowerCase().includes('throttl');
+      if (!isThrottle || attempt === maxRetries) throw e;
+      // Exponential backoff: 2s, 4s, 8s, 16s
+      await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt - 1)));
     }
   }
 }
 
-// Safe JSON extract from Bedrock response (handles markdown code fences)
+// Safe JSON extract from Bedrock response (handles markdown code fences and truncation)
 function extractJSON(text) {
   const clean = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
   const match = clean.match(/\{[\s\S]*\}/);
-  if (match) return JSON.parse(match[0]);
-  return JSON.parse(clean);
+  const jsonStr = match ? match[0] : clean;
+  try {
+    return JSON.parse(jsonStr);
+  } catch(e) {
+    // Attempt to repair truncated JSON by closing open structures
+    let repaired = jsonStr;
+    const opens = (repaired.match(/\{/g)||[]).length - (repaired.match(/\}/g)||[]).length;
+    const openArr = (repaired.match(/\[/g)||[]).length - (repaired.match(/\]/g)||[]).length;
+    if (repaired.endsWith(',') || repaired.endsWith(':')) repaired = repaired.slice(0,-1);
+    if (repaired.endsWith('"')) repaired += '"';
+    for (let i=0;i<openArr;i++) repaired += ']';
+    for (let i=0;i<opens;i++) repaired += '}';
+    return JSON.parse(repaired);
+  }
 }
 
 // ── Express ───────────────────────────────────────────────────────────────────
@@ -1912,6 +1926,22 @@ app.post('/api/risk-appetite/generate', aiLimiter, requireAuth, async function(r
   } catch(e) { console.error('[mra-generate]',e.message); res.status(500).json({ error:e.message }); }
 });
 
+app.put('/api/risk-appetite/:id', requireAuth, async function(req, res) {
+  try {
+    const { statement_text } = req.body;
+    if (!statement_text || !statement_text.trim())
+      return res.status(400).json({ error:'statement_text required' });
+    const r = await pool.query(
+      `UPDATE risk_appetite_statements SET statement_text=$1
+       WHERE id=$2 AND tenant_id=$3 AND status='draft' RETURNING *`,
+      [statement_text.trim(), req.params.id, req.user.tenant_id]
+    );
+    if (!r.rows.length) return res.status(404).json({ error:'Draft statement not found or already approved' });
+    await audit(req.user.tenant_id,null,req.user.email,'mra_statement_edited',{ metadata:{ statement_id:req.params.id } });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error:e.message }); }
+});
+
 app.post('/api/risk-appetite/:id/approve', requireAuth, async function(req, res) {
   try {
     if (!['admin','super_admin'].includes(req.user.role))
@@ -2140,8 +2170,8 @@ app.post('/api/models/portfolio-scan', aiLimiter, requireAuth, async function(re
     const tid = req.user.tenant_id;
     const [models, validations] = await Promise.all([
       pool.query(
-        `SELECT id,name,risk_tier,model_type,model_owner,next_validation_due,revalidation_required,
-                current_version,methodology,data_sources,primary_output,model_purpose,status
+        `SELECT id,name,risk_tier,methodology_type,model_owner_name,next_validation_due,revalidation_required,
+                current_version,input_data_sources,purpose,is_third_party,vendor_name,status
          FROM models WHERE tenant_id=$1 AND status='active'`, [tid]),
       pool.query(
         `SELECT v.model_id, v.status, v.outcome, v.created_at
@@ -2545,14 +2575,16 @@ app.get('/api/audit/ai-anomaly', aiLimiter, requireAuth, async function(req, res
     evRes.rows.forEach(e => { byUser[e.actor_email]=(byUser[e.actor_email]||0)+1; byType[e.event_type]=(byType[e.event_type]||0)+1; });
     const offHours = evRes.rows.filter(e => { const h=new Date(e.created_at).getUTCHours(); return h<6||h>22; }).length;
     const aiResp = await callBedrock({
-      model: 'anthropic.claude-3-haiku-20240307-v1:0', max_tokens: 1200,
+      model: 'anthropic.claude-3-haiku-20240307-v1:0', max_tokens: 1200, temperature: 0,
       system: 'You are an audit risk analyst reviewing MRM audit logs for anomalies — unusual patterns, off-hours activity, bulk changes, compliance risks. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
-        `Last 30 days: ${evRes.rows.length} events. By user: ${JSON.stringify(byUser)}. By type: ${JSON.stringify(byType)}. Off-hours: ${offHours}.\n`+
-        `Sample: ${JSON.stringify(evRes.rows.slice(0,30).map(e=>({user:e.actor_email,type:e.event_type,time:e.created_at})))}\n\n`+
-        `Return JSON: {"anomaly_detected":false,"risk_level":"Critical|High|Medium|Low|None",`+
-        `"findings":[{"type":"...","description":"1-2 sentences","severity":"high|medium|low","recommendation":"1 sentence"}],`+
-        `"activity_summary":"2 sentences","compliance_posture":"Strong|Adequate|Concerning"}`
+        `Last 30 days: ${evRes.rows.length} events. By user: ${JSON.stringify(byUser)}. By type: ${JSON.stringify(byType)}. Off-hours activity: ${offHours} events.\n`+
+        `Sample events: ${JSON.stringify(evRes.rows.slice(0,30).map(e=>({user:e.actor_email,type:e.event_type,time:e.created_at})))}\n\n`+
+        `Analyse for anomalies. Return JSON:\n`+
+        `{"anomaly_detected":false,"risk_level":"Critical|High|Medium|Low|None",`+
+        `"findings":[{"type":"short label","description":"1-2 sentences explaining the anomaly","severity":"high|medium|low","recommendation":"1 actionable sentence"}],`+
+        `"activity_summary":"2 sentences summarising 30-day audit activity","compliance_posture":"Strong|Adequate|Concerning",`+
+        `"corrective_actions":["actionable step 1","actionable step 2"]}`
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
