@@ -832,6 +832,37 @@ All 7 features deployed with zero DB schema changes and zero infrastructure chan
 
 ---
 
+---
+
+### Change Log Additions (Session 9 — June 24, 2026 UX + AI Depth Sprint)
+
+**Scope:** Bug fixes (§ characters, vendor assessment 404, PDF text overlap), platform-wide contextual help system, new AI capabilities on all new feature screens, and AI Peer Benchmark for Validations.
+
+| Date | Change | Root Cause / Reason | Fix / Decision |
+|---|---|---|---|
+| 2026-06-24 | **§ special character removed from all user-visible surfaces** — 86 occurrences in server.js, 24 in index.html | § was embedded in OSFI regulation references (e.g., §4.2) throughout AI prompts, PDF generation, and UI labels — appeared as a garbled character on some client systems | PowerShell regex replaced `§([0-9])` → `Section $1`, `§([a-zA-Z])` → `$1`, remaining stray `§` removed |
+| 2026-06-24 | **Vendor Assessment 404 "vendor model not available" fixed** | Backend query had `AND is_third_party=TRUE` — this correctly filtered when assessments only used third-party models; after Session 8 fixed the dropdown to show all models (including internal), selecting an internal model caused a 404 because the query rejected it | Removed `is_third_party` filter; changed to `AND status='active'` so any active model (internal or third-party) can be assessed |
+| 2026-06-24 | **Board Report PDF text overlap fixed** | Executive summary box was drawn at a fixed 58px height; AI-generated summaries averaging 200–350 characters wrapped to 5–7 lines at 8px type, overflowing into compliance summary text below | Pre-calculate `wrapLines()` count before drawing background rectangle; `boxH = Math.max(52, lines*13+16)`; anchor all downstream elements to dynamic `summaryBottom` variable |
+| 2026-06-24 | **Examiner Export PDF vendor row text overlap fixed** | Vendor row background rectangle was drawn at fixed 40px; AI assessment text (up to 200 chars) wrapped beyond 2 lines, overflowing into next row's rectangle | Pre-calculate `aiLineCount` from character count; `rowH = Math.max(52, 38+aiLineCount*10)` before rectangle draw; advance Y pointer using `Math.min(afterY, y5-rowH)-8` |
+| 2026-06-24 | **PageHelp contextual help system added to all 18 nav screens** | Platform had no self-service explanation — users needed to be trained or call for help; first prospect explicitly said platform was not self-explanatory | Added `PageHelp` React component (collapsible, 2-column grid); deployed to: Action Queue, Model Inventory, Validations, Vendor Assessments, Audit Trail, Board Report, Examiner Export, Admin Panel, Regulatory Calendar, Risk Appetite (MRAWizard), Exam Sprint, MRM Policy Generator, Policy Gap Checker, Audit Summary, B-10 Package, AI Examiner Prep, Natural Language Search, CSV Import |
+| 2026-06-24 | **AI Risk Appetite Compliance Check added to MRAWizard** | Risk Appetite screen generated a statement but provided no compliance scoring — users had no way to know if the AI output met OSFI E-23 expectations | New `POST /api/risk-appetite/ai-compliance-check` route (Sonnet, temperature:0): returns compliance_score, quality grade A–F, examiner_risk, overall_assessment, gaps[], suggested_additions[]; displayed in-panel after statement generation |
+| 2026-06-24 | **AI Portfolio Impact Analysis added to Regulatory Calendar** | Calendar showed upcoming regulatory events but had no way to assess which portfolio models would be affected — CRO had to manually cross-reference | New `POST /api/calendar/ai-portfolio-impact` route (Haiku): accepts event_title/regulation_ref/due_date; fetches active portfolio and returns impacted_models[], key_risks, overall_effort; per-event expandable panel with ⚡ Impact button |
+| 2026-06-24 | **AI Peer Benchmark added to Validation detail** | Validations had AI pre-assessment, approval readiness, and closure summary but no quality benchmarking against OSFI E-23 best practices | New `POST /api/validations/:id/ai-peer-benchmark` route (Haiku, temperature:0): fetches validation + model data + backtesting logs; returns benchmark_score, quality_grade A–F, examiner_rating, overall_assessment, examiner_comment, gaps[]; displayed in ValDetailModal below closure summary |
+
+**New backend routes (Session 9):**
+- `POST /api/risk-appetite/ai-compliance-check` — Sonnet, temperature:0, OSFI E-23 compliance scoring
+- `POST /api/calendar/ai-portfolio-impact` — Haiku, per-event portfolio impact analysis
+- `POST /api/validations/:id/ai-peer-benchmark` — Haiku, temperature:0, benchmarked quality grade
+
+**Frontend additions (Session 9):**
+- `PageHelp` component + CSS (`page-help-wrap`, `page-help-toggle`, `page-help-body`, `page-help-grid`, `page-help-label`, `page-help-text`, `page-help-connections`, `page-help-conn-chip`)
+- `PageHelp` deployed to all 18 nav screens with context-specific purpose/who/inputs/outputs/connections data
+- `MRAWizard`: `complianceCheck` state, `runComplianceCheck()`, grade badge, examiner risk chip, gaps panel
+- `RegulatoryCalendar`: `impactResults`/`impactLoading` per-event state, `runPortfolioImpact()`, expandable impact panel per `CalEvent`
+- `ValDetailModal`: `benchmark`/`benchmarkLoading` state, `runBenchmark()`, benchmark panel with grade, score, examiner rating, examiner comment, gaps
+
+---
+
 *This document must be updated after every strategic session, product decision, customer conversation, or architecture change. The goal is that any new team member can read this document and understand exactly what we are building, why, who we are building it for, and what decisions have already been made.*
 
 *Next scheduled update: After first customer discovery call, or after Validator Marketplace partnership outreach begins.*

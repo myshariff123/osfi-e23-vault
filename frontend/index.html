@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -350,6 +350,19 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .strengths-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .strength-chip { padding: 5px 12px; background: #dcfce7; border-radius: 20px; font-size: 12px; font-weight: 600; color: #15803d; }
 .sprint-feature-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+
+/* PAGE HELP */
+.page-help-wrap { margin-bottom: 16px; }
+.page-help-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 12.5px; font-weight: 600; color: #1d4ed8; cursor: pointer; transition: background .15s; }
+.page-help-toggle:hover { background: #dbeafe; }
+.page-help-body { margin-top: 8px; padding: 16px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; animation: slideIn .2s ease; }
+.page-help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-bottom: 12px; }
+@media (max-width: 640px) { .page-help-grid { grid-template-columns: 1fr; } }
+.page-help-label { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); margin-bottom: 4px; }
+.page-help-text { font-size: 12.5px; color: var(--text); line-height: 1.6; }
+.page-help-connections { padding-top: 10px; border-top: 1px solid var(--border); }
+.page-help-conn-list { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.page-help-conn-chip { padding: 3px 10px; background: #eff6ff; color: #1d4ed8; border-radius: 20px; font-size: 11.5px; font-weight: 600; border: 1px solid #bfdbfe; }
 
 /* REGULATORY CALENDAR */
 .cal-event { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); margin-bottom: 8px; }
@@ -1075,6 +1088,14 @@ function Dashboard({ setScreen, setDetailModelId }) {
 
   return (
     <div>
+      <PageHelp
+        title="Dashboard — Action Queue"
+        purpose="Your central command centre for OSFI E-23 compliance. The AI scans your entire model portfolio and surfaces the highest-priority actions the MRM team must take this week, ranked by regulatory urgency and OSFI exam risk."
+        who="Chief Risk Officer (CRO), Model Risk Manager (MRM), Compliance Officer. Reviewed daily or weekly."
+        inputs="No manual input required — the AI pulls from your live model inventory, validations, vendor assessments, and audit trail automatically."
+        outputs="Risk Pulse score (0–100), ranked action items with OSFI section references, estimated effort, consequence if ignored, and quick-win tasks under 15 minutes."
+        connections={['Model Inventory (source)', 'Validations (source)', 'Vendor Assessments (source)', 'Audit Trail (source)', 'Exam Sprint (detailed 30/60/90 plan)']}
+      />
       {/* AI Action Queue Hero */}
       {queue && (
         <div className="aq-hero">
@@ -1236,6 +1257,14 @@ function ModelInventory({ setScreen, setDetailModelId, setEditModelId }) {
 
   return (
     <div>
+      <PageHelp
+        title="Model Inventory"
+        purpose="The central registry of all models subject to OSFI E-23. Every model in use at your institution must be registered here with its risk tier, owner, methodology, and validation status. This is the foundation of your entire MRM program."
+        who="Model Risk Manager (MRM), model owners, CRO, internal audit, OSFI examiners. Model owners register their own models; MRM team assigns risk tiers and monitors compliance."
+        inputs="Model name, methodology type, business unit, model owner, purpose, input data sources, version, next validation due date. Use AI Smart Fill to extract data from existing documents, or Import CSV for bulk onboarding."
+        outputs="Searchable model list with readiness scores, risk tier badges, overdue flags, Portfolio Doctor health scan, AI-generated validation reports, Board Report data feed, Examiner Export data."
+        connections={['Validations (trigger a new validation from here)', 'Risk Rating Wizard (assign tier from model detail)', 'Vendor Assessments (if third-party model)', 'Board Report (feeds model count and tier data)', 'Examiner Export (Section 1)', 'AI Action Queue (overdue models appear as P1 actions)', 'Smart Search (NLP search across this inventory)']}
+      />
       <div className="search-row">
         <input className="form-control" placeholder="Search by name, owner, BU…" value={search} onChange={e => setSearch(e.target.value)} />
         <select className="form-control" value={tierFilter} onChange={e => setTierFilter(e.target.value)} style={{ maxWidth: 160 }}>
@@ -1596,7 +1625,7 @@ function ModelForm({ modelId, setScreen, setDetailModelId }) {
                   <input className="form-control" placeholder="Spreadsheet location (SharePoint path, network drive, etc.)"
                     value={form.spreadsheet_location} onChange={e => set('spreadsheet_location', e.target.value)} />
                   <div className="spreadsheet-warn">
-                    ⚠️ <span><strong>Enhanced controls required.</strong> Spreadsheet models require Tier 1 treatment with version-controlled workbook, cell-level protection, and annual independent validation per OSFI E-23 §4.2. Ensure an offline backup copy exists.</span>
+                    ⚠️ <span><strong>Enhanced controls required.</strong> Spreadsheet models require Tier 1 treatment with version-controlled workbook, cell-level protection, and annual independent validation per OSFI E-23 Section 4.2. Ensure an offline backup copy exists.</span>
                   </div>
                 </div>
               )}
@@ -1697,7 +1726,7 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
 
       {model.revalidation_required && (
         <div className="reval-banner">
-          ⚠️ <strong>Re-validation Required</strong> — A material change has been logged. Independent re-validation required under OSFI E-23 §4.3.
+          ⚠️ <strong>Re-validation Required</strong> — A material change has been logged. Independent re-validation required under OSFI E-23 Section 4.3.
         </div>
       )}
 
@@ -1758,7 +1787,7 @@ function ModelDetail({ modelId, setScreen, setEditModelId, setRateModelId }) {
             </div>
             {model.is_spreadsheet_model && (
               <div className="spreadsheet-warn" style={{ marginTop:10 }}>
-                ⚠️ <span><strong>Enhanced validation controls required.</strong> Spreadsheet models carry elevated operational risk. Ensure version-controlled workbook, cell protection, offline backup, and annual independent validation. OSFI E-23 §4.2.</span>
+                ⚠️ <span><strong>Enhanced validation controls required.</strong> Spreadsheet models carry elevated operational risk. Ensure version-controlled workbook, cell protection, offline backup, and annual independent validation. OSFI E-23 Section 4.2.</span>
               </div>
             )}
             {model.spreadsheet_location && (
@@ -1972,7 +2001,7 @@ function ModelChangeSection({ modelId, onRevalidationNeeded }) {
           </div>
           <label style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, cursor:'pointer', fontWeight:600 }}>
             <input type="checkbox" checked={form.is_material} onChange={e => setForm(p => ({...p,is_material:e.target.checked}))} />
-            Mark as material — flags model for re-validation under OSFI E-23 §4.3
+            Mark as material — flags model for re-validation under OSFI E-23 Section 4.3
           </label>
           <div>
             <button className="btn btn-primary btn-sm" onClick={submit} disabled={saving}>
@@ -1984,7 +2013,7 @@ function ModelChangeSection({ modelId, onRevalidationNeeded }) {
 
       {loading && <div className="spinner-center"><Spinner dark size={22} /></div>}
       {!loading && changes.length === 0 && (
-        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No changes logged yet. Use "Log Change" to track model version history per OSFI E-23 §4.2.</div>
+        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No changes logged yet. Use "Log Change" to track model version history per OSFI E-23 Section 4.2.</div>
       )}
       {!loading && changes.length > 0 && (
         <div className="change-timeline">
@@ -2022,7 +2051,7 @@ function ModelChangeSection({ modelId, onRevalidationNeeded }) {
               )}
               {!c.ai_materiality && (
                 <button className="btn btn-ai btn-sm" style={{ marginTop:8 }} onClick={() => runAIMateriality(c)} disabled={aiLoading[c.id]}>
-                  {aiLoading[c.id] ? <><Spinner /> Assessing…</> : '🧠 AI Materiality Check (OSFI §4.3)'}
+                  {aiLoading[c.id] ? <><Spinner /> Assessing…</> : '🧠 AI Materiality Check (OSFI Section 4.3)'}
                 </button>
               )}
               <button className="btn btn-ai btn-sm" style={{ marginTop:8, marginLeft: c.ai_materiality ? 0 : 8 }} onClick={() => runAIImpact(c)} disabled={impactLoading[c.id]}>
@@ -2726,6 +2755,14 @@ function Validations() {
 
   return (
     <div>
+      <PageHelp
+        title="Validations"
+        purpose="Manages the full OSFI E-23 model validation lifecycle across 6 states: Draft → Submitted → Under Review → Findings Submitted → Approved/Rejected → Closed. Tier 1 (High Risk) models require annual independent validation. Tier 2 requires biennial validation."
+        who="Validators (assigned per validation), MRM team (workflow management), CRO (final approval), Internal Audit (oversight). OSFI E-23 requires the validator to be independent of model development."
+        inputs="Model to be validated, assigned validator email, validation type (full/targeted), scope description, due date. Findings, outcome (pass/conditional/fail), and conditions are added as the workflow progresses."
+        outputs="Validation records with full audit trail, AI findings analysis, AI approval readiness check, AI closure narrative for audit record, AI validation report (formal PDF-ready), AI peer benchmark vs OSFI best practices, Sprint Brief for new validators."
+        connections={['Model Inventory (select model to validate)', 'Audit Trail (every state change logged)', 'Backtesting Log (add test results within a validation)', 'Board Report (validation evidence feeds Section 3)', 'Examiner Export (Section 3)', 'Action Queue (overdue validations appear as P1 actions)']}
+      />
       <div className="section-hdr">
         <div>
           <div className="section-title">Validations</div>
@@ -2977,6 +3014,8 @@ function ValDetailModal({ val: initialVal, onClose }) {
   const [aiApprCheck, setAiApprCheck] = useState(v.ai_approval_check || null);
   const [aiClosure, setAiClosure]     = useState(v.ai_closure_summary ? { summary: v.ai_closure_summary } : null);
   const [aiLoading, setAiLoading]     = useState({ analyze: false, check: false, closure: false });
+  const [benchmark, setBenchmark]     = useState(null);
+  const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const toast = useToast();
   const setA = (k, x) => setAD(p => ({ ...p, [k]: x }));
 
@@ -2991,6 +3030,16 @@ function ValDetailModal({ val: initialVal, onClose }) {
       toast('AI analysis complete', 'success');
     } catch(e) { toast(e.message, 'error'); }
     finally { setAiLoading(p => ({ ...p, [type]: false })); }
+  }
+
+  async function runBenchmark() {
+    setBenchmarkLoading(true);
+    try {
+      const r = await apiFetch(`/api/validations/${v.id}/ai-peer-benchmark`, { method:'POST' });
+      setBenchmark(r);
+      toast('Peer benchmark complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setBenchmarkLoading(false); }
   }
 
   async function doAction(action, extra = {}) {
@@ -3147,12 +3196,51 @@ function ValDetailModal({ val: initialVal, onClose }) {
           </div>
           {aiClosure && (
             <div className="ai-panel">
-              <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>Audit Closure Narrative (OSFI E-23 §4.4)</div>
+              <div className="ai-panel-hdr"><span className="ai-icon">🧠</span>Audit Closure Narrative (OSFI E-23 Section 4.4)</div>
               <div className="ai-insight">{aiClosure.summary || aiClosure}</div>
             </div>
           )}
         </div>
       )}
+
+      {/* AI: Peer Benchmark */}
+      <div style={{ marginBottom:14, paddingTop:12, borderTop:'1px solid var(--border)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+          <span style={{ fontSize:12.5, fontWeight:700, color:'var(--navy)' }}>📊 AI Peer Benchmark</span>
+          <span style={{ fontSize:11.5, color:'var(--text-muted)' }}>Rate this validation against OSFI E-23 best practices</span>
+          <button className="btn btn-ai btn-sm" style={{ marginLeft:'auto' }} onClick={runBenchmark} disabled={benchmarkLoading}>
+            {benchmarkLoading ? <><Spinner /> Benchmarking…</> : benchmark ? '↻ Re-benchmark' : '📊 Run Benchmark'}
+          </button>
+        </div>
+        {benchmark && (
+          <div className="ai-panel">
+            <AIDisclaimer />
+            <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:10, flexWrap:'wrap' }}>
+              <span style={{ fontWeight:800, fontSize:22, color: benchmark.quality_grade==='A'?'#15803d':benchmark.quality_grade==='B'?'#1d4ed8':benchmark.quality_grade==='C'?'#c07500':'#b81c1c' }}>{benchmark.quality_grade}</span>
+              <span style={{ fontSize:14, fontWeight:700 }}>{benchmark.benchmark_score}/100</span>
+              <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, fontWeight:600, background: benchmark.examiner_rating==='Satisfactory'?'#dcfce7':benchmark.examiner_rating==='Needs Improvement'?'#fef3c7':'#fee2e2', color: benchmark.examiner_rating==='Satisfactory'?'#15803d':benchmark.examiner_rating==='Needs Improvement'?'#92400e':'#b81c1c' }}>{benchmark.examiner_rating}</span>
+            </div>
+            <div style={{ fontSize:13, lineHeight:1.7, margin:'8px 0' }}>{benchmark.overall_assessment}</div>
+            {benchmark.examiner_comment && (
+              <div style={{ padding:'7px 10px', background:'#fffbeb', borderRadius:6, fontSize:12.5, color:'#78350f', marginBottom:8 }}>
+                <strong>Examiner would say:</strong> {benchmark.examiner_comment}
+              </div>
+            )}
+            {(benchmark.gaps||[]).length > 0 && (
+              <div style={{ marginBottom:8 }}>
+                <div style={{ fontSize:11.5, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', marginBottom:6 }}>Quality Gaps</div>
+                {benchmark.gaps.map((g,i) => (
+                  <div key={i} style={{ padding:'7px 10px', background:'#fff', border:'1px solid var(--border)', borderLeft:`3px solid ${g.severity==='Critical'?'#b81c1c':g.severity==='High'?'#c2410c':'#c07500'}`, borderRadius:5, marginBottom:5, fontSize:12 }}>
+                    <span style={{ fontWeight:700 }}>{g.area}</span>
+                    <span style={{ color:'var(--text-muted)', marginLeft:8 }}>{g.finding}</span>
+                    <div style={{ color:'#1d4ed8', fontWeight:600, marginTop:3 }}>→ {g.recommendation} <span style={{ color:'var(--text-muted)', fontWeight:400 }}>({g.osfi_requirement})</span></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Action areas */}
       {v.status === 'requested' && (
@@ -3252,6 +3340,14 @@ function VendorAssessments() {
 
   return (
     <div>
+      <PageHelp
+        title="Vendor Assessments"
+        purpose="Documents OSFI E-23 Section 5 (Third-Party Model Risk) due diligence for any model where a third-party vendor provides a component, algorithm, or full model. Required for all vendor or externally sourced models used in material decisions."
+        who="Procurement team, Legal, CRO, MRM team. The assessment is completed by whoever manages the vendor relationship, then reviewed by MRM."
+        inputs="Select a model from your inventory, complete the 7-item OSFI Section 5 due diligence checklist (SLA, data access, audit rights, exit plan, concentration risk, model documentation, override capability), and optionally add findings notes."
+        outputs="Risk score (0–12), risk level (High/Medium/Low), AI governance narrative, next annual review date, OSFI Section 5 Deep Dive analysis with compliance score and remediation plan. Feeds into the B-10 Third-Party Risk Package."
+        connections={['Model Inventory (model must exist first)', 'B-10 Package (all assessments feed the board report)', 'Examiner Export (Section 4)', 'Audit Trail (each assessment is logged)', 'Action Queue (High-risk vendor models appear as urgent actions)']}
+      />
       <div className="section-hdr">
         <div className="section-title">Vendor Assessments</div>
         <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ New Assessment</button>
@@ -3335,7 +3431,7 @@ function CreateVendorModal({ models, onClose, onCreated }) {
               {models.filter(m=>!m.is_third_party).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </optgroup>}
           </select>
-          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>OSFI §5 applies to third-party/vendor models. Internal models may also be assessed where third parties provide components.</div>
+          <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>OSFI Section 5 applies to third-party/vendor models. Internal models may also be assessed where third parties provide components.</div>
         </div>
         <div style={{ marginBottom: 16 }}>
           <div className="form-label" style={{ marginBottom: 8 }}>Due Diligence Checklist</div>
@@ -3379,7 +3475,7 @@ function VendorDetailModal({ a: initialA, onClose }) {
     <Modal title="Vendor Assessment Detail" onClose={onClose} footer={<button className="btn btn-ghost" onClick={onClose}>Close</button>}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
         <button className="btn btn-ai btn-sm" onClick={runDeepdive} disabled={ddLoading}>
-          {ddLoading ? <><Spinner /> Analysing…</> : deepdive ? '↻ Refresh Deep Dive' : '🔬 AI OSFI §5 Deep Dive'}
+          {ddLoading ? <><Spinner /> Analysing…</> : deepdive ? '↻ Refresh Deep Dive' : '🔬 AI OSFI Section 5 Deep Dive'}
         </button>
       </div>
       <div className="detail-grid">
@@ -3395,7 +3491,7 @@ function VendorDetailModal({ a: initialA, onClose }) {
         <div className="detail-item"><div className="dl">Score</div><div className="dv">{a.risk_score}/12</div></div>
       </div>
       <div style={{ marginBottom: 14 }}>
-        <div className="dl" style={{ marginBottom: 8 }}>OSFI §5 Due Diligence Checklist</div>
+        <div className="dl" style={{ marginBottom: 8 }}>OSFI Section 5 Due Diligence Checklist</div>
         <div className="vendor-cb-list">
           {VENDOR_CHECKS.map(c => (
             <div key={c.key} className="vendor-cb">
@@ -3421,8 +3517,8 @@ function VendorDetailModal({ a: initialA, onClose }) {
         <div className="ai-analysis-panel">
           <div className="ai-analysis-hdr">
             <span className="ai-icon">🔬</span>
-            <span className="ai-analysis-hdr-title">OSFI §5 Deep Dive Analysis</span>
-            <span className="ai-score-chip">§5 Score: {deepdive.osfi_section5_compliance_score}%</span>
+            <span className="ai-analysis-hdr-title">OSFI Section 5 Deep Dive Analysis</span>
+            <span className="ai-score-chip">Section 5 Score: {deepdive.osfi_section5_compliance_score}%</span>
           </div>
           <div className="ai-analysis-body">
             <div className="ai-meta-row">
@@ -3512,6 +3608,14 @@ function AuditTrail() {
 
   return (
     <div>
+      <PageHelp
+        title="Audit Trail"
+        purpose="Immutable, append-only record of every significant action in the system — model changes, validation state transitions, approvals, AI outputs, policy generation, and more. Required by OSFI E-23 Section 4.4. Uses a SHA-256 Merkle hash chain so any tampering is cryptographically detectable."
+        who="Internal Audit, CRO, OSFI examiners, Compliance Officer. Events are generated automatically — no manual input is needed. Auditors and examiners review this page during examinations."
+        inputs="No manual input. All events are created automatically by other pages. Use the Verify Integrity button to confirm the hash chain has not been tampered with. Use AI Anomaly Detection to identify unusual patterns."
+        outputs="Chronological event log with actor, timestamp, event type, and SHA-256 hash. Merkle root for chain integrity proof. AI Anomaly Detection report with risk level, findings, and corrective actions. AI Audit Summary (12-month narrative) available on the Audit Summary page."
+        connections={['All pages feed this trail automatically', 'Audit Summary page (12-month AI narrative)', 'Examiner Export (feeds into package narrative)', 'Board Report (referenced in compliance summary)']}
+      />
       {/* Integrity Panel */}
       <div className="card" style={{ marginBottom:18 }}>
         <div className="section-hdr" style={{ marginBottom: integrity ? 14 : 0 }}>
@@ -3674,6 +3778,14 @@ function BoardReport() {
 
   return (
     <div>
+      <PageHelp
+        title="Board Report"
+        purpose="Generates a multi-page PDF Board Risk Committee report covering model inventory KPIs, risk tier breakdown, validation status, overdue models, and an AI-generated executive summary. Designed for CRO presentation to the Board Risk Committee."
+        who="CRO (generates and presents), Board Risk Committee (receives the report), MRM team (reviews before distribution)."
+        inputs="No manual input — the report is generated automatically from your live model inventory, validation records, and vendor assessments. Click Download to generate a fresh report at any time."
+        outputs="Downloadable PDF with cover page, model inventory table, Tier 1 high-risk model detail, compliance summary KPIs, and AI executive summary. Each download is logged in the audit trail."
+        connections={['Model Inventory (all model data)', 'Validations (validation status)', 'Examiner Export (companion document for OSFI)', 'Audit Trail (download event logged)']}
+      />
       <div className="section-title" style={{ marginBottom: 16 }}>Board Report</div>
       <div className="card" style={{ maxWidth: 580 }}>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 14 }}>
@@ -3734,6 +3846,14 @@ function CsvImport() {
 
   return (
     <div>
+      <PageHelp
+        title="Import CSV"
+        purpose="Bulk-import model records from a CSV file to populate your model inventory quickly during initial setup or when migrating from spreadsheets. Supports mapping of all core model fields."
+        who="MRM team during initial ClearMRM onboarding or when bringing in model data from existing spreadsheet-based registers."
+        inputs="A .csv file with one row per model. Supported column headers: name, version, business_unit, model_owner_name, methodology_type, is_third_party (true/false), vendor_name. The name column is required; all others are optional."
+        outputs="Newly created model records in your Model Inventory, with a count of successfully imported rows and any skipped or errored rows. Imported models will have default risk tier (unrated) — assign tiers individually after import."
+        connections={['Model Inventory (all imported models appear here)', 'Risk Rating Wizard (assign tiers after import)', 'Doc Intelligence (alternative: paste one document at a time for AI-assisted extraction)']}
+      />
       <div className="section-title" style={{ marginBottom: 16 }}>Import Models from CSV</div>
       <div className="card" style={{ maxWidth: 560 }}>
         <div
@@ -3941,15 +4061,23 @@ function ExaminerExport() {
   }
 
   const sections = [
-    { num: 1, title: 'Complete Model Inventory', desc: 'All active models with tier, owner, validation status, and OSFI E-23 §3 classification.' },
-    { num: 2, title: 'Tier 1 High-Risk Model Detail', desc: 'Per-model risk justification with AI reasoning and overdue validation flags per §4.2.' },
-    { num: 3, title: 'Validation Evidence', desc: 'Full validation history including findings, outcomes, and conditions per §4.3.' },
-    { num: 4, title: 'Third-Party Vendor Governance', desc: 'OSFI §5 compliance checklist and AI risk assessment for each vendor model.' },
+    { num: 1, title: 'Complete Model Inventory', desc: 'All active models with tier, owner, validation status, and OSFI E-23 Section 3 classification.' },
+    { num: 2, title: 'Tier 1 High-Risk Model Detail', desc: 'Per-model risk justification with AI reasoning and overdue validation flags per Section 4.2.' },
+    { num: 3, title: 'Validation Evidence', desc: 'Full validation history including findings, outcomes, and conditions per Section 4.3.' },
+    { num: 4, title: 'Third-Party Vendor Governance', desc: 'OSFI Section 5 compliance checklist and AI risk assessment for each vendor model.' },
     { num: 5, title: 'Management Attestation', desc: 'Formal signatory page with OSFI E-23 compliance declarations.' },
   ];
 
   return (
     <div>
+      <PageHelp
+        title="OSFI Examiner Export"
+        purpose="Generates a 6-section Supervisory Review Package in the format OSFI examiners expect — covering model inventory, Tier 1 validation evidence, vendor governance, and management attestation. Use this when preparing for an OSFI examination or responding to an examination request."
+        who="CRO and MRM team generate this package. OSFI examiners and internal audit receive it. The Management Attestation page requires sign-off by the Chief Risk Officer."
+        inputs="No manual input — the package is generated automatically from your current model inventory, validations, vendor assessments, and audit trail. Ensure your data is up to date before generating."
+        outputs="Downloadable 6-page PDF with AI-generated examination narrative, model inventory table, Tier 1 model detail with risk rationale, validation evidence summary, OSFI Section 5 vendor checklist, and formal management attestation. Each generation is logged in the audit trail."
+        connections={['Model Inventory (Sections 1 & 2)', 'Validations (Section 3)', 'Vendor Assessments (Section 4)', 'Risk Appetite / MRA (referenced in attestation)', 'Audit Trail (generation logged)', 'AI Examiner Prep (use alongside for Q&A preparation)']}
+      />
       <div className="examiner-banner">
         <div>
           <div className="examiner-banner-title">🏛️ OSFI Examiner Export</div>
@@ -3963,7 +4091,7 @@ function ExaminerExport() {
       </div>
       {generated && (
         <div className="alert alert-success" style={{ marginBottom: 18 }}>
-          ✓ OSFI Examiner Export generated and downloaded. This export has been logged in the audit trail per OSFI E-23 §4.4.
+          ✓ OSFI Examiner Export generated and downloaded. This export has been logged in the audit trail per OSFI E-23 Section 4.4.
         </div>
       )}
       <div style={{ marginBottom: 14, fontWeight: 700, color: 'var(--navy)' }}>What's included in the export:</div>
@@ -3990,7 +4118,7 @@ function ExaminerExport() {
         <ul style={{ paddingLeft: 18, fontSize: 13.5, lineHeight: 2, color: 'var(--text-muted)' }}>
           <li>Export is generated from live data — always generate immediately before submission</li>
           <li>The AI compliance narrative is explicitly labelled AI-generated in the document</li>
-          <li>Each generation is logged as an immutable audit event per OSFI E-23 §4.4</li>
+          <li>Each generation is logged as an immutable audit event per OSFI E-23 Section 4.4</li>
           <li>Data never leaves AWS ca-central-1 (PIPEDA / Canadian data residency)</li>
         </ul>
       </div>
@@ -4069,6 +4197,14 @@ function AdminPanel({ user }) {
 
   return (
     <div>
+      <PageHelp
+        title="Admin Panel"
+        purpose="System administration for your ClearMRM tenant — manage users, configure SSO/SAML authentication, view tenant settings, and generate an AI-powered onboarding action plan for new institutions."
+        who="System Administrators, CRO (for onboarding plan). Not for day-to-day MRM users."
+        inputs="User Management: email, name, role, temporary password. SSO: SAML 2.0 provider name and metadata URL. AI Onboarding Plan: generated automatically from current system state."
+        outputs="Provisioned users with role-based access, SSO integration configuration, AI Onboarding Plan (30-day P1/P2 action roadmap for new ClearMRM clients with current OSFI E-23 compliance gap analysis)."
+        connections={['All pages (user provisioning affects who can access what)', 'Model Inventory (onboarding plan references current gap state)', 'MRM Policy (onboarding plan includes policy generation step)']}
+      />
       <div className="admin-tabs">
         {[['users', 'User Management'], ['sso', 'SSO Configuration'], ['tenants', 'All Tenants'], ['ai_onboarding', '🧠 AI Onboarding Plan']].map(([k, l]) => (
           <button key={k} className={`admin-tab${activeTab === k ? ' active' : ''}`} onClick={() => setActiveTab(k)}>{l}</button>
@@ -4381,7 +4517,7 @@ function ModelMonitoringSection({ modelId }) {
   return (
     <div className="card" style={{ marginTop:16 }}>
       <div className="section-hdr" style={{ flexWrap:'wrap', gap:8 }}>
-        <div className="section-title">📈 Ongoing Monitoring (OSFI E-23 §4.5)</div>
+        <div className="section-title">📈 Ongoing Monitoring (OSFI E-23 Section 4.5)</div>
         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
           <button className="btn btn-ai btn-sm" onClick={runPsiAnalysis} disabled={psiLoading}>
             {psiLoading ? <><Spinner /> Calculating…</> : '📊 PSI Analysis'}
@@ -4438,7 +4574,7 @@ function ModelMonitoringSection({ modelId }) {
 
       {loading && <div className="spinner-center"><Spinner dark size={22} /></div>}
       {!loading && entries.length === 0 && (
-        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No monitoring data yet. Log performance metrics (PSI, Gini, Accuracy, etc.) to track model drift over time per OSFI E-23 §4.5.</div>
+        <div style={{ fontSize:13, color:'var(--text-muted)' }}>No monitoring data yet. Log performance metrics (PSI, Gini, Accuracy, etc.) to track model drift over time per OSFI E-23 Section 4.5.</div>
       )}
       {!loading && entries.length > 0 && (
         <>
@@ -4583,6 +4719,8 @@ function RegulatoryCalendar() {
   const [loading, setLoading]         = useState(true);
   const [briefing, setBriefing]       = useState(null);
   const [briefingLoading, setBriefingLoading] = useState(false);
+  const [impactResults, setImpactResults] = useState({});
+  const [impactLoading, setImpactLoading] = useState({});
   const toast = useToast();
 
   useEffect(() => {
@@ -4597,6 +4735,17 @@ function RegulatoryCalendar() {
       setBriefing(r);
     } catch(e) { toast(e.message,'error'); }
     finally { setBriefingLoading(false); }
+  }
+
+  async function runPortfolioImpact(ev) {
+    setImpactLoading(p => ({...p, [ev.id]: true}));
+    try {
+      const r = await apiFetch('/api/calendar/ai-portfolio-impact', { method:'POST', body:JSON.stringify({
+        event_title: ev.title, regulation_ref: ev.subtitle, due_date: ev.due_date, description: ev.business_unit
+      })});
+      setImpactResults(p => ({...p, [ev.id]: r}));
+    } catch(e) { toast(e.message,'error'); }
+    finally { setImpactLoading(p => ({...p, [ev.id]: false})); }
   }
 
   const overdue  = events.filter(e => e.urgency === 'overdue');
@@ -4619,25 +4768,60 @@ function RegulatoryCalendar() {
     const chipColor = ev.urgency === 'overdue' ? { background:'#fee2e2', color:'var(--red)' }
       : ev.urgency === 'critical' ? { background:'#fef3c7', color:'#92400e' }
       : { background:'#eff6ff', color:'#1d4ed8' };
+    const impact = impactResults[ev.id];
+    const iLoading = impactLoading[ev.id];
+    const effortColor = e => ({ 'Very High':'#b81c1c', High:'#c2410c', Medium:'#c07500', Low:'#15803d' }[e] || '#6b7280');
 
     return (
-      <div className={`cal-event ${ev.urgency}`}>
-        {dt ? (
-          <div className={`cal-date-box ${ev.urgency}`}>
-            <div className="cal-date-day">{dt.day}</div>
-            <div className="cal-date-mon">{dt.mon}</div>
+      <div style={{ marginBottom:8 }}>
+        <div className={`cal-event ${ev.urgency}`}>
+          {dt ? (
+            <div className={`cal-date-box ${ev.urgency}`}>
+              <div className="cal-date-day">{dt.day}</div>
+              <div className="cal-date-mon">{dt.mon}</div>
+            </div>
+          ) : (
+            <div className={`cal-date-box info`} style={{ justifyContent:'center' }}>
+              <div style={{ fontSize:18 }}>⏳</div>
+            </div>
+          )}
+          <div style={{ flex:1, minWidth:0 }}>
+            <div className="cal-event-title">{ev.title}</div>
+            <div className="cal-event-sub">{ev.subtitle}{ev.business_unit ? ' · '+ev.business_unit : ''}</div>
           </div>
-        ) : (
-          <div className={`cal-date-box info`} style={{ justifyContent:'center' }}>
-            <div style={{ fontSize:18 }}>⏳</div>
-          </div>
-        )}
-        <div style={{ flex:1, minWidth:0 }}>
-          <div className="cal-event-title">{ev.title}</div>
-          <div className="cal-event-sub">{ev.subtitle}{ev.business_unit ? ' · '+ev.business_unit : ''}</div>
+          {daysLabel && <span className="cal-days-chip" style={chipColor}>{daysLabel}</span>}
+          <button className="btn btn-ai btn-sm" style={{ flexShrink:0, marginLeft:8 }} onClick={() => runPortfolioImpact(ev)} disabled={iLoading} title="AI Portfolio Impact — which models are affected">
+            {iLoading ? <Spinner /> : impact ? '↻ Re-assess' : '⚡ Impact'}
+          </button>
         </div>
-        {daysLabel && (
-          <span className="cal-days-chip" style={chipColor}>{daysLabel}</span>
+        {impact && (
+          <div className="ai-panel" style={{ marginTop:4, marginBottom:4, borderRadius:'0 0 8px 8px', borderTop:'none' }}>
+            <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:8, flexWrap:'wrap' }}>
+              <span style={{ fontWeight:700, fontSize:12.5, color:'var(--navy)' }}>⚡ Portfolio Impact</span>
+              <span style={{ fontSize:12, padding:'2px 8px', borderRadius:10, background:'#eff6ff', color:'#1d4ed8', fontWeight:600 }}>
+                {(impact.impacted_models||[]).length} models affected · {impact.overall_effort} effort
+              </span>
+            </div>
+            <div style={{ fontSize:12.5, lineHeight:1.6, marginBottom:8 }}>{impact.impact_summary}</div>
+            {(impact.impacted_models||[]).length > 0 && (
+              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                {impact.impacted_models.slice(0,5).map((m,i) => (
+                  <div key={i} style={{ padding:'7px 10px', background:'#fff', border:'1px solid var(--border)', borderLeft:`3px solid ${m.impact_level==='Critical'?'#b81c1c':m.impact_level==='High'?'#c2410c':'#c07500'}`, borderRadius:5, fontSize:12 }}>
+                    <span style={{ fontWeight:700 }}>{m.model_name}</span>
+                    <span style={{ padding:'1px 6px', borderRadius:8, background:'#fee2e2', color:'var(--red)', fontWeight:700, fontSize:10.5, marginLeft:6 }}>{m.impact_level}</span>
+                    <span style={{ color:'var(--text-muted)', marginLeft:8 }}>{m.reason}</span>
+                    <div style={{ marginTop:3, color:'#1d4ed8', fontWeight:600 }}>→ {m.required_action} ({m.timeline})</div>
+                  </div>
+                ))}
+                {impact.impacted_models.length > 5 && <div style={{ fontSize:11.5, color:'var(--text-muted)', padding:'4px 0' }}>+{impact.impacted_models.length - 5} more models affected</div>}
+              </div>
+            )}
+            {(impact.key_risks||[]).length > 0 && (
+              <div style={{ marginTop:8, padding:'7px 10px', background:'#fff7ed', borderRadius:6, fontSize:12 }}>
+                <strong>Key risks:</strong> {impact.key_risks.join(' · ')}
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
@@ -4649,6 +4833,14 @@ function RegulatoryCalendar() {
 
   return (
     <div>
+      <PageHelp
+        title="Regulatory Calendar"
+        purpose="Tracks all upcoming OSFI regulatory deadlines and compliance events relevant to your institution. Provides a prioritized timeline view (Overdue, 30-day, 90-day, Open) and AI-generated CRO briefings. Add custom events for internal milestones, OSFI examination dates, or policy renewal deadlines."
+        who="Compliance Officer, CRO, MRM team. The calendar drives the weekly compliance agenda."
+        inputs="Add calendar events manually: event title, regulation reference (e.g. OSFI E-23, B-10, B-15), due date, description, business unit. Model validation due dates are auto-generated from the Model Inventory. Use AI Portfolio Impact to identify which models each regulation affects."
+        outputs="Prioritized deadline view with days-remaining chips, AI CRO Briefing (2-sentence weekly priority summary), AI Portfolio Impact Analysis (which models each regulation touches and required actions)."
+        connections={['Model Inventory (validation due dates appear here)', 'Validations (overdue validations trigger calendar alerts)', 'MRM Policy (policy renewal events)', 'Exam Sprint (exam date drives the sprint timeline)', 'Action Queue (overdue calendar items appear as P1 actions)']}
+      />
       <div className="kpi-grid" style={{ marginBottom:20 }}>
         {[
           ['Overdue',         overdue.length,   'kpi-red'],
@@ -4730,6 +4922,8 @@ function MRAWizard() {
   const [editing, setEditing]       = useState(false);
   const [editText, setEditText]     = useState('');
   const [saving, setSaving]         = useState(false);
+  const [complianceCheck, setComplianceCheck] = useState(null);
+  const [complianceLoading, setComplianceLoading] = useState(false);
   const [form, setForm] = useState({
     institution_type: 'federally regulated credit union',
     risk_tolerance: 'low',
@@ -4775,6 +4969,16 @@ function MRAWizard() {
     setEditing(true);
   }
 
+  async function runComplianceCheck() {
+    setComplianceLoading(true);
+    try {
+      const r = await apiFetch('/api/risk-appetite/ai-compliance-check',{ method:'POST', body:'{}' });
+      setComplianceCheck(r);
+      toast('Compliance check complete','success');
+    } catch(e) { toast(e.message,'error'); }
+    finally { setComplianceLoading(false); }
+  }
+
   async function saveEdit() {
     if (!editText.trim()) return toast('Statement text cannot be empty','error');
     setSaving(true);
@@ -4791,12 +4995,20 @@ function MRAWizard() {
 
   return (
     <div>
+      <PageHelp
+        title="Risk Appetite (MRA Wizard)"
+        purpose="Generates and manages the Model Risk Appetite (MRA) Statement — the board-approved policy document that defines your institution's tolerance for model risk, governance boundaries, and escalation thresholds. Required by OSFI E-23 Section 3 and must be approved by senior management."
+        who="CRO drafts and presents for board approval. Compliance Officer reviews for regulatory alignment. Board Risk Committee approves."
+        inputs="Institution type (e.g. Schedule I bank, credit union), appetite level (Conservative / Moderate / Progressive), estimated model count. The AI generates the full formal statement text from these inputs. Edit the draft before approving if needed."
+        outputs="Formal MRA statement text (suitable for board approval), AI Compliance Check (gap analysis vs OSFI E-23 requirements), approval record logged in the audit trail. The approved statement feeds into your MRM Policy."
+        connections={['MRM Policy (MRA is referenced in policy generation)', 'Audit Trail (approval logged as immutable event)', 'Board Report (MRA section)', 'AI Compliance Check (scan for OSFI gaps after generation)']}
+      />
       <div className="card" style={{ marginBottom:16 }}>
         <div className="section-hdr">
           <div>
             <div className="section-title">🎯 Model Risk Appetite Statement</div>
             <div style={{ fontSize:13, color:'var(--text-muted)', marginTop:4 }}>
-              Required by OSFI E-23 §3 — defines your institution's tolerance for model risk and the governance boundaries around it.
+              Required by OSFI E-23 Section 3 — defines your institution's tolerance for model risk and the governance boundaries around it.
             </div>
           </div>
           <button className="btn btn-outline btn-sm" onClick={() => setShowForm(p => !p)}>
@@ -4847,7 +5059,7 @@ function MRAWizard() {
               <div className="form-group">
                 <label className="form-label">Third-Party Model Posture</label>
                 <select className="form-select" value={form.third_party_posture} onChange={e => setForm(p => ({...p,third_party_posture:e.target.value}))}>
-                  <option value="conservative">Conservative (full §5 due diligence required)</option>
+                  <option value="conservative">Conservative (full Section 5 due diligence required)</option>
                   <option value="moderate">Moderate (risk-based due diligence)</option>
                   <option value="permissive">Permissive (vendor attestation accepted)</option>
                 </select>
@@ -4930,6 +5142,55 @@ function MRAWizard() {
           <div style={{ marginTop:16, fontSize:12, color:'var(--text-muted)' }}>
             Generated {new Date(statement.created_at).toLocaleDateString('en-CA')} by {statement.created_by} · {statement.version}
           </div>
+
+          {/* AI Compliance Check */}
+          <div style={{ marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8, flexWrap:'wrap', gap:8 }}>
+              <div>
+                <span style={{ fontWeight:700, fontSize:13 }}>🔬 AI Compliance Check</span>
+                <span style={{ fontSize:12, color:'var(--text-muted)', marginLeft:8 }}>Scan this statement against OSFI E-23 requirements</span>
+              </div>
+              <button className="btn btn-ai btn-sm" onClick={runComplianceCheck} disabled={complianceLoading}>
+                {complianceLoading ? <><Spinner /> Scanning…</> : complianceCheck ? '↻ Re-scan' : '🔬 Run Compliance Check'}
+              </button>
+            </div>
+            {complianceCheck && (
+              <div className="ai-panel">
+                <AIDisclaimer />
+                <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:10, flexWrap:'wrap' }}>
+                  <span style={{ fontWeight:800, fontSize:22, color: complianceCheck.compliance_grade==='A'?'#15803d':complianceCheck.compliance_grade==='B'?'#1d4ed8':complianceCheck.compliance_grade==='C'?'#c07500':'#b81c1c' }}>{complianceCheck.compliance_grade}</span>
+                  <span style={{ fontSize:15, fontWeight:700 }}>{complianceCheck.compliance_score}% Compliance</span>
+                  <span style={{ fontSize:12, padding:'2px 10px', borderRadius:10, background:'#fff7ed', color:'#92400e', fontWeight:600 }}>Examiner risk: {complianceCheck.examiner_risk}</span>
+                </div>
+                <div style={{ fontSize:13, lineHeight:1.7, marginTop:8, marginBottom:10 }}>{complianceCheck.overall_assessment}</div>
+                {complianceCheck.examiner_comment && (
+                  <div style={{ padding:'8px 12px', background:'#fffbeb', borderRadius:6, fontSize:12.5, color:'#78350f', marginBottom:10 }}>
+                    <strong>OSFI Examiner would note:</strong> {complianceCheck.examiner_comment}
+                  </div>
+                )}
+                {(complianceCheck.gaps||[]).length > 0 && (
+                  <div style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:11.5, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'var(--text-muted)', marginBottom:8 }}>Compliance Gaps ({complianceCheck.gaps.length})</div>
+                    {complianceCheck.gaps.map((g,i) => (
+                      <div key={i} style={{ padding:'9px 12px', background:'#fff', border:'1px solid var(--border)', borderLeft:`4px solid ${g.severity==='Critical'?'#b81c1c':g.severity==='High'?'#c2410c':'#c07500'}`, borderRadius:6, marginBottom:6 }}>
+                        <div style={{ fontWeight:700, fontSize:12.5, marginBottom:3 }}>{g.section} <span style={{ fontWeight:400, color:'var(--text-muted)' }}>— {g.requirement}</span></div>
+                        <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:4 }}>{g.finding}</div>
+                        <div style={{ fontSize:12, color:'#1d4ed8', fontWeight:600 }}>→ {g.recommendation}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(complianceCheck.suggested_additions||[]).length > 0 && (
+                  <div style={{ padding:'10px 14px', background:'#f0fdf4', borderRadius:8, border:'1px solid #bbf7d0' }}>
+                    <div style={{ fontSize:11.5, fontWeight:800, textTransform:'uppercase', letterSpacing:'.5px', color:'#15803d', marginBottom:6 }}>Suggested Additions to Statement</div>
+                    {complianceCheck.suggested_additions.map((s,i) => (
+                      <div key={i} style={{ fontSize:12.5, padding:'3px 0', color:'#14532d' }}>▸ {s}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -4977,6 +5238,14 @@ function ExamSprintMode() {
 
   return (
     <div>
+      <PageHelp
+        title="Exam Sprint Mode"
+        purpose="Emergency OSFI examination readiness tool. Runs a full AI gap analysis against all OSFI E-23 requirements and produces a prioritized 30/60/90-day action plan with owner assignments. Use this 3–6 months before an expected OSFI examination."
+        who="CRO (review and prioritize), MRM team (execute the plan), Business Units (complete model documentation tasks assigned to them). Updated as items are completed."
+        inputs="No manual input for the gap analysis — the AI scans your entire system state (model inventory, validations, vendor assessments, monitoring data, policy status). Use the Sprint Brief (on the Validations page) to generate a scoped brief for a specific new validation engagement."
+        outputs="Overall readiness score (0–100), exam risk level (High/Medium/Low), critical gaps by OSFI section, 30/60/90-day tiered action plan with P1/P2 priority and owner, quick wins list, likely examiner questions, and key strengths to highlight."
+        connections={['Model Inventory (gap source)', 'Validations (overdue gaps)', 'Vendor Assessments (Section 5 gaps)', 'MRM Policy (governance gaps)', 'Risk Appetite (MRA gaps)', 'Examiner Export (use alongside for submission-ready PDF)', 'AI Examiner Prep (companion page for Q&A rehearsal)']}
+      />
       <div className="sprint-hero">
         <div style={{ flex:1 }}>
           <div className="sprint-hero-title">🚨 OSFI Exam Sprint Mode</div>
@@ -5010,7 +5279,7 @@ function ExamSprintMode() {
         <div className="card">
           <div className="section-title" style={{ marginBottom:14 }}>What Exam Sprint Covers</div>
           {[
-            ['🔍','Compliance Gap Analysis','Scans your model inventory, validation records, and vendor assessments against every OSFI E-23 requirement with specific §section references.'],
+            ['🔍','Compliance Gap Analysis','Scans your model inventory, validation records, and vendor assessments against every OSFI E-23 requirement with specific section references.'],
             ['📅','30/60/90-Day Sprint Plan','Prioritized action plan by urgency — P1 actions for immediate resolution, P2 for medium-term — with assigned owners and OSFI references.'],
             ['❓','Examiner Question Prep','Predicts the questions an OSFI examiner is most likely to ask based on your current posture, so your team can prepare responses in advance.'],
             ['⚡','Quick Wins','Actions you can complete today or this week to immediately improve your readiness before the full remediation plan is underway.'],
@@ -5162,6 +5431,14 @@ function MRMPolicyGenerator() {
 
   if (step === 'form') return (
     <div>
+      <PageHelp
+        title="MRM Policy Generator"
+        purpose="Generates a complete 13-section OSFI E-23 Model Risk Management Policy document — covering governance, model identification, risk tiering, validation standards, vendor model rules, ongoing monitoring, change management, and audit requirements. Replaces the need for $25K–$50K regulatory counsel fees."
+        who="Chief Compliance Officer, CRO. The policy is generated once, reviewed, approved by the board, and updated when OSFI guidance changes or when significant MRM program changes occur."
+        inputs="A 10-question intake covering institution type, model count, in-house vs vendor mix, validation team structure, risk appetite, materiality thresholds, monitoring approach, committee structure, audit frequency, and board reporting cadence."
+        outputs="13-section formal MRM Policy document, version-controlled with board approval workflow. Policy Gap Check (separate page) analyzes the generated policy for OSFI coverage gaps. Each generation is logged in the audit trail."
+        connections={['Risk Appetite (MRA referenced in policy governance section)', 'Policy Gap Check (analyze generated policy for gaps)', 'Board Report (policy status feeds compliance summary)', 'Audit Trail (generation and approval logged)']}
+      />
       {existing && (
         <div className="card" style={{ marginBottom:18 }}>
           <div className="section-hdr">
@@ -5354,6 +5631,14 @@ function NaturalLanguageSearch({ setScreen, setDetailModelId }) {
 
   return (
     <div>
+      <PageHelp
+        title="Smart Search (NLS)"
+        purpose="Natural language search across your entire model inventory. Ask questions in plain English and Claude interprets your intent, searches the database, and explains the results. Eliminates the need to build complex filters for common compliance queries."
+        who="MRM team, CRO, auditors. Especially useful for quickly answering ad-hoc examiner questions like 'How many Tier 1 models are overdue?' without building reports."
+        inputs="A natural language question or phrase about your models. Examples: 'Show all Tier 1 credit models overdue for validation', 'Find models owned by John Smith', 'Which ML models have no backtesting data'."
+        outputs="Filtered model list matching your query intent, with an AI interpretation of what it searched for and why. Click any result to open the model detail page."
+        connections={['Model Inventory (all results link back here)', 'Model Detail (click any result to open)', 'Validations (validation status is searchable)']}
+      />
       <div className="card" style={{ marginBottom:18 }}>
         <div style={{ marginBottom:12 }}>
           <div className="section-title" style={{ marginBottom:4 }}>Natural Language Model Search</div>
@@ -5598,6 +5883,50 @@ function DocumentIntelligence({ setScreen, setEditModelId }) {
 }
 
 /* ═══════════════════════════════════════════════════
+   PAGE HELP — self-explanatory contextual guide on every screen
+═══════════════════════════════════════════════════ */
+function PageHelp({ title, purpose, who, inputs, outputs, connections }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="page-help-wrap">
+      <button className="page-help-toggle" onClick={() => setOpen(!open)}>
+        ℹ️ How to use: {title} {open ? '▲' : '▼'}
+      </button>
+      {open && (
+        <div className="page-help-body">
+          <div className="page-help-grid">
+            <div>
+              <div className="page-help-label">Purpose</div>
+              <div className="page-help-text">{purpose}</div>
+            </div>
+            <div>
+              <div className="page-help-label">Who Should Use This</div>
+              <div className="page-help-text">{who}</div>
+            </div>
+            <div>
+              <div className="page-help-label">Inputs Required</div>
+              <div className="page-help-text">{inputs}</div>
+            </div>
+            <div>
+              <div className="page-help-label">Outputs Produced</div>
+              <div className="page-help-text">{outputs}</div>
+            </div>
+          </div>
+          {connections && connections.length > 0 && (
+            <div className="page-help-connections">
+              <div className="page-help-label">Connects To</div>
+              <div className="page-help-conn-list">
+                {connections.map((c, i) => <span key={i} className="page-help-conn-chip">{c}</span>)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════
    AI DISCLAIMER — shared across all AI panels
 ═══════════════════════════════════════════════════ */
 function AIDisclaimer() {
@@ -5630,6 +5959,14 @@ function PolicyGapChecker() {
 
   return (
     <div>
+      <PageHelp
+        title="Policy Gap Checker"
+        purpose="AI-powered compliance scan of your MRM Policy against every OSFI E-23 (September 2025) required section. Identifies missing coverage, weak provisions, and sections requiring strengthening — with specific recommended text additions. Run this after generating a new policy version and before board approval."
+        who="Chief Compliance Officer, CRO. Run before submitting the policy for board approval and before any OSFI examination."
+        inputs="No manual input — the AI reads your latest generated MRM Policy automatically. You must have generated an MRM Policy first (on the MRM Policy page)."
+        outputs="Compliance score (0–100%), letter grade (A–F), count of gaps found, count of OSFI sections covered, per-gap severity ratings with specific OSFI section references and recommended additions to the policy text, and overall examiner risk assessment."
+        connections={['MRM Policy (must generate a policy first)', 'MRM Policy page (apply gap recommendations by regenerating)', 'Audit Trail (scan is logged)', 'Exam Sprint (gaps here align with exam sprint findings)']}
+      />
       <div className="card" style={{marginBottom:16}}>
         <div className="section-hdr">
           <div>
@@ -5705,6 +6042,14 @@ function AuditSummary() {
 
   return (
     <div>
+      <PageHelp
+        title="AI Audit Summary"
+        purpose="Generates a formal 12-month AI-narrated audit narrative covering all significant MRM activities — model additions, validations completed, vendor assessments, policy changes, and monitoring actions. Written in examination-ready language for OSFI review."
+        who="CRO, Internal Audit, MRM team. Generated ahead of OSFI examinations or annual audit review cycles."
+        inputs="No manual input — the AI reads 12 months of audit trail events automatically. A richer audit trail (more events from active platform use) produces a more detailed summary."
+        outputs="12-month executive narrative, key activity breakdown by category (Model Inventory, Validation, Monitoring, Governance, Vendor), significant events timeline, areas of progress, areas for improvement, and compliance posture rating (Strong/Adequate/Developing)."
+        connections={['Audit Trail (data source — all events from the past 12 months)', 'Examiner Export (companion document)', 'Board Report (summary feeds executive narrative)', 'AI Anomaly Detection (on Audit Trail page — complements this narrative)']}
+      />
       <div className="card" style={{marginBottom:16}}>
         <div className="section-hdr">
           <div>
@@ -5788,11 +6133,19 @@ function B10Package() {
 
   return (
     <div>
+      <PageHelp
+        title="B-10 Third-Party Risk Package"
+        purpose="Generates a Board-ready Third-Party Model Risk Report per OSFI Guideline B-10 and E-23 Section 5. Covers all vendor models in your system — inventory, risk ratings, concentration risk, due diligence gaps, and a remediation plan — in formal board report language."
+        who="CRO presents to Board Risk Committee. Compliance Officer reviews for B-10 alignment. Required annually or whenever vendor model risk profile changes materially."
+        inputs="No manual input — the report pulls all vendor assessments you have completed on the Vendor Assessments page. You must have completed at least one vendor assessment before generating this package."
+        outputs="7-section AI-generated report: Executive Summary, Vendor Inventory, Risk Assessment, Due Diligence Status, Concentration Risk Analysis, Regulatory Compliance Status, and Remediation Action Plan. Includes B-10 compliance score and prioritized action items with owners and timelines."
+        connections={['Vendor Assessments (all assessments feed this report)', 'Model Inventory (vendor models must be registered here first)', 'Examiner Export (Section 4 vendor governance)', 'Board Report (companion document for board package)', 'Audit Trail (generation logged)']}
+      />
       <div className="card" style={{marginBottom:16}}>
         <div className="section-hdr">
           <div>
             <div className="section-title">B-10 Third-Party Risk Package <span className="ai-tag">Can Build Now</span></div>
-            <div style={{fontSize:13,color:'var(--text-muted)',marginTop:4}}>Generates a Board-ready Third-Party Model Risk Report per OSFI B-10 and E-23 §5, covering vendor inventory, risk assessment, concentration risk, and remediation plan.</div>
+            <div style={{fontSize:13,color:'var(--text-muted)',marginTop:4}}>Generates a Board-ready Third-Party Model Risk Report per OSFI B-10 and E-23 Section 5, covering vendor inventory, risk assessment, concentration risk, and remediation plan.</div>
           </div>
           <button className="btn btn-ai" onClick={generate} disabled={loading}>
             {loading ? <><span className="spinner" /> Generating...</> : '📦 Generate B-10 Package'}
@@ -5858,6 +6211,14 @@ function AIExaminerPrep() {
 
   return (
     <div>
+      <PageHelp
+        title="AI Examiner Prep"
+        purpose="Generates a frank, actionable OSFI examination preparation brief by synthesizing your full MRM portfolio. Tells you exactly what an OSFI examiner will scrutinize, predicts likely examination questions, identifies the most vulnerable findings, and gives you a 30-day priority action list before the exam."
+        who="CRO and MRM team, 30–90 days before an OSFI examination visit. Review together in an exam prep session."
+        inputs="No manual input required. The AI synthesizes your model inventory, validation records, vendor assessments, monitoring data, policy status, and audit trail into an integrated risk picture."
+        outputs="Overall readiness rating (Strong/Adequate/Needs Work/At Risk), readiness score (0–100), critical findings list, predicted examiner questions with recommended responses, 30-day priority actions by owner, exam-day checklist, and key strengths to lead with."
+        connections={['Examiner Export (generate PDF alongside this brief)', 'Exam Sprint (use for the full 30/60/90-day action plan)', 'Audit Summary (12-month activity narrative for examiner)', 'Model Inventory (inventory completeness assessed here)', 'Validations (validation gaps assessed here)']}
+      />
       <div className="card" style={{marginBottom:16}}>
         <div className="section-hdr">
           <div>

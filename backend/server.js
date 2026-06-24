@@ -319,7 +319,7 @@ app.post('/api/models/:id/ai-advice', aiLimiter, requireAuth, async function(req
         'You are an OSFI E-23 model risk compliance advisor at a Canadian federally regulated financial institution.\n\n'+
         'Model: "'+m.name+'"\nBusiness Unit: '+(m.business_unit||'Unknown')+'\nMethodology: '+(m.methodology_type||'Unknown')+'\nPurpose: '+(m.purpose||'Not specified')+'\nRisk Tier: '+(m.risk_tier ? 'Tier '+m.risk_tier : 'UNRATED')+'\nVendor: '+(m.is_third_party ? 'Yes - '+(m.vendor_name||'unknown') : 'No')+'\nLast Validated: '+(m.last_validated_at ? new Date(m.last_validated_at).toLocaleDateString('en-CA') : 'Never')+'\nValidation Status: '+(isOverdue ? 'OVERDUE by '+overdueDays+' days' : 'Current')+(ratingRes.rows.length ? '\nLatest Risk Reasoning: '+ratingRes.rows[0].ai_reasoning : '')+'\n\n'+
         'Return ONLY valid JSON:\n'+
-        '{"priority":"critical|high|medium|low","executive_summary":"2 sentences on current OSFI E-23 compliance posture","immediate_actions":["action with §reference","action 2","action 3"],"osfi_e23_gaps":["gap 1","gap 2"],"validation_scope":"what the next independent validation should cover","estimated_effort":"e.g. 3-4 weeks with internal model validation team"}'
+        '{"priority":"critical|high|medium|low","executive_summary":"2 sentences on current OSFI E-23 compliance posture","immediate_actions":["action with reference","action 2","action 3"],"osfi_e23_gaps":["gap 1","gap 2"],"validation_scope":"what the next independent validation should cover","estimated_effort":"e.g. 3-4 weeks with internal model validation team"}'
       }]
     });
     const advice = extractJSON(aiResp.content[0].text);
@@ -797,8 +797,8 @@ app.get('/api/vendor-assessments', requireAuth, async function(req, res) {
 app.post('/api/vendor-assessments', aiLimiter, requireAuth, async function(req, res) {
   try {
     const b=req.body;
-    const mRes=await pool.query('SELECT * FROM models WHERE id=$1 AND tenant_id=$2 AND is_third_party=TRUE',[b.model_id,req.user.tenant_id]);
-    if (!mRes.rows.length) return res.status(404).json({ error:'Vendor model not found' });
+    const mRes=await pool.query('SELECT * FROM models WHERE id=$1 AND tenant_id=$2 AND status=\'active\'',[b.model_id,req.user.tenant_id]);
+    if (!mRes.rows.length) return res.status(404).json({ error:'Model not found or inactive' });
     const m=mRes.rows[0];
 
     // Score: each TRUE answer reduces risk
@@ -815,10 +815,10 @@ app.post('/api/vendor-assessments', aiLimiter, requireAuth, async function(req, 
       const aiResp=await callBedrock({
         model:'anthropic.claude-3-haiku-20240307-v1:0', max_tokens:300, temperature:0.2,
         messages:[{role:'user',content:
-          'You are an OSFI E-23 third-party model risk expert. Assess this vendor model per OSFI E-23 §5 (Third-Party Model Risk).\n\n'+
+          'You are an OSFI E-23 third-party model risk expert. Assess this vendor model per OSFI E-23 Section 5 (Third-Party Model Risk).\n\n'+
           'Model: "'+m.name+'" from vendor '+( m.vendor_name||'unknown')+' ('+( m.vendor_product||'unknown')+')\n'+
           'SLA documented: '+b.q_sla_documented+'\nData access rights: '+b.q_data_access+'\nAudit rights: '+b.q_audit_rights+'\nExit plan: '+b.q_exit_plan+'\nConcentration risk: '+b.q_concentration_risk+'\nModel documentation received: '+b.q_model_doc_received+'\nOverride capability: '+b.q_override_capability+'\nOverall risk score: '+score+'/12 ('+riskLevel+' risk)\n\n'+
-          'Write 3 sentences: (1) overall vendor governance posture per OSFI E-23 §5, (2) most critical gap, (3) recommended action with timeline.'
+          'Write 3 sentences: (1) overall vendor governance posture per OSFI E-23 Section 5, (2) most critical gap, (3) recommended action with timeline.'
         }]
       });
       aiAssessment=aiResp.content[0].text.trim();
@@ -909,27 +909,33 @@ app.post('/api/reports/board-pack', aiLimiter, requireAuth, async function(req, 
       bx+=bw+8;
     });
 
-    // AI Executive Summary box
+    // AI Executive Summary box — dynamic height based on text
     txt(p1,'EXECUTIVE SUMMARY (AI-GENERATED)',M,H-395,{size:9,bold:true,color:NAVY});
-    p1.drawRectangle({x:M,y:H-460,width:W-2*M,height:58,color:rgb(0.97,0.98,1.0)});
-    p1.drawRectangle({x:M,y:H-460,width:3,height:58,color:NAVY});
-    // Wrap text manually (pdf-lib doesn't auto-wrap)
-    const words=execSummary.split(' ');
-    let line='', lineY=H-408, maxW=W-2*M-20;
-    words.forEach(function(w){
-      const test=line ? line+' '+w : w;
-      if (test.length*4.5 > maxW && line) {
-        txt(p1,line,M+10,lineY,{size:8});
-        line=w; lineY-=12;
-      } else { line=test; }
-    });
-    if (line) txt(p1,line,M+10,lineY,{size:8});
+    // Pre-calculate wrapped lines to size box correctly
+    function wrapLines(text,charWidth,maxW){
+      const words=String(text||'').split(' ');
+      const lines=[]; let line='';
+      words.forEach(function(w){
+        const test=line?line+' '+w:w;
+        if(test.length*charWidth>maxW&&line){lines.push(line);line=w;}else{line=test;}
+      });
+      if(line)lines.push(line);
+      return lines;
+    }
+    const summaryLines=wrapLines(execSummary,4.3,W-2*M-24);
+    const boxH=Math.max(52,summaryLines.length*13+16);
+    p1.drawRectangle({x:M,y:H-400-boxH,width:W-2*M,height:boxH,color:rgb(0.97,0.98,1.0)});
+    p1.drawRectangle({x:M,y:H-400-boxH,width:3,height:boxH,color:NAVY});
+    summaryLines.forEach(function(ln,i){ txt(p1,ln,M+10,H-412-i*13,{size:8}); });
+    let summaryBottom=H-400-boxH-16;
 
     // Compliance summary
-    txt(p1,'OSFI E-23 COMPLIANCE SUMMARY',M,H-480,{size:9,bold:true,color:NAVY});
+    txt(p1,'OSFI E-23 COMPLIANCE SUMMARY',M,summaryBottom,{size:9,bold:true,color:NAVY});
     p1.drawLine({start:{x:M,y:H-484},end:{x:W-M,y:H-484},thickness:0.5,color:rgb(0.85,0.85,0.9)});
     const rated=ms.length-unr.length;
     const pct=ms.length ? Math.round(rated/ms.length*100) : 0;
+    const complianceY=summaryBottom-18;
+    p1.drawLine({start:{x:M,y:complianceY-4},end:{x:W-M,y:complianceY-4},thickness:0.5,color:rgb(0.85,0.85,0.9)});
     [
       'Total models in inventory: '+ms.length,
       'Models with assigned risk tier: '+rated+' of '+ms.length+' ('+pct+'%)',
@@ -938,8 +944,8 @@ app.post('/api/reports/board-pack', aiLimiter, requireAuth, async function(req, 
       'Tier 3 (Standard Risk) — triennial validation required: '+t3.length,
       'Models overdue for independent validation: '+overdueCount,
       'Open validation workflows in progress: '+valPending.rows[0].c,
-    ].forEach(function(l,i){ txt(p1,l,M+10,H-498-i*14,{size:8}); });
-    txt(p1,'OSFI Guideline E-23 (September 2025) effective May 1, 2027. AI summary generated by Amazon Bedrock Claude (ca-central-1).',M,H-600,{size:7,color:GRY});
+    ].forEach(function(l,i){ txt(p1,l,M+10,complianceY-18-i*14,{size:8}); });
+    txt(p1,'OSFI Guideline E-23 (September 2025) effective May 1, 2027. AI summary generated by Amazon Bedrock Claude (ca-central-1).',M,28,{size:7,color:GRY});
 
     // Page 2 — Model Inventory
     const p2=newPage();
@@ -1015,7 +1021,7 @@ app.post('/api/validations/:id/ai-analyze', aiLimiter, requireAuth, async functi
         'Outcome declared: '+(v.outcome||'not yet declared')+'\n'+
         'Conditions: '+(v.conditions||'none')+'\n\n'+
         'Return ONLY valid JSON:\n'+
-        '{"severity":"critical|high|medium|low","osfi_sections_implicated":["§X.X: finding description"],"findings_completeness_score":0,"gaps_in_findings":["gap 1"],"recommended_conditions":["condition with §ref"],"remediation_timeline":"e.g. 30 days","approval_recommendation":"approve|conditional_approve|reject","approval_rationale":"2 sentences citing OSFI E-23"}'
+        '{"severity":"critical|high|medium|low","osfi_sections_implicated":["X.X: finding description"],"findings_completeness_score":0,"gaps_in_findings":["gap 1"],"recommended_conditions":["condition with ref"],"remediation_timeline":"e.g. 30 days","approval_recommendation":"approve|conditional_approve|reject","approval_rationale":"2 sentences citing OSFI E-23"}'
       }]
     });
     const analysis = extractJSON(aiResp.content[0].text);
@@ -1045,7 +1051,7 @@ app.post('/api/validations/:id/ai-approve-check', aiLimiter, requireAuth, async 
         'Outcome: '+(v.outcome||'NONE')+'\n'+
         'Conditions imposed: '+(v.conditions||'none')+'\n'+
         'AI findings analysis performed: '+(v.ai_findings_analysis ? 'Yes — severity: '+JSON.parse(JSON.stringify(v.ai_findings_analysis)).severity : 'No')+'\n\n'+
-        'OSFI E-23 requires: independent validator, documented scope, findings with §references, pass/fail outcome, conditions if conditional, approval by authorized senior officer.\n\n'+
+        'OSFI E-23 requires: independent validator, documented scope, findings with references, pass/fail outcome, conditions if conditional, approval by authorized senior officer.\n\n'+
         'Return ONLY valid JSON:\n'+
         '{"approval_ready":true,"completeness_score":0,"missing_documentation":["item 1"],"osfi_e23_requirements_met":["req 1"],"osfi_e23_requirements_missing":["req 1"],"recommendation":"1-2 sentences"}'
       }]
@@ -1068,14 +1074,14 @@ app.post('/api/validations/:id/ai-closure-summary', aiLimiter, requireAuth, asyn
     const aiResp = await callBedrock({
       model:'anthropic.claude-3-haiku-20240307-v1:0', max_tokens:350, temperature:0.2,
       messages:[{role:'user',content:
-        'You are an OSFI E-23 model risk compliance officer writing the official closure narrative for a completed validation. This text will become part of the permanent audit record per OSFI E-23 §4.4.\n\n'+
+        'You are an OSFI E-23 model risk compliance officer writing the official closure narrative for a completed validation. This text will become part of the permanent audit record per OSFI E-23 Section 4.4.\n\n'+
         'Model: "'+v.model_name+'" | Tier: '+(v.risk_tier||'unrated')+' | BU: '+(v.business_unit||'unknown')+'\n'+
         'Validation type: '+v.validation_type+' | Outcome: '+(v.outcome||'unknown')+'\n'+
         'Assigned to: '+(v.assigned_to_email||'unknown')+' | Approved by: '+(v.approved_by_email||'unknown')+'\n'+
         'Findings: '+(v.findings||'none recorded')+'\n'+
         'Conditions imposed: '+(v.conditions||'none')+'\n'+
         'Next validation due: '+(v.next_validation_due||'not set')+'\n\n'+
-        'Write exactly 3 sentences for the audit closure record: (1) validation scope, validator, and outcome per OSFI E-23 §4.3, (2) key finding and compliance status with specific §references, (3) next action or next validation due timeline. Formal, audit-grade language only.'
+        'Write exactly 3 sentences for the audit closure record: (1) validation scope, validator, and outcome per OSFI E-23 Section 4.3, (2) key finding and compliance status with specific references, (3) next action or next validation due timeline. Formal, audit-grade language only.'
       }]
     });
     const summary = aiResp.content[0].text.trim();
@@ -1101,7 +1107,7 @@ app.get('/api/validations/:id/full', requireAuth, async function(req, res) {
 // PHASE 2 AI ENHANCEMENTS — VENDOR ASSESSMENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// AI: Full OSFI §5 deep-dive analysis with remediation plan and trend
+// AI: Full OSFI Section 5 deep-dive analysis with remediation plan and trend
 app.post('/api/vendor-assessments/:id/ai-deepdive', aiLimiter, requireAuth, async function(req, res) {
   try {
     const r = await pool.query(
@@ -1120,12 +1126,12 @@ app.post('/api/vendor-assessments/:id/ai-deepdive', aiLimiter, requireAuth, asyn
     const aiResp = await callBedrock({
       model:'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens:1000, temperature:0.2,
       messages:[{role:'user',content:
-        'You are an OSFI E-23 third-party model risk specialist. Conduct a deep-dive vendor governance analysis per OSFI E-23 §5 (Third-Party Model Risk Management).\n\n'+
+        'You are an OSFI E-23 third-party model risk specialist. Conduct a deep-dive vendor governance analysis per OSFI E-23 Section 5 (Third-Party Model Risk Management).\n\n'+
         'Vendor: '+(a.vendor_name||'unknown')+' | Product: '+(a.vendor_product||'unknown')+'\n'+
         'Model: "'+a.model_name+'" ('+(a.methodology_type||'unknown')+')\n'+
         'Business Unit: '+(a.business_unit||'unknown')+'\n'+
         'Risk Level: '+a.risk_level+' (Score: '+a.risk_score+'/12)\n\n'+
-        'OSFI E-23 §5 Checklist:\n'+
+        'OSFI E-23 Section 5 Checklist:\n'+
         '- SLA documented: '+a.q_sla_documented+'\n'+
         '- Data access rights: '+a.q_data_access+'\n'+
         '- Contractual audit rights: '+a.q_audit_rights+'\n'+
@@ -1136,7 +1142,7 @@ app.post('/api/vendor-assessments/:id/ai-deepdive', aiLimiter, requireAuth, asyn
         'Assessor findings: '+(a.findings||'none')+'\n'+
         'Historical trend: '+trend+' | History: '+history.rows.map(function(h){ return h.risk_level+'('+new Date(h.created_at).toLocaleDateString('en-CA')+')'; }).join(' → ')+'\n\n'+
         'Return ONLY valid JSON:\n'+
-        '{"osfi_section5_compliance_score":0,"critical_gaps":["gap with §ref"],"remediation_plan":[{"action":"...","owner":"CRO|Legal|IT|Procurement","timeline":"e.g. 30 days","osfi_ref":"§X.X"}],"concentration_risk_narrative":"2 sentences","regulatory_disclosure_required":false,"regulatory_disclosure_rationale":"1 sentence","trend":"'+trend+'","next_assessment_priority":"high|medium|low","next_assessment_rationale":"1 sentence"}'
+        '{"osfi_section5_compliance_score":0,"critical_gaps":["gap with ref"],"remediation_plan":[{"action":"...","owner":"CRO|Legal|IT|Procurement","timeline":"e.g. 30 days","osfi_ref":"X.X"}],"concentration_risk_narrative":"2 sentences","regulatory_disclosure_required":false,"regulatory_disclosure_rationale":"1 sentence","trend":"'+trend+'","next_assessment_priority":"high|medium|low","next_assessment_rationale":"1 sentence"}'
       }]
     });
     const deepdive = extractJSON(aiResp.content[0].text);
@@ -1411,7 +1417,7 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
           'OSFI Guideline E-23 (September 2025, effective May 1, 2027)\n\n'+
           'Data: Total models: '+ms.length+'. Tier 1 (High): '+t1.length+'. Tier 2: '+t2.length+'. Tier 3: '+t3.length+'. Unrated: '+unr.length+'.\n'+
           'Overdue validations: '+overdueN+'. Completed validations: '+completedVals.length+'. Vendor assessments: '+vendors.rows.length+'.\n\n'+
-          'Write exactly 4 sentences for the official examination narrative: (1) overall OSFI E-23 compliance posture with inventory completeness, (2) governance strength with §references, (3) validation program effectiveness with §references, (4) key finding requiring management response. Formal OSFI examination language.'
+          'Write exactly 4 sentences for the official examination narrative: (1) overall OSFI E-23 compliance posture with inventory completeness, (2) governance strength with references, (3) validation program effectiveness with references, (4) key finding requiring management response. Formal OSFI examination language.'
         }]
       });
       complianceNarrative = aiResp.content[0].text.trim();
@@ -1489,7 +1495,7 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
 
     let iy=Math.min(ny-22,H-492);
     ny=secHdr(p1,'DOCUMENT INDEX',iy);
-    ['Section 1: Complete Model Inventory Summary','Section 2: Tier 1 High-Risk Models — Validation Evidence','Section 3: Active Validation Findings','Section 4: Third-Party Vendor Governance (OSFI E-23 §5)','Section 5: Management Attestation'].forEach(function(s,i){
+    ['Section 1: Complete Model Inventory Summary','Section 2: Tier 1 High-Risk Models — Validation Evidence','Section 3: Active Validation Findings','Section 4: Third-Party Vendor Governance (OSFI E-23 Section 5)','Section 5: Management Attestation'].forEach(function(s,i){
       tx(p1,(i+1)+'.  '+s,M+8,ny,{size:8.5}); ny-=14;
     });
     tx(p1,'CONFIDENTIAL: Contains supervisory information. Distribution restricted to model risk function and OSFI examiners.',M,30,{size:6.5,color:GRY});
@@ -1519,7 +1525,7 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
     // PAGE 3 — Tier 1 Detail with AI reasoning
     if (t1.length>0) {
       const p3=exPage();
-      let y3=secHdr(p3,'SECTION 2: TIER 1 HIGH-RISK MODELS (OSFI E-23 §4.2 — Annual Validation Required)',H-70);
+      let y3=secHdr(p3,'SECTION 2: TIER 1 HIGH-RISK MODELS (OSFI E-23 Section 4.2 — Annual Validation Required)',H-70);
       t1.forEach(function(m){
         if (y3<100) return;
         p3.drawRectangle({x:M-4,y:y3-54,width:W-2*M+8,height:60,color:rgb(0.999,0.97,0.97)});
@@ -1539,7 +1545,7 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
 
     // PAGE 4 — Validation Evidence
     const p4=exPage();
-    let y4=secHdr(p4,'SECTION 3: VALIDATION EVIDENCE (OSFI E-23 §4.3 — Independent Validation Program)',H-70);
+    let y4=secHdr(p4,'SECTION 3: VALIDATION EVIDENCE (OSFI E-23 Section 4.3 — Independent Validation Program)',H-70);
     if (validations.rows.length===0) {
       tx(p4,'No validations on record.',M,y4,{size:9,color:GRY});
     } else {
@@ -1562,26 +1568,29 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
 
     // PAGE 5 — Vendor Assessments
     const p5=exPage();
-    let y5=secHdr(p5,'SECTION 4: THIRD-PARTY VENDOR GOVERNANCE (OSFI E-23 §5)',H-70);
+    let y5=secHdr(p5,'SECTION 4: THIRD-PARTY VENDOR GOVERNANCE (OSFI E-23 Section 5)',H-70);
     if (vendors.rows.length===0) {
       tx(p5,'No vendor assessments on record.',M,y5,{size:9,color:GRY});
     } else {
       vendors.rows.slice(0,12).forEach(function(a){
-        if (y5<100) return;
+        if (y5<80) return;
         const rc=a.risk_level==='high'?RED:a.risk_level==='medium'?AMB:GRN;
-        p5.drawRectangle({x:M-2,y:y5-36,width:W-2*M+4,height:40,color:rgb(0.97,0.97,0.99)});
-        tx(p5,a.model_name,M+4,y5,{size:8.5,bold:true});
-        tx(p5,a.vendor_name||'—',M+4,y5-12,{size:8,color:GRY});
-        tx(p5,(a.risk_level||'').toUpperCase()+' RISK',M+185,y5,{size:8,bold:true,color:rc});
-        tx(p5,'Score: '+(a.risk_score||0)+'/12',M+265,y5,{size:8,color:GRY});
-        tx(p5,'Assessed: '+(a.assessed_by_email||'—'),M+340,y5,{size:7.5,color:GRY});
-        tx(p5,'Next review: '+(a.next_review_due||'—'),M+440,y5,{size:7.5,color:GRY});
         const chks=['q_sla_documented','q_data_access','q_audit_rights','q_exit_plan','q_model_doc_received','q_override_capability'];
         const passed=chks.filter(function(k){ return a[k]; }).length;
-        tx(p5,'§5 Checklist: '+passed+'/'+chks.length+' items satisfied',M+4,y5-24,{size:7.5,color:GRY});
-        if (a.ai_assessment) y5=wrapTx(p5,'AI: '+a.ai_assessment.substring(0,170),M+130,y5-24,{size:7,maxW:W-2*M-138,lh:10,color:rgb(0.25,0.25,0.55)});
-        else y5-=24;
-        y5-=18;
+        // Calculate row height before drawing background (avoids fixed-height overlap)
+        const aiText=a.ai_assessment?a.ai_assessment.substring(0,200):'';
+        const aiLineCount=aiText ? Math.ceil(aiText.length*4.0/(W-2*M-30)) : 0;
+        const rowH=Math.max(52, 38+aiLineCount*10);
+        p5.drawRectangle({x:M-2,y:y5-rowH+4,width:W-2*M+4,height:rowH,color:rgb(0.97,0.97,0.99)});
+        tx(p5,a.model_name,M+4,y5,{size:8.5,bold:true});
+        tx(p5,a.vendor_name||'—',M+4,y5-12,{size:7.5,color:GRY});
+        tx(p5,(a.risk_level||'').toUpperCase()+' RISK',M+220,y5,{size:8,bold:true,color:rc});
+        tx(p5,'Score: '+(a.risk_score||0)+'/12',M+300,y5,{size:7.5,color:GRY});
+        tx(p5,'Next review: '+(a.next_review_due||'—'),M+380,y5,{size:7.5,color:GRY});
+        tx(p5,'Section 5 Checklist: '+passed+'/'+chks.length+' satisfied',M+4,y5-24,{size:7.5,color:GRY});
+        let afterY=y5-24;
+        if (aiText) afterY=wrapTx(p5,'AI: '+aiText,M+4,y5-35,{size:7,maxW:W-2*M-16,lh:10,color:rgb(0.25,0.25,0.55)});
+        y5=Math.min(afterY,y5-rowH)-8;
       });
     }
 
@@ -1594,11 +1603,11 @@ app.post('/api/reports/examiner-export', aiLimiter, requireAuth, async function(
       new Date().toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})+'. This document is provided in confidence to the Office of the Superintendent of Financial Institutions.',
       '',
       'The institution confirms:',
-      '1. The model inventory represents all material models in active use, classified per OSFI E-23 §3 tiering criteria.',
-      '2. Risk tier classifications reflect the institution\'s OSFI E-23 §4.2-aligned risk framework.',
-      '3. Independent validation activities have been conducted per §4.3 by qualified, independent validators.',
-      '4. Third-party model governance complies with or is remediating to OSFI E-23 §5 requirements.',
-      '5. Audit trail records are maintained in append-only, immutable format per §4.4.',
+      '1. The model inventory represents all material models in active use, classified per OSFI E-23 Section 3 tiering criteria.',
+      '2. Risk tier classifications reflect the institution\'s OSFI E-23 Section 4.2-aligned risk framework.',
+      '3. Independent validation activities have been conducted per Section 4.3 by qualified, independent validators.',
+      '4. Third-party model governance complies with or is remediating to OSFI E-23 Section 5 requirements.',
+      '5. Audit trail records are maintained in append-only, immutable format per Section 4.4.',
       '',
       'Material exceptions or open findings are documented in Section 3 of this package.',
     ];
@@ -1676,7 +1685,7 @@ app.post('/api/models/:id/changes/:changeId/ai-materiality', aiLimiter, requireA
         'Version change: '+((cv.snapshot&&cv.snapshot.version)||'prior')+' → '+cv.version_label+'\n'+
         'Change type: '+cv.change_type+'\nChange category: '+cv.change_category+'\nChange reason: '+cv.change_reason+'\n\n'+
         'Return ONLY valid JSON:\n'+
-        '{"is_material":true,"materiality_score":0,"osfi_rationale":"...","revalidation_required":true,"revalidation_urgency":"immediate|within_90_days|next_cycle","risk_implications":["..."],"recommended_actions":["..."],"osfi_sections_implicated":["§X.X"]}'
+        '{"is_material":true,"materiality_score":0,"osfi_rationale":"...","revalidation_required":true,"revalidation_urgency":"immediate|within_90_days|next_cycle","risk_implications":["..."],"recommended_actions":["..."],"osfi_sections_implicated":["X.X"]}'
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
@@ -1734,7 +1743,7 @@ app.post('/api/exam-sprint/launch', aiLimiter, requireAuth, async function(req, 
         '- Models with material changes requiring revalidation: '+materialChanges.rows[0].c+'\n\n'+
         'Generate a comprehensive Emergency OSFI Exam Sprint Plan based on OSFI Guideline E-23 (September 2025).\n\n'+
         'Return ONLY valid JSON (no extra text):\n'+
-        '{"overall_readiness_score":0,"exam_risk_level":"high","executive_summary":"3 sentences","critical_gaps":[{"gap":"...","osfi_section":"§X.X","severity":"critical","affected_count":0}],"sprint_plan":{"day_30":[{"action":"...","owner":"...","osfi_ref":"§X.X","priority":"P1"}],"day_60":[{"action":"...","owner":"...","osfi_ref":"§X.X","priority":"P2"}],"day_90":[{"action":"...","owner":"...","osfi_ref":"§X.X","priority":"P2"}]},"quick_wins":["..."],"examiner_likely_questions":["..."],"strengths":["..."]}'
+        '{"overall_readiness_score":0,"exam_risk_level":"high","executive_summary":"3 sentences","critical_gaps":[{"gap":"...","osfi_section":"X.X","severity":"critical","affected_count":0}],"sprint_plan":{"day_30":[{"action":"...","owner":"...","osfi_ref":"X.X","priority":"P1"}],"day_60":[{"action":"...","owner":"...","osfi_ref":"X.X","priority":"P2"}],"day_90":[{"action":"...","owner":"...","osfi_ref":"X.X","priority":"P2"}]},"quick_wins":["..."],"examiner_likely_questions":["..."],"strengths":["..."]}'
       }]
     });
     const plan = extractJSON(aiResp.content[0].text);
@@ -2026,7 +2035,7 @@ app.get('/api/calendar/ai-briefing', aiLimiter, requireAuth, async function(req,
         '- Models never validated: '+neverVal.rows[0].c+'\n'+
         '- Open validation workflows: '+openVals.rows[0].c+'\n'+
         '- Vendor assessments overdue: '+vendors.rows[0].c+'\n\n'+
-        'Write exactly 2 sentences. Sentence 1: most urgent compliance priority this week with specific numbers and OSFI E-23 §reference. Sentence 2: the one delegation action for the team to close open items. Be directive and specific.'
+        'Write exactly 2 sentences. Sentence 1: most urgent compliance priority this week with specific numbers and OSFI E-23 reference. Sentence 2: the one delegation action for the team to close open items. Be directive and specific.'
       }]
     });
     res.json({ briefing:aiResp.content[0].text.trim(), generated_at:new Date() });
@@ -2054,12 +2063,12 @@ app.post('/api/models/:id/monitoring/ai-analysis', aiLimiter, requireAuth, async
       model:'anthropic.claude-3-sonnet-20240229-v1:0',
       max_tokens:600, temperature:0.2,
       messages:[{role:'user',content:
-        'You are an OSFI E-23 model risk expert analyzing ongoing model performance monitoring data under §4.5.\n\n'+
+        'You are an OSFI E-23 model risk expert analyzing ongoing model performance monitoring data under Section 4.5.\n\n'+
         'Model: '+m.name+'\nRisk Tier: '+(m.risk_tier||'Unrated')+'\nMethodology: '+(m.methodology_type||'unknown')+'\n'+
         'Metric: '+metric_name+'\nReadings (date: value): '+readingSummary+'\n'+
         'Amber threshold: '+(latest.threshold_amber||'not set')+'\nRed threshold: '+(latest.threshold_red||'not set')+'\n\n'+
         'Return ONLY valid JSON:\n'+
-        '{"trend":"improving|stable|deteriorating","trend_magnitude":"low|moderate|significant","drift_assessment":"1 sentence","is_material_drift":false,"osfi_e23_implication":"1 sentence citing §4.5","recommended_actions":["..."],"escalation_required":false,"escalation_rationale":"..."}'
+        '{"trend":"improving|stable|deteriorating","trend_magnitude":"low|moderate|significant","drift_assessment":"1 sentence","is_material_drift":false,"osfi_e23_implication":"1 sentence citing Section 4.5","recommended_actions":["..."],"escalation_required":false,"escalation_rationale":"..."}'
       }]
     });
     const result=extractJSON(aiResp.content[0].text);
@@ -2155,7 +2164,7 @@ app.get('/api/dashboard/action-queue', aiLimiter, requireAuth, async function(re
         `Portfolio state: ${JSON.stringify(portfolioContext)}\n\n` +
         `Today: ${today}\n\n` +
         `Return JSON:\n` +
-        `{"risk_pulse_score":0,"risk_pulse_label":"High/Moderate/Low Risk","executive_summary":"2 sentences on overall MRM posture","actions":[{"rank":1,"urgency":"critical|high|medium","category":"validation|monitoring|vendor|governance|exam","title":"...","detail":"2 sentences with specifics","action_label":"Open ...","nav_target":"validations|models|vendors|exam_sprint|mra_wizard|calendar","osfi_ref":"§X.X","estimated_hours":0,"consequence":"1 sentence on OSFI risk if ignored"}],"quick_wins":["<15 min task..."],"this_week":"1 paragraph directive to the MRM team"}`
+        `{"risk_pulse_score":0,"risk_pulse_label":"High/Moderate/Low Risk","executive_summary":"2 sentences on overall MRM posture","actions":[{"rank":1,"urgency":"critical|high|medium","category":"validation|monitoring|vendor|governance|exam","title":"...","detail":"2 sentences with specifics","action_label":"Open ...","nav_target":"validations|models|vendors|exam_sprint|mra_wizard|calendar","osfi_ref":"X.X","estimated_hours":0,"consequence":"1 sentence on OSFI risk if ignored"}],"quick_wins":["<15 min task..."],"this_week":"1 paragraph directive to the MRM team"}`
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
@@ -2195,7 +2204,7 @@ app.post('/api/models/portfolio-scan', aiLimiter, requireAuth, async function(re
       messages: [{ role:'user', content:
         `Model portfolio: ${JSON.stringify(enriched)}\n\n` +
         `Return JSON:\n` +
-        `{"health_score":0,"health_grade":"A|B|C|D|F","headline":"1 sentence CRO-level summary","critical_findings":[{"finding":"...","affected_models":["name"],"osfi_ref":"§X.X","severity":"critical|high"}],"systemic_risks":[{"risk":"...","description":"...","osfi_ref":"§X.X"}],"quick_wins":[{"action":"...","models_affected":0,"hours_saved":0}],"tier_adequacy":{"assessment":"...","recommendation":"..."},"concentration_risks":[{"type":"methodology|vendor|owner|data_source","description":"...","affected_count":0}],"hours_saved_if_fixed":0,"estimated_osfi_exam_risk":"low|moderate|high|critical"}`
+        `{"health_score":0,"health_grade":"A|B|C|D|F","headline":"1 sentence CRO-level summary","critical_findings":[{"finding":"...","affected_models":["name"],"osfi_ref":"X.X","severity":"critical|high"}],"systemic_risks":[{"risk":"...","description":"...","osfi_ref":"X.X"}],"quick_wins":[{"action":"...","models_affected":0,"hours_saved":0}],"tier_adequacy":{"assessment":"...","recommendation":"..."},"concentration_risks":[{"type":"methodology|vendor|owner|data_source","description":"...","affected_count":0}],"hours_saved_if_fixed":0,"estimated_osfi_exam_risk":"low|moderate|high|critical"}`
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
@@ -2244,7 +2253,7 @@ Write in formal financial institution language. Be specific and professional. Re
         `"executive_summary":"3–4 sentence formal summary","validation_scope":"2–3 sentences on scope and objectives",` +
         `"model_overview":{"description":"2–3 sentences","methodology_assessment":"2 sentences","data_assessment":"2 sentences"},` +
         `"findings_narrative":"3–5 paragraphs describing findings in formal language",` +
-        `"findings_table":[{"id":"F-01","category":"Data Quality|Model Risk|Documentation|Governance","severity":"Critical|High|Medium|Low","finding":"...","osfi_ref":"§X.X","recommendation":"...","target_date":"YYYY-MM-DD"}],` +
+        `"findings_table":[{"id":"F-01","category":"Data Quality|Model Risk|Documentation|Governance","severity":"Critical|High|Medium|Low","finding":"...","osfi_ref":"X.X","recommendation":"...","target_date":"YYYY-MM-DD"}],` +
         `"overall_risk_opinion":"Pass|Conditional Pass|Fail","risk_opinion_rationale":"2–3 sentences",` +
         `"conditions_of_approval":["condition..."],"recommendations":["recommendation..."],` +
         `"osfi_compliance_assessment":"2 sentences on OSFI E-23 compliance posture",` +
@@ -2299,12 +2308,12 @@ Draft a complete, board-ready Model Risk Management Policy document. Use formal 
         `{"number":"1","title":"Purpose and Scope","content":"3–4 paragraphs"},` +
         `{"number":"2","title":"Definitions","content":"definitions of: Model, Model Risk, Tier 1/2/3, MRM, Validation, Champion-Challenger"},` +
         `{"number":"3","title":"Governance Framework","content":"3–4 paragraphs covering Board, Audit Committee, CRO, Model Risk Committee, Second Line"},` +
-        `{"number":"4","title":"Model Identification and Inventory (OSFI E-23 §3)","content":"3–4 paragraphs"},` +
-        `{"number":"5","title":"Model Risk Rating and Tiering (OSFI E-23 §3.2)","content":"3–4 paragraphs with tier criteria table"},` +
-        `{"number":"6","title":"Model Validation Standards (OSFI E-23 §4)","content":"4–5 paragraphs covering independence, scope, frequency, findings"},` +
-        `{"number":"7","title":"Third-Party and Vendor Models (OSFI E-23 §5)","content":"3–4 paragraphs"},` +
-        `{"number":"8","title":"Ongoing Model Monitoring (OSFI E-23 §4.5)","content":"3–4 paragraphs covering metrics, thresholds, escalation"},` +
-        `{"number":"9","title":"Model Change Management (OSFI E-23 §4.2)","content":"3 paragraphs covering materiality, re-validation triggers"},` +
+        `{"number":"4","title":"Model Identification and Inventory (OSFI E-23 Section 3)","content":"3–4 paragraphs"},` +
+        `{"number":"5","title":"Model Risk Rating and Tiering (OSFI E-23 Section 3.2)","content":"3–4 paragraphs with tier criteria table"},` +
+        `{"number":"6","title":"Model Validation Standards (OSFI E-23 Section 4)","content":"4–5 paragraphs covering independence, scope, frequency, findings"},` +
+        `{"number":"7","title":"Third-Party and Vendor Models (OSFI E-23 Section 5)","content":"3–4 paragraphs"},` +
+        `{"number":"8","title":"Ongoing Model Monitoring (OSFI E-23 Section 4.5)","content":"3–4 paragraphs covering metrics, thresholds, escalation"},` +
+        `{"number":"9","title":"Model Change Management (OSFI E-23 Section 4.2)","content":"3 paragraphs covering materiality, re-validation triggers"},` +
         `{"number":"10","title":"Model Risk Appetite","content":"2–3 paragraphs with quantitative limits"},` +
         `{"number":"11","title":"Audit and Reporting","content":"2–3 paragraphs"},` +
         `{"number":"12","title":"Policy Exceptions","content":"2 paragraphs"},` +
@@ -2383,7 +2392,7 @@ app.post('/api/ai/ingest-document', aiLimiter, requireAuth, async function(req, 
         `"extracted_validation_data":{"validator_name":null,"validation_date":null,"outcome":null,"findings":null,"conditions":null,"scope":null},` +
         `"extracted_vendor_data":{"vendor_name":null,"product_name":null,"contract_end_date":null,"risk_rating":null},` +
         `"key_dates":[{"label":"...","date":"YYYY-MM-DD"}],` +
-        `"osfi_sections_referenced":["§X.X"],` +
+        `"osfi_sections_referenced":["X.X"],` +
         `"summary":"2–3 sentence plain English summary of what this document is about",` +
         `"suggested_next_action":"what to do with this document in ClearMRM",` +
         `"data_quality_warnings":["any fields that seemed unclear or ambiguous"]}`
@@ -2415,7 +2424,7 @@ app.post('/api/admin/ai-onboarding-plan', aiLimiter, requireAuth, async function
         `OSFI E-23 effective: May 1 2027. Today: ${new Date().toISOString().split('T')[0]}.\n\n`+
         `Return JSON: {"readiness_score":0,"readiness_label":"Not Started|Early Stage|In Progress|Near Complete","months_to_deadline":0,`+
         `"priority_gaps":["gap"],"implementation_roadmap":[{"phase":"Phase 1","title":"...","timeline":"Month 1-2",`+
-        `"actions":["action"],"osfi_sections":["§3.1"],"effort":"Low|Medium|High"}],`+
+        `"actions":["action"],"osfi_sections":["Section 3.1"],"effort":"Low|Medium|High"}],`+
         `"quick_wins":["30-day action"],"examiner_focus_areas":["area"],"executive_summary":"2-3 sentences for CRO"}`
       }]
     });
@@ -2452,7 +2461,7 @@ app.post('/api/examiner/ai-prep', aiLimiter, requireAuth, async function(req, re
       messages: [{ role:'user', content:
         `Portfolio: ${JSON.stringify(context)}\nDeadline: OSFI E-23 May 1 2027.\n\n`+
         `Return JSON: {"overall_readiness":"Strong|Adequate|Needs Work|At Risk","readiness_score":0,`+
-        `"executive_summary":"3 sentences","critical_findings":[{"issue":"...","osfi_ref":"§X.X","severity":"critical|high|medium","remediation":"1 sentence"}],`+
+        `"executive_summary":"3 sentences","critical_findings":[{"issue":"...","osfi_ref":"X.X","severity":"critical|high|medium","remediation":"1 sentence"}],`+
         `"strengths":["strength"],"documentation_gaps":["gap"],"examiner_questions":["likely question"],`+
         `"30_day_priority_actions":["action with owner"],"exam_day_checklist":["artifact"]}`
       }]
@@ -2480,14 +2489,14 @@ app.post('/api/model-versions/:id/ai-impact', aiLimiter, requireAuth, async func
       [v.model_id, tid]);
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1500,
-      system: 'You are a model risk analyst assessing downstream impact of a model change per OSFI E-23 §4.2. Return ONLY valid JSON.',
+      system: 'You are a model risk analyst assessing downstream impact of a model change per OSFI E-23 Section 4.2. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `Model: "${v.model_name}" (Tier ${v.risk_tier||'unrated'})\nChange: ${v.change_type} — ${v.change_reason}\n`+
         `Category: ${v.change_category||'other'}  Material: ${v.is_material?'Yes':'No'}\n`+
         `Downstream: ${deps.rows.map(d=>`${d.downstream_name} (Tier ${d.downstream_tier||'?'})`).join(', ')||'None'}\n\n`+
         `Return JSON: {"impact_level":"Critical|High|Medium|Low","revalidation_required":true,"revalidation_urgency":"Immediate|Within 30 days|Within 90 days|Next cycle",`+
         `"affected_downstream":[{"model":"...","risk":"1 sentence"}],"affected_processes":["process"],`+
-        `"osfi_implications":"1 sentence on §4.2","recommended_actions":[{"action":"...","owner":"CRO|MRM|IT|Business","timeline":"...","osfi_ref":"§X.X"}],`+
+        `"osfi_implications":"1 sentence on Section 4.2","recommended_actions":[{"action":"...","owner":"CRO|MRM|IT|Business","timeline":"...","osfi_ref":"X.X"}],`+
         `"board_notification_required":false,"board_notification_rationale":"1 sentence"}`
       }]
     });
@@ -2514,14 +2523,14 @@ app.post('/api/models/:id/ai-drift-analysis', aiLimiter, requireAuth, async func
     });
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1500,
-      system: 'You are a quantitative model risk analyst detecting drift per OSFI E-23 §4.5. Return ONLY valid JSON.',
+      system: 'You are a quantitative model risk analyst detecting drift per OSFI E-23 Section 4.5. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `Model: "${m.name}" (Tier ${m.risk_tier||'unrated'}, ${m.methodology_type||'unknown'})\n`+
         `Metrics: ${JSON.stringify(metricSummary)}\n\n`+
         `Return JSON: {"drift_detected":false,"overall_severity":"Critical|High|Medium|Low|None","confidence":"High|Medium|Low",`+
         `"metrics_analysis":[{"metric_name":"...","trend":"Increasing|Decreasing|Stable|Volatile","breach_count":0,"drift_signal":false,"interpretation":"1 sentence"}],`+
         `"stability_assessment":"Stable|Minor Instability|Significant Instability|Unstable",`+
-        `"root_cause_hypotheses":["hypothesis"],"recommended_actions":[{"action":"...","urgency":"Immediate|This Week|This Month","osfi_ref":"§X.X"}],`+
+        `"root_cause_hypotheses":["hypothesis"],"recommended_actions":[{"action":"...","urgency":"Immediate|This Week|This Month","osfi_ref":"X.X"}],`+
         `"revalidation_triggered":false,"revalidation_rationale":"1 sentence"}`
       }]
     });
@@ -2544,11 +2553,11 @@ app.post('/api/mrm-policy/gap-check', aiLimiter, requireAuth, async function(req
     const policyText = typeof p.policy_text === 'string' ? p.policy_text : JSON.stringify(p.policy_text);
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
-      system: 'You are an OSFI E-23 compliance expert. Required sections: §3 Inventory; §3.2 Risk Tiering; §4 Validation (independence,scope,frequency,findings); §4.2 Change Management; §4.3 Documentation; §4.4 Audit Trail; §4.5 Monitoring (PSI); §5 Third-Party/Vendor; §6 Governance (Board,CRO,MRM Committee). Return ONLY valid JSON.',
+      system: 'You are an OSFI E-23 compliance expert. Required sections: Section 3 Inventory; Section 3.2 Risk Tiering; Section 4 Validation (independence,scope,frequency,findings); Section 4.2 Change Management; Section 4.3 Documentation; Section 4.4 Audit Trail; Section 4.5 Monitoring (PSI); Section 5 Third-Party/Vendor; Section 6 Governance (Board,CRO,MRM Committee). Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `MRM Policy (${p.version}):\n\n${policyText.substring(0,6000)}\n\n`+
-        `Return JSON: {"compliance_score":0,"compliance_grade":"A|B|C|D|F","osfi_sections_covered":["§X.X"],`+
-        `"gaps":[{"section":"§X.X","title":"...","severity":"Critical|High|Medium|Low","description":"what is missing","recommended_addition":"1-2 sentences to add"}],`+
+        `Return JSON: {"compliance_score":0,"compliance_grade":"A|B|C|D|F","osfi_sections_covered":["X.X"],`+
+        `"gaps":[{"section":"X.X","title":"...","severity":"Critical|High|Medium|Low","description":"what is missing","recommended_addition":"1-2 sentences to add"}],`+
         `"strengths":["strength"],"priority_additions":["most urgent addition"],`+
         `"examiner_risk":"1 sentence","overall_assessment":"2-3 sentence summary"}`
       }]
@@ -2609,7 +2618,7 @@ app.post('/api/models/:id/ai-assumption-sensitivity', aiLimiter, requireAuth, as
     if (!aRes.rows.length) return res.status(400).json({ error:'No assumptions registered. Add assumptions in the Assumption Register first.' });
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1800,
-      system: 'You are an actuarial model risk analyst assessing assumption sensitivity per OSFI E-23 §4.3 and IFRS 17. Return ONLY valid JSON.',
+      system: 'You are an actuarial model risk analyst assessing assumption sensitivity per OSFI E-23 Section 4.3 and IFRS 17. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `Model: "${m.name}" (${m.methodology_type||'unknown'}, ${m.insurance_category||'general'})\nIFRS 17: ${m.is_ifrs17_model?'Yes':'No'}\nPurpose: ${m.purpose||'unspecified'}\n`+
         `Assumptions: ${JSON.stringify(aRes.rows)}\n\n`+
@@ -2617,7 +2626,7 @@ app.post('/api/models/:id/ai-assumption-sensitivity', aiLimiter, requireAuth, as
         `"sensitivity_matrix":[{"assumption":"...","current_value":"...","unit":"...","sensitivity_level":"High|Medium|Low","direction":"Increases output|Decreases output|Non-linear","impact_description":"1 sentence"}],`+
         `"high_risk_assumptions":[{"assumption":"...","risk":"1 sentence"}],`+
         `"stress_scenarios":[{"scenario":"...","assumptions_affected":["..."],"estimated_impact":"..."}],`+
-        `"osfi_implications":"1 sentence citing §4.3","recommended_monitoring":["monitoring action"]}`
+        `"osfi_implications":"1 sentence citing Section 4.3","recommended_monitoring":["monitoring action"]}`
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
@@ -2645,9 +2654,9 @@ app.post('/api/validations/:id/ai-backtest-narrative', aiLimiter, requireAuth, a
         `Tests: ${summary.total} total — ${summary.pass} pass, ${summary.fail} fail, ${summary.inconclusive} inconclusive\n`+
         `Test details: ${JSON.stringify(btRes.rows)}\n\n`+
         `Return JSON: {"overall_verdict":"Pass|Conditional Pass|Fail","pass_rate_pct":0,`+
-        `"narrative":"3-5 formal paragraphs","material_findings":[{"test":"...","issue":"...","severity":"Material|Moderate|Minor","osfi_ref":"§X.X"}],`+
+        `"narrative":"3-5 formal paragraphs","material_findings":[{"test":"...","issue":"...","severity":"Material|Moderate|Minor","osfi_ref":"X.X"}],`+
         `"statistical_observations":"1-2 sentences","model_stability_conclusion":"1 paragraph",`+
-        `"conditions_if_conditional":["condition"],"osfi_implications":"1 sentence on §4"}`
+        `"conditions_if_conditional":["condition"],"osfi_implications":"1 sentence on Section 4"}`
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
@@ -2668,7 +2677,7 @@ app.post('/api/models/:id/ai-cascade-risk', aiLimiter, requireAuth, async functi
     ]);
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 1800,
-      system: 'You are a model risk specialist analyzing cascading failure risk per OSFI E-23 §3.1 and §4.5. Return ONLY valid JSON.',
+      system: 'You are a model risk specialist analyzing cascading failure risk per OSFI E-23 Section 3.1 and Section 4.5. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `Focus: "${m.name}" (Tier ${m.risk_tier||'unrated'}, ${m.methodology_type||'unknown'})\n`+
         `Upstream (feed IN): ${JSON.stringify(upDeps.rows.map(d=>({name:d.upstream_name,tier:d.upstream_tier,method:d.upstream_method})))}\n`+
@@ -2677,7 +2686,7 @@ app.post('/api/models/:id/ai-cascade-risk', aiLimiter, requireAuth, async functi
         `"upstream_risk":"1 sentence","downstream_impact":"1 sentence",`+
         `"critical_paths":[{"path":["A","B","C"],"risk":"1 sentence"}],`+
         `"single_points_of_failure":["model/process with no backup"],"concentration_risk":"1 sentence",`+
-        `"risk_scenarios":[{"scenario":"...","probability":"High|Medium|Low","impact":"...","osfi_ref":"§X.X"}],`+
+        `"risk_scenarios":[{"scenario":"...","probability":"High|Medium|Low","impact":"...","osfi_ref":"X.X"}],`+
         `"mitigations":[{"action":"...","priority":"Immediate|Near-term|Long-term"}],"board_disclosure_recommended":false}`
       }]
     });
@@ -2759,12 +2768,12 @@ app.post('/api/models/:id/readiness-assessment', aiLimiter, requireAuth, async f
     };
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 2000,
-      system: 'You are an OSFI E-23 model readiness expert. Checklist: §3 Inventory completeness (name,purpose,methodology,owner,data sources,BU); §3.2 Risk Tier assigned; §4 Independent validation completed; §4.2 Version/change docs; §4.3 Documentation standards; §4.5 Monitoring configured; §5 Vendor due diligence if third-party; IFRS 17 if applicable. Return ONLY valid JSON.',
+      system: 'You are an OSFI E-23 model readiness expert. Checklist: Section 3 Inventory completeness (name,purpose,methodology,owner,data sources,BU); Section 3.2 Risk Tier assigned; Section 4 Independent validation completed; Section 4.2 Version/change docs; Section 4.3 Documentation standards; Section 4.5 Monitoring configured; Section 5 Vendor due diligence if third-party; IFRS 17 if applicable. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `Model state: ${JSON.stringify(context)}\n\n`+
         `Return JSON: {"readiness_score":0,"readiness_grade":"A|B|C|D|F","readiness_label":"Exam Ready|Near Ready|In Progress|Needs Work|Not Started",`+
-        `"checklist":[{"item":"OSFI E-23 §X.X — description","status":"Complete|Partial|Missing","evidence":"what is present or absent","impact":"High|Medium|Low"}],`+
-        `"critical_gaps":[{"gap":"...","osfi_ref":"§X.X","action":"specific remediation","priority":1}],`+
+        `"checklist":[{"item":"OSFI E-23 X.X — description","status":"Complete|Partial|Missing","evidence":"what is present or absent","impact":"High|Medium|Low"}],`+
+        `"critical_gaps":[{"gap":"...","osfi_ref":"X.X","action":"specific remediation","priority":1}],`+
         `"strengths":["strength"],"examiner_risk":"1 sentence on highest exam risk",`+
         `"validation_sprint_recommended":false,"sprint_rationale":"1 sentence","executive_summary":"2-3 sentences for CRO"}`
       }]
@@ -2810,7 +2819,7 @@ app.post('/api/models/:id/psi-analysis', aiLimiter, requireAuth, async function(
       system: 'PSI interpreter: <0.1=Stable; 0.1-0.25=Monitor; >0.25=Action Required. Return ONLY valid JSON.',
       messages: [{ role:'user', content:
         `Model: "${m.name}" (Tier ${m.risk_tier||'unrated'})\nPSI results: ${JSON.stringify(psiData)}\n\n`+
-        `Return JSON: {"overall_stability":"Stable|Monitor|Action Required","psi_metrics":[{"metric":"...","psi":0,"interpretation":"Stable|Monitor|Action Required","flag_color":"green|amber|red","narrative":"1 sentence"}],"immediate_actions":["action if PSI>0.25"],"monitoring_recommendation":"1 sentence","osfi_ref":"§4.5"}`
+        `Return JSON: {"overall_stability":"Stable|Monitor|Action Required","psi_metrics":[{"metric":"...","psi":0,"interpretation":"Stable|Monitor|Action Required","flag_color":"green|amber|red","narrative":"1 sentence"}],"immediate_actions":["action if PSI>0.25"],"monitoring_recommendation":"1 sentence","osfi_ref":"Section 4.5"}`
       }]
     });
     const result = extractJSON(aiResp.content[0].text);
@@ -2846,7 +2855,7 @@ app.post('/api/validations/sprint-brief', aiLimiter, requireAuth, async function
         `Type: ${validation_type||'full'}  Scope notes: ${scope_notes||'none'}  Urgency: ${urgency||'standard'}\n\n`+
         `Return JSON: {"brief_title":"Validation Sprint Brief: ${m.name}","model_name":"${m.name}","institution":"${instName}",`+
         `"sprint_type":"Full Validation|Targeted Review|Monitoring Assessment",`+
-        `"executive_summary":"2 sentences","scope_of_work":["item 1"],"osfi_requirements":["§X.X — req"],"deliverables":["Deliverable — desc"],`+
+        `"executive_summary":"2 sentences","scope_of_work":["item 1"],"osfi_requirements":["X.X — req"],"deliverables":["Deliverable — desc"],`+
         `"estimated_hours":{"conceptual_soundness":0,"data_analysis":0,"outcomes_testing":0,"documentation_review":0,"report_writing":0,"total":0},`+
         `"suggested_price_range":{"low":0,"high":0,"currency":"CAD"},`+
         `"market_rate_comparison":{"market_rate_low":50000,"market_rate_high":75000,"clearMRM_discount_pct":0,"savings":"$X"},`+
@@ -2886,8 +2895,8 @@ app.get('/api/audit/ai-summary', aiLimiter, requireAuth, async function(req, res
         `Total events: ${evRes.rows.length}  Event types: ${JSON.stringify(byType)}  Unique actors: ${uniqueUsers.length}\n`+
         `Portfolio: ${JSON.stringify(mRes.rows[0])}\nSample: ${JSON.stringify(evRes.rows.slice(0,50).map(e=>({type:e.event_type,actor:e.actor_email,time:e.created_at})))}\n\n`+
         `Return JSON: {"period_from":"${fromDate}","period_to":"${toDate}","institution_name":"${instName}",`+
-        `"executive_narrative":"3-4 formal paragraphs","key_activities":[{"category":"Model Inventory|Validation|Monitoring|Governance|Vendor","description":"formal description","event_count":0,"osfi_ref":"§X.X"}],`+
-        `"significant_events":[{"date":"YYYY-MM","event":"...","outcome":"...","osfi_section":"§X.X"}],`+
+        `"executive_narrative":"3-4 formal paragraphs","key_activities":[{"category":"Model Inventory|Validation|Monitoring|Governance|Vendor","description":"formal description","event_count":0,"osfi_ref":"X.X"}],`+
+        `"significant_events":[{"date":"YYYY-MM","event":"...","outcome":"...","osfi_section":"X.X"}],`+
         `"compliance_posture":"Strong|Adequate|Developing","compliance_narrative":"2 sentences",`+
         `"areas_of_progress":["strength"],"areas_for_improvement":["gap"],"conclusion":"1 closing paragraph"}`
       }]
@@ -2914,19 +2923,19 @@ app.post('/api/vendor-assessments/b10-package', aiLimiter, requireAuth, async fu
     const summary = { total:vaRes.rows.length, high_risk:vaRes.rows.filter(v=>v.risk_level==='high').length, medium_risk:vaRes.rows.filter(v=>v.risk_level==='medium').length, low_risk:vaRes.rows.filter(v=>v.risk_level==='low').length, overdue_reviews:vaRes.rows.filter(v=>v.next_review_due&&v.next_review_due<new Date().toISOString().split('T')[0]).length };
     const aiResp = await callBedrock({
       model: 'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens: 3000,
-      system: `You are a compliance officer drafting a Board-ready Third-Party Model Risk Report for ${instName} per OSFI B-10 and E-23 §5. Formal language. Return ONLY valid JSON.`,
+      system: `You are a compliance officer drafting a Board-ready Third-Party Model Risk Report for ${instName} per OSFI B-10 and E-23 Section 5. Formal language. Return ONLY valid JSON.`,
       messages: [{ role:'user', content:
         `Institution: ${instName}  Date: ${new Date().toISOString().split('T')[0]}\n`+
         `Summary: ${JSON.stringify(summary)}\nAssessments: ${JSON.stringify(vaRes.rows.map(v=>({model:v.model_name,vendor:v.vendor_name,product:v.vendor_product,risk:v.risk_level,tier:v.risk_tier,sla:v.q_sla_documented,audit_rights:v.q_audit_rights,exit_plan:v.q_exit_plan,concentration:v.q_concentration_risk,next_review:v.next_review_due})))}\n\n`+
         `Return JSON: {"report_title":"Third-Party Model Risk Management Report","institution":"${instName}","report_date":"${new Date().toISOString().split('T')[0]}",`+
         `"executive_summary":"3-4 sentences for Board","sections":[{"number":"1","title":"Vendor Model Inventory","content":"formal paragraph"},`+
-        `{"number":"2","title":"Risk Assessment Summary (OSFI E-23 §5 & B-10)","content":"formal paragraph"},`+
+        `{"number":"2","title":"Risk Assessment Summary (OSFI E-23 Section 5 & B-10)","content":"formal paragraph"},`+
         `{"number":"3","title":"High-Risk Vendor Findings","content":"formal paragraph"},`+
         `{"number":"4","title":"Concentration Risk Analysis","content":"formal paragraph"},`+
         `{"number":"5","title":"Due Diligence Gaps","content":"formal paragraph"},`+
         `{"number":"6","title":"Remediation Plan","content":"formal paragraph"},`+
         `{"number":"7","title":"Board Attestation","content":"board statement"}],`+
-        `"action_items":[{"item":"...","owner":"CRO|Procurement","timeline":"30|60|90 days","osfi_ref":"§X.X","priority":"Critical|High|Medium"}],`+
+        `"action_items":[{"item":"...","owner":"CRO|Procurement","timeline":"30|60|90 days","osfi_ref":"X.X","priority":"Critical|High|Medium"}],`+
         `"b10_compliance_score":0,"b10_compliance_narrative":"1 sentence"}`
       }]
     });
@@ -2934,6 +2943,96 @@ app.post('/api/vendor-assessments/b10-package', aiLimiter, requireAuth, async fu
     await audit(tid, null, req.user.email, 'b10_package_generated', { metadata:{ vendors:vaRes.rows.length, high_risk:summary.high_risk } });
     res.json({ ...result, vendor_summary:summary, generated_at:new Date().toISOString() });
   } catch(e) { console.error('[b10-package]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI: Risk Appetite Statement Compliance Check
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/risk-appetite/ai-compliance-check', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const raRes = await pool.query(
+      `SELECT * FROM risk_appetite_statements WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`, [tid]);
+    if (!raRes.rows.length) return res.status(404).json({ error:'No risk appetite statement found. Generate one first.' });
+    const stmt = raRes.rows[0];
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-sonnet-20240229-v1:0', max_tokens:1400, temperature:0,
+      system:'You are an OSFI E-23 compliance expert reviewing a Model Risk Appetite Statement. Return ONLY valid JSON.',
+      messages:[{ role:'user', content:
+        'Review this Model Risk Appetite Statement for OSFI E-23 (September 2025) compliance.\n\n'+
+        'Status: '+stmt.status+'\nAppetite level: '+(stmt.appetite_level||'not specified')+'\n\n'+
+        'STATEMENT TEXT:\n'+stmt.statement_text+'\n\n'+
+        'OSFI E-23 requires an MRA statement to cover: (1) explicit risk tolerance thresholds, (2) model risk governance framework, (3) roles and responsibilities, (4) validation independence requirements, (5) third-party model risk boundaries, (6) escalation and breach protocols, (7) board oversight and approval.\n\n'+
+        'Return JSON: {"compliance_score":0,"compliance_grade":"A|B|C|D|F","overall_assessment":"2-3 sentences","strengths":["what the statement does well"],"gaps":[{"section":"OSFI E-23 Section X","requirement":"what is required","finding":"what is missing or weak","severity":"Critical|High|Medium|Low","recommendation":"1-2 sentences on what to add"}],"suggested_additions":["specific paragraph or sentence to add to the statement"],"examiner_risk":"Low|Medium|High|Critical","examiner_comment":"1 sentence — what an OSFI examiner would note"}'
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    res.json(result);
+  } catch(e) { console.error('[mra-compliance-check]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI: Regulatory Calendar — Portfolio Impact Assessment
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/calendar/ai-portfolio-impact', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const { event_title, regulation_ref, due_date, description } = req.body;
+    if (!event_title) return res.status(400).json({ error:'event_title required' });
+    const modRes = await pool.query(
+      `SELECT name,risk_tier,methodology_type,model_owner_name,business_unit,is_third_party,purpose,input_data_sources
+       FROM models WHERE tenant_id=$1 AND status='active' ORDER BY risk_tier NULLS LAST, name LIMIT 40`, [tid]);
+    const models = modRes.rows;
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-haiku-20240307-v1:0', max_tokens:1200, temperature:0,
+      system:'You are an OSFI regulatory impact analyst. Return ONLY valid JSON.',
+      messages:[{ role:'user', content:
+        'Analyze which models in this inventory will be impacted by the upcoming regulatory event.\n\n'+
+        'REGULATORY EVENT: '+event_title+'\n'+
+        (regulation_ref?'Reference: '+regulation_ref+'\n':'')+
+        (due_date?'Due Date: '+due_date+'\n':'')+
+        (description?'Description: '+description+'\n':'')+
+        '\nMODEL INVENTORY ('+models.length+' active models):\n'+
+        models.map(function(m,i){
+          return (i+1)+'. '+m.name+' | Tier '+(m.risk_tier||'?')+' | '+(m.methodology_type||'unknown')+' | BU: '+(m.business_unit||'—')+' | Owner: '+(m.model_owner_name||'—')+(m.is_third_party?' [VENDOR]':'');
+        }).join('\n')+'\n\n'+
+        'Return JSON: {"impact_summary":"2 sentences on overall portfolio impact","impacted_models":[{"model_name":"...","impact_level":"Critical|High|Medium|Low","reason":"1 sentence why this model is impacted","required_action":"1 specific action","timeline":"e.g. 30 days before deadline"}],"unimpacted_count":0,"key_risks":["risk 1","risk 2"],"recommended_priority_order":["model name 1","model name 2"],"overall_effort":"Low|Medium|High|Very High"}'
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    res.json(result);
+  } catch(e) { console.error('[calendar-impact]',e.message); res.status(500).json({ error:e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AI: Validation Peer Benchmark
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/validations/:id/ai-peer-benchmark', aiLimiter, requireAuth, async function(req, res) {
+  try {
+    const tid = req.user.tenant_id;
+    const vRes = await pool.query(
+      `SELECT v.*,m.name model_name,m.risk_tier,m.methodology_type,m.business_unit,m.is_third_party,m.purpose
+       FROM validations v JOIN models m ON v.model_id=m.id WHERE v.id=$1 AND v.tenant_id=$2`,[req.params.id,tid]);
+    if (!vRes.rows.length) return res.status(404).json({ error:'Validation not found' });
+    const v=vRes.rows[0];
+    const btRes = await pool.query(
+      `SELECT test_name,verdict,variance_pct FROM backtesting_logs WHERE validation_id=$1 LIMIT 5`,[req.params.id]);
+    const aiResp = await callBedrock({
+      model:'anthropic.claude-3-haiku-20240307-v1:0', max_tokens:1200, temperature:0,
+      system:'You are an OSFI E-23 validation quality expert benchmarking a validation against best practices. Return ONLY valid JSON.',
+      messages:[{ role:'user', content:
+        'Benchmark this validation against OSFI E-23 best practices for Tier '+(v.risk_tier||'?')+' models.\n\n'+
+        'VALIDATION DATA:\nModel: '+v.model_name+' ('+v.methodology_type+')\nStatus: '+v.status+'\nOutcome: '+(v.outcome||'pending')+'\n'+
+        'Scope: '+(v.scope||'not documented')+'\nFindings: '+(v.findings||'none documented')+'\nConditions: '+(v.conditions||'none')+'\n'+
+        'Validator: '+(v.assigned_to_email||'not assigned')+'\n'+
+        (btRes.rows.length?'Backtests: '+btRes.rows.map(function(b){return b.test_name+' ('+b.verdict+(b.variance_pct?' '+b.variance_pct+'%':'')+')';}).join(', '):'No backtesting data')+'\n\n'+
+        'OSFI E-23 best practice requirements for Tier '+(v.risk_tier||'?')+' validation: independent validator, documented scope covering conceptual soundness + data quality + outcome analysis + limitations, formal findings with severity, pass/fail with conditions, backtesting results, board/senior management sign-off.\n\n'+
+        'Return JSON: {"benchmark_score":0,"quality_grade":"A|B|C|D|F","overall_assessment":"2 sentences","strengths":["..."],"gaps":[{"area":"Independence|Scope|Findings|Documentation|Backtesting|Approval","finding":"...","severity":"Critical|High|Medium|Low","osfi_requirement":"OSFI E-23 Section X.X","recommendation":"..."}],"missing_elements":["specific element missing"],"examiner_rating":"Satisfactory|Needs Improvement|Unsatisfactory","examiner_comment":"1 sentence"}'
+      }]
+    });
+    const result = extractJSON(aiResp.content[0].text);
+    res.json(result);
+  } catch(e) { console.error('[validation-benchmark]',e.message); res.status(500).json({ error:e.message }); }
 });
 
 // ── SPA fallback ──────────────────────────────────────────────────────────────
