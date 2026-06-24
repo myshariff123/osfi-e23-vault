@@ -1774,9 +1774,10 @@ app.get('/api/calendar/events', requireAuth, async function(req, res) {
         [tid]
       ),
       pool.query(
-        `SELECT id,model_name,vendor_name,next_review_due
-         FROM vendor_assessments WHERE tenant_id=$1 AND next_review_due IS NOT NULL
-         ORDER BY next_review_due ASC LIMIT 30`,
+        `SELECT va.id,m.name AS model_name,m.vendor_name,va.next_review_due
+         FROM vendor_assessments va JOIN models m ON m.id=va.model_id
+         WHERE va.tenant_id=$1 AND va.next_review_due IS NOT NULL
+         ORDER BY va.next_review_due ASC LIMIT 30`,
         [tid]
       ),
       pool.query(
@@ -2072,7 +2073,7 @@ app.get('/api/dashboard/action-queue', aiLimiter, requireAuth, async function(re
     const [models, validations, vendors, monAlerts, lastSprint] = await Promise.all([
       pool.query(
         `SELECT id,name,risk_tier,status,next_validation_due,revalidation_required,
-                current_version,model_owner,model_type
+                current_version,model_owner_name,methodology_type
          FROM models WHERE tenant_id=$1 AND status='active'`, [tid]),
       pool.query(
         `SELECT v.id,v.status,v.created_at,v.assigned_to_email,m.name model_name,m.risk_tier,
@@ -2080,8 +2081,9 @@ app.get('/api/dashboard/action-queue', aiLimiter, requireAuth, async function(re
          FROM validations v JOIN models m ON m.id=v.model_id
          WHERE v.tenant_id=$1 AND v.status NOT IN ('approved','closed')`, [tid]),
       pool.query(
-        `SELECT id,vendor_name,next_review_due,risk_rating FROM vendor_assessments
-         WHERE tenant_id=$1 AND status='active'`, [tid]),
+        `SELECT va.id,va.next_review_due,va.risk_level,m.vendor_name
+         FROM vendor_assessments va JOIN models m ON m.id=va.model_id
+         WHERE va.tenant_id=$1 AND va.next_review_due IS NOT NULL`, [tid]),
       pool.query(
         `SELECT DISTINCT ON (model_id,metric_name) model_id,metric_name,metric_value,threshold_red,
                 threshold_amber, m.name model_name
@@ -2177,8 +2179,8 @@ app.post('/api/validations/:id/generate-report', aiLimiter, requireAuth, async f
   try {
     const tid = req.user.tenant_id;
     const vr = await pool.query(
-      `SELECT v.*,m.name model_name,m.risk_tier,m.model_type,m.model_purpose,m.methodology,
-              m.data_sources,m.primary_output,m.model_owner,m.regulatory_use,m.is_vendor_model,
+      `SELECT v.*,m.name model_name,m.risk_tier,m.methodology_type,m.purpose,
+              m.input_data_sources,m.model_owner_name,m.is_third_party,
               m.vendor_name,m.current_version
        FROM validations v JOIN models m ON m.id=v.model_id
        WHERE v.id=$1 AND v.tenant_id=$2`, [req.params.id, tid]);
@@ -2198,13 +2200,13 @@ app.post('/api/validations/:id/generate-report', aiLimiter, requireAuth, async f
 Write in formal financial institution language. Be specific and professional. Return ONLY valid JSON.`,
       messages: [{ role:'user', content:
         `Generate a complete formal validation report.\n\nValidation data: ${JSON.stringify({
-          model_name: v.model_name, risk_tier: v.risk_tier, model_type: v.model_type,
-          model_purpose: v.model_purpose, methodology: v.methodology, data_sources: v.data_sources,
-          primary_output: v.primary_output, model_owner: v.model_owner, model_version: v.current_version,
-          regulatory_use: v.regulatory_use, is_vendor: v.is_vendor_model, vendor: v.vendor_name,
+          model_name: v.model_name, risk_tier: v.risk_tier, model_type: v.methodology_type,
+          model_purpose: v.purpose, data_sources: v.input_data_sources,
+          model_owner: v.model_owner_name, model_version: v.current_version,
+          is_vendor: v.is_third_party, vendor: v.vendor_name,
           validator_email: v.assigned_to_email, validation_status: v.status,
-          outcome: v.outcome, findings: v.findings, conditions: v.conditions_of_approval,
-          validation_started: v.created_at, validation_closed: v.closed_at,
+          outcome: v.outcome, findings: v.findings, conditions: v.conditions,
+          validation_started: v.created_at, validation_closed: v.approved_at,
           validation_history: history.rows, institution: instName,
         })}\n\n` +
         `Return JSON with these exact keys:\n` +
@@ -2372,5 +2374,5 @@ app.get('/{*path}', function(req, res) {
 
 const PORT=process.env.PORT||3001;
 app.listen(PORT, function() {
-  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1–5');
+  console.log('[ClearMRM] Port '+PORT+' | Bedrock ca-central-1 | DB: clearmrm | Phase 1–7');
 });
