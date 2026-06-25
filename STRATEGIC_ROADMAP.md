@@ -1,8 +1,10 @@
 # ClearMRM Strategic Roadmap
 ## From Crawling to Dominant — The SpaceX Analogy
 
-**Last updated:** June 23, 2026  
+**Last updated:** June 25, 2026  
 **Author:** Nimblestride Inc.
+
+> **New in this revision (June 25, 2026):** Added Phase 12 (OSFI E-23 Regulatory Completeness — compliance parity items sourced from the official guideline text line by line) and Phase 13 (Unique Differentiator Services — the 8 capabilities no existing competitor provides in the Canadian market). Cross-referenced against COMPLIANCE_GAPS.md. All prior phases unchanged.
 
 ---
 
@@ -304,6 +306,204 @@ The biggest risk facing ClearMRM is not regulatory alignment or product complete
 | P2 | Build Validation Sprint service tier (service SKU, validator portal, attestation workflow) | Tech + Founder | September 30, 2026 |
 | P3 | Validator Marketplace MVP live (3 vetted validators, referral fee workflow) | Tech | October 31, 2026 |
 | P3 | Phase 9 product additions complete (PSI + Sprint) | Tech | October 31, 2026 |
+
+---
+
+## Phase 12: OSFI E-23 Regulatory Completeness
+*Q3–Q4 2026 — Compliance Parity (Must Have Before First Enterprise Deal Closes)*
+
+> **Strategic context:** These items are NOT differentiators. IBM, ValidMind, and Yields.io all have equivalent features. However, an OSFI examiner reviewing ClearMRM's own compliance posture (per B-10) and a Tier 1 FRFI's procurement checklist will verify these exist. Without them, enterprise deals stall in procurement and pilot audits fail. Build these as efficiently as possible — they are infrastructure, not product.
+
+**Source:** Every item below is sourced directly from the OSFI E-23 official text. Detailed regulatory mapping is in COMPLIANCE_GAPS.md.
+
+### 12A — Appendix 1 Inventory Completeness (Low Effort / High Examiner Visibility)
+*An OSFI examiner's first step is pulling the model inventory and checking it against Appendix 1 field by field.*
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| CP-01: `approved_uses` field | Appendix 1 | Structured text field on model record documenting what the model IS and IS NOT approved to do. Displayed prominently on model detail page. |
+| CP-01: `limitations` field with exceptions | Appendix 1 | Structured field for known model limitations, failure modes, and documented exceptions from standard governance requirements. |
+| CP-02: `monitoring_status` enum | Appendix 1 | Distinct status field separate from validation status: `active` / `breached` / `under_review` / `suspended`. Visible in inventory table. |
+| CP-03: `model_developer` split from `model_owner` | Appendix 1, A.4 | Add `model_developer_name` and `model_developer_email` as distinct fields. OSFI defines these as separate roles. |
+| CP-04: `residual_risk_rating` at approval | C.2, Approval | When a model is approved, require the approver to record the residual risk rating (after controls) separately from the inherent risk tier. |
+
+### 12B — Risk Rating Completeness (Low Effort / Required for C.2)
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| CP-05: Negligible / Tier 0 category | C.2 | Add a fourth option to the risk rating wizard: Negligible/Tier 0 (exempts model from full lifecycle governance). Requires: formal justification, approver sign-off, expiry date, trigger conditions for re-rating. Exemption register screen in admin panel. |
+| CP-08: Usage limits and constraints | C.3 | `usage_limits` JSONB field per model: max_dollar_exposure, max_decision_volume, approved_business_units[], override_required_above_$. Displayed on model detail. Usage limit breach triggers monitoring alert. |
+| CP-09: Contingency plans | C.3, 3.6 | `contingency_plan` JSONB field per model: backup_model_id (link to fallback model), manual_override_procedure (text), fallback_data_source (text), escalation_contact. Part of model setup form. Checklist item in periodic review. |
+| Residual risk in board report | C.2 | Add "Inherent vs. Residual Risk" section to board report PDF. Show delta between what the model inherently risks and what remains after controls. |
+
+### 12C — Model Rationale (Medium Effort / Required for Principle 3.1)
+*OSFI Principle 3.1 and the Model Rationale section require a structured design-phase document. Currently only free-text description exists.*
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| CP-07: Structured model rationale | Principle 3.1 | Replace free-text `purpose` field with structured rationale form: `model_scope` (what the model covers), `model_coverage` (geographic/product/segment scope), `intended_use_description` (how outputs will be used), `business_use_case` (specific decision the model informs), `usage_risk_notes` (risks of using this model for this purpose). |
+| CP-07: AI/ML rationale extension | Model Rationale AI/ML | Additional tab shown only when `methodology_type` = AI/ML or advanced technique: `explainability_level_required` (enum: not_required / limited / standard / full_regulatory with rationale), `is_black_box` (boolean), `alternative_controls_description` (text, required when `is_black_box = true`), `bias_potential_assessment` (text), `ethical_risk_notes` (text), `privacy_risk_notes` (text). These fields are design-phase obligations — distinct from Phase 11's SHAP/LIME output capture. |
+
+### 12D — Lifecycle Gates (Medium Effort / Required for Principles 3.5 and Decommission)
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| CP-06: Formal decommission workflow | Decommission | New lifecycle state: `decommissioned` (distinct from archive/soft-delete). Decommission wizard: (1) reason for decommission (performance/regulatory/obsolete/cost), (2) stakeholder notification list (auto-email model owner, validators, users), (3) successor model link, (4) documentation retention period (configurable, default 36 months), (5) downstream model impact assessment (pulls dependency map, lists affected models), (6) third-party coordination checklist (if `is_third_party = true`: vendor notification, exit plan reference, data return). `model_decommissions` table. |
+| CP-10: Deployment checklist | Principle 3.5 | New lifecycle gate between validation approval and model `active` status. Deployment checklist (checkbox per item, stored in `model_deployments` table): dev/prod data consistency verified, production environment tests completed, monitoring configured, explainability requirements communicated to stakeholders, cybersecurity/infrastructure risk assessed (reference to B-13/E-21 review), change control documented, exception handling documented. Cannot mark model `active` without checklist completion. |
+
+### 12E — Data Governance (Medium Effort / Principle 3.2 and 3.3)
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| DG-01: Structured data lineage | Principle 3.2 | `model_data_sources` table: model_id, source_system_name, source_table_or_api, refresh_frequency (real-time/daily/weekly/monthly/ad-hoc), data_owner, is_synthetic (boolean), is_proxy (boolean), lineage_validated_at, validated_by. Data Sources tab on model detail page. |
+| DG-02: Data quality check log | Principle 3.2 | `model_data_quality_checks` table: model_id, check_type (outlier_detection/missing_value/consistency/bias_check/proxy_analysis), check_result, issues_found, run_date, run_by. Log visible on model detail under Data Governance tab. |
+| DG-04: Expert judgment register | Principle 3.3 | `model_expert_judgments` table: model_id, judgment_description, justification, expert_name, expert_role, magnitude_of_impact (low/medium/high), applied_at, reviewed_by. Expert Judgment Register tab on model detail. Critical for actuarial models (tail factors, development factors, IBNR selections). |
+
+### 12F — Validation Scope Completeness (Low Effort / Principle 3.4)
+*The current validation workflow captures findings and outcomes but does not enforce the specific scope OSFI mandates.*
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| Structured validation scope checklist | Principle 3.4 | Add a checklist to the validation form that reviewers must complete before submitting findings: ☐ Risk rating confirmed/challenged ☐ Model purpose and scope reviewed ☐ Conceptual soundness assessed ☐ Data quality reviewed ☐ Limitations and mitigants reviewed ☐ Explainability level evaluated (for AI/ML) ☐ Sub-components reviewed (for vendor models) ☐ Reasonableness of outcomes verified. Each item requires a checkbox + brief note. |
+| Residual risk in validation approval | Principle 3.4, Approval | When a validator recommends approval, require: `residual_risk_rating` (inherent tier minus controls) + `residual_risk_narrative` (what controls reduce the residual risk, and what risk remains). |
+
+### 12G — Governance Evidence (Medium Effort / Sections B.1 and C.1)
+
+| Item | OSFI Reference | What to Build |
+|---|---|---|
+| GV-01: Multi-disciplinary stakeholder tracking | B.1, D.1 | `model_stakeholders` table: model_id, stakeholder_email, discipline (legal/ethics/compliance/IT/data_science/business/risk/other), involvement_type (reviewer/approver/consulted/informed), involved_at. Stakeholder tab on model detail. Warning displayed on AI/ML model if no legal or ethics stakeholder on record. Included in examiner export. |
+| GV-02: Risk appetite breach linkage | B.2, C.2 | Risk appetite statement thresholds stored as machine-readable config (max_tier1_count, max_unvalidated_pct, max_vendor_concentration). Model-level flag `outside_risk_appetite` (boolean) + `risk_appetite_breach_reason` + `remediation_plan` + `remediation_due_date`. Dashboard banner when portfolio exceeds appetite thresholds. Board report section: "Models Operating Outside Risk Appetite." |
+| GV-03: Periodic model survey workflow | C.1 | `model_surveys` table: survey_id, survey_period, business_unit, sent_to_email, completed_at, models_declared_count. Admin initiates survey (sends form link to business unit contacts). Business unit submits declaration: "We have X models in use. Here is the list." System reconciles declared models vs inventory and flags potential shadow models. Survey completion dashboard. |
+| GV-04: Monitoring config persistence | C.3, 3.6 | `model_monitoring_configs` table: model_id, metric_name, metric_type, threshold_warning, threshold_breach, frequency (monthly/quarterly/semi-annual), last_checked_at, status. Tier-based defaults auto-populated on model creation (Tier 1: monthly, Tier 2: quarterly, Tier 3: semi-annual). Monitoring results history log. Stakeholder notification when threshold breached. |
+
+---
+
+## Phase 13: Unique Differentiator Services — The 8 Things No Competitor Builds
+*Q4 2026 → 2027 — These are the reason a Canadian FRFI chooses ClearMRM over IBM, ValidMind, or Yields.io*
+
+> **Strategic context:** Phase 12 builds the compliance floor. Phase 13 builds the competitive ceiling. The 8 services below solve problems that OSFI E-23 creates but that NO existing platform addresses in the Canadian market. These are not feature additions — they are new market categories. Each one is described in detail in COMPLIANCE_GAPS.md Part D.
+
+### D-01: Validator Marketplace — Market-Creating, Not Market-Competing (Phase 10 — Priority Accelerate)
+**The problem:** Every non-negligible model needs independent validation. At $75K/model market rate, a 100-model FRFI cannot comply before May 2027. Validators are booked 12 months out. **This is a crisis with no current solution.**
+
+**What no competitor builds:** A two-sided marketplace connecting FRFIs with vetted Canadian validators. ClearMRM AI generates the validation draft. The validator reviews, adds independent judgment, and signs in days instead of weeks. Fee drops from $75K to $20K/model. ClearMRM earns 15% platform fee.
+
+**Why this is structurally impossible for IBM or ValidMind to copy:** It requires a Canadian validator network + a governance platform. IBM's Big-4 partners charge $75K/model — marketplace would cannibalize their own partners. ValidMind is US-focused with no Canadian validator relationships.
+
+**Revenue:** 20 clients × 10 sprints/year × $20K × 15% = $600K marketplace revenue. At 50 clients: $1.5M/year from marketplace alone, on top of subscription revenue.
+
+**MVP requirements (already in Phase 10):** Validator profiles + request workflow + secure validator portal + attestation workflow + platform fee invoicing.
+
+### D-02: OSFI Examination Simulator (Deepen Current Exam Sprint)
+**The problem:** FRFIs don't know what an examination looks like until they're in one. Exam failures are not caused by non-compliance — they're caused by poor examination preparation. First-time auditees answer the wrong questions, present evidence incorrectly, and miss gaps they would have caught with preparation.
+
+**What no competitor builds:** A full simulation of the OSFI examination methodology. Presents the actual questions an OSFI examiner would ask (sourced from examination methodology, not just the guideline). Cross-references your live model inventory to generate answers. Identifies your vulnerabilities before the examiner does. Generates the examination response document.
+
+**Beyond current Exam Sprint:** Current Exam Sprint gives a 30/60/90-day remediation plan based on identified gaps. The Simulation goes further: it replicates the examination interview, not just the gap analysis.
+
+**Implementation:** Expand Exam Sprint module with a "Simulation Mode" that walks through a structured examination scenario, pulls live data from the model inventory, and generates the examiner Q&A document.
+
+### D-03: Insurance Actuarial Model Governance — Depth Needed Beyond Phase 7
+**Phase 7 built:** 14-category insurance model taxonomy, assumption register, backtesting log, dependency map.
+
+**What still needs to be built for actuarial governance parity:**
+
+| Feature | Description |
+|---|---|
+| Appointed Actuary sign-off workflow | Distinct from standard model approver. Actuarial reserving and capital models require the Appointed Actuary (OSFI-defined role) to sign. ClearMRM should have an "Appointed Actuary Attestation" step separate from the standard validation approval. |
+| Cat model adjustment factor tracking | When an insurer uses RMS or AIR as the vendor cat model, their internal team applies adjustment factors (EMFs, demand surge loading, climate peril loading). ClearMRM should track these internal adjustments alongside the vendor model record — creating a full audit trail of the combined cat risk view. |
+| IFRS 17 CSM sensitivity analysis documentation | The Contractual Service Margin under IFRS 17 is sensitive to actuarial model assumptions. ClearMRM should allow actuaries to document which model assumptions feed the CSM and how sensitivity tests were performed. |
+| ORSA model dependency chain | The Own Risk and Solvency Assessment (ORSA) depends on multiple models feeding into capital projections. ClearMRM's dependency map should have an ORSA-specific view showing the full chain from input models to ORSA outputs. |
+
+### D-04: OSFI Regulatory Intelligence Feed
+**The problem:** OSFI publishes guidance letters, FAQ updates, speeches, consultation papers, and finalized guidelines continuously. Each may affect specific model types. Today, compliance teams track this manually — someone has to read every OSFI publication and determine if it affects any of their 100+ models.
+
+**What no competitor builds:**
+- Monitor OSFI's guidance library for new publications automatically
+- Parse new publications using AI to identify which OSFI E-23 sections are affected
+- Cross-reference against the institution's model inventory to identify which specific models may require review
+- Generate a one-page impact memo: "OSFI published [title]. This affects your [N] models of type [X]. Recommended actions: [Y]."
+- Send to the MRM team automatically
+
+**Implementation:** Scheduled job monitors OSFI guidance library RSS/sitemap. On new publication, AI parses the document, extracts affected model types, and cross-references inventory. Generates and sends impact assessment. Results visible in Regulatory Calendar.
+
+### D-05: AMF Quebec Dual-Compliance Overlay (Phase 11 — Accelerate)
+**The problem:** Quebec-domiciled FRFIs are governed by OSFI E-23 federally AND by Quebec Law 25 (privacy/AI) AND by AMF guidelines locally. No platform provides a single governance view across both frameworks simultaneously.
+
+**Market:** 40+ Quebec FRFIs including Desjardins subsidiaries, National Bank, Laurentian Bank, and dozens of Quebec caisses. Zero existing solution.
+
+**What to build:**
+- Quebec Law 25 compliance checklist mapped to each model (privacy impact assessment, AI disclosure obligations)
+- AMF-specific model governance fields for models subject to AMF oversight (insurance product pricing models)
+- Combined OSFI E-23 + AMF examination package PDF
+- Dual-compliance status badge on model inventory (OSFI: compliant / AMF: compliant)
+
+### D-06: OSFI B-15 Climate Risk Module (Phase 11)
+**The problem:** OSFI's B-15 Climate Risk Management guideline creates model risk obligations for physical and transition risk models. The same CRO managing E-23 compliance is responsible for B-15. But no platform provides integrated E-23 + B-15 governance.
+
+**What to build:**
+- Climate-specific model taxonomy: physical risk (flood, wildfire, severe weather), transition risk (carbon pricing, stranded asset), climate-adjusted cat model
+- B-15 specific validation requirements mapped to the existing validation workflow
+- Combined E-23 + B-15 board report section
+- Climate model dependency chains (how physical risk models feed into cat models, capital models, ORSA)
+
+**Cross-sell:** Every E-23 client is a natural B-15 prospect. Add-on pricing at $15K–$30K/year on top of existing subscription.
+
+### D-07: B-10 Vendor Portal — The Reverse Flow
+**The problem:** B-10 requires FRFIs to conduct due diligence on every vendor model. Vendors respond to 15–20 different FRFI due diligence requests per year, sending the same documentation 15–20 times by email.
+
+**What no competitor builds:** A vendor-facing portal where AI vendors selling into the Canadian market:
+- Register their AI/ML models once (name, methodology, training data summary, performance metrics, explainability approach, known limitations)
+- Maintain their documentation (updated when model version changes)
+- Grant access to specific FRFI clients who import the vendor documentation directly into their ClearMRM vendor assessment
+
+**Revenue model:** Vendors pay ClearMRM for a portal subscription ($5K–$15K/year per vendor). FRFIs get higher-quality vendor documentation. ClearMRM earns on both sides.
+
+**Network effect:** The more FRFIs on ClearMRM, the more valuable the vendor portal (vendors reach more clients through one registration). The more vendors on the portal, the faster FRFI vendor due diligence becomes.
+
+### D-08: Canadian Insurance Bias Detection
+**The problem:** OSFI E-23 requires bias and fairness assessment for AI/ML models. Canadian insurance regulators (FSRA in Ontario, AMF in Quebec, OSFI federally) have specific concern about geographic proxy variables. A Toronto postal code (M5V) correlates with race, ethnicity, and income in ways that may constitute prohibited discrimination in insurance pricing.
+
+**What no competitor builds:** Fairness testing designed specifically for Canadian insurance pricing regulation:
+- Postal code proxy risk detection: flag postal codes that correlate with protected characteristics per Canadian census data
+- GISA grouping analysis: check if geographic rating factors align with GISA (General Insurance Statistical Agency) accepted groupings
+- FSRA rating factor compliance check: compare model rating factors against FSRA's approved/prohibited factor list for Ontario auto
+- AMF pricing factor check: equivalent for Quebec
+- Fairness testing results stored in validation record as OSFI-required evidence
+
+**Why Fiddler AI cannot do this:** Fiddler AI provides generic demographic parity and equalized odds metrics. It does not know Canadian insurance regulation, GISA groupings, FSRA prohibited factors, or the postal code correlation problem specific to Canadian demographics.
+
+---
+
+## Product Decision Record — June 25, 2026
+
+### What Phase 12 and Phase 13 Are NOT
+
+**Phase 12 does not make ClearMRM unique.** These are compliance parity items. They make the platform credible for OSFI examination. Build them efficiently — they are infrastructure.
+
+**Phase 13 is the business.** The 8 differentiator services are what justify a $72K–$144K subscription, a 2.6–3.0× ROI claim, and a $12M ARR trajectory. No compliance parity item builds a moat. The Validator Marketplace, the Examination Simulator, the Actuarial Governance depth, the Regulatory Intelligence Feed, the Quebec overlay, the B-15 module, the Vendor Portal, and the Canadian Insurance Bias Detection — these are the moat.
+
+### Build Sequence (Revised)
+
+| Priority | Phase | Target |
+|---|---|---|
+| P0 | Validator Marketplace MVP (Phase 10) | October 31, 2026 |
+| P0 | Phase 12 Appendix 1 fields (CP-01, CP-02, CP-03) | July 31, 2026 |
+| P1 | Phase 12 Model Rationale AI/ML extension (CP-07 AI/ML) | August 31, 2026 |
+| P1 | Phase 12 Decommission workflow (CP-06) | September 30, 2026 |
+| P1 | Phase 12 Deployment checklist (CP-10) | September 30, 2026 |
+| P1 | PSI monitoring (Phase 9C) | August 31, 2026 |
+| P2 | Phase 12 Data governance (DG-01, DG-02, DG-04) | October 31, 2026 |
+| P2 | Phase 12 Governance evidence (GV-01, GV-02, GV-03, GV-04) | November 30, 2026 |
+| P2 | Phase 12 Validation scope checklist | October 31, 2026 |
+| P2 | OSFI Examination Simulator (D-02) | November 30, 2026 |
+| P3 | Phase 12 Remaining items (CP-04, CP-05, CP-08, CP-09) | December 31, 2026 |
+| P3 | OSFI Regulatory Intelligence Feed (D-04) | December 31, 2026 |
+| P3 | Actuarial governance depth: Appointed Actuary workflow, cat adjustment tracking (D-03) | Q1 2027 |
+| P4 | AMF Quebec overlay (D-05) | Q1 2027 |
+| P4 | Canadian Insurance Bias Detection (D-08) | Q1 2027 |
+| P5 | B-10 Vendor Portal (D-07) | Q2 2027 |
+| P5 | OSFI B-15 Climate Risk Module (D-06) | Q2 2027 |
 
 ---
 
